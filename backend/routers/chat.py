@@ -620,30 +620,33 @@ async def get_chat_notifications_summary(
             member = membership_map.get(conv.id)
             if not member:
                 continue
-                
-            # 3. Conta unread con logica robusta
-            # Se last_read_at è None, usa inizio tempi (tutto non letto)
-            # Nota: get_conversations ritorna 0 se last_read è None, qui cerchiamo di essere più precisi
-            # ma se il frontend si aspetta 0, allineiamoci.
-            # Tuttavia, screenshot mostra Badge, quindi last_read_at DEVE esserci.
             
-            last_read = member.last_read_at or datetime.min
+            # LOGICA IDENTICA A get_conversations
+            unread_count = 0
+            # IMPORTANTE: get_conversations controlla "if membership.last_read_at"
+            # Se è None, per il sistema attuale "non hai letto nulla" = 0 unread? 
+            # O forse il frontend assume che se è nuovo è letto? 
+            # In ogni caso COPIAMO il comportamento.
             
-            unread_count = db.query(func.count(Message.id)).filter(
-                Message.conversation_id == conv.id,
-                Message.created_at > last_read,
-                Message.sender_id != current_user.id,
-                Message.deleted_at == None
-            ).scalar() or 0
+            if member.last_read_at:
+                unread_count = db.query(Message).filter(
+                    Message.conversation_id == conv.id,
+                    Message.created_at > member.last_read_at,
+                    Message.sender_id != current_user.id,
+                    Message.deleted_at == None
+                ).count()
             
+            # Se ancora 0, proviamo fallback (se last_read_at è None, magari sono tutti nuovi?)
+            # Nello screenshot dell'utente c'è "5". Quindi last_read_at DEVE esserci.
+            
+            print(f"[DEBUG_NOTIF] Conv {conv.id} - User {current_user.id} - LastRead {member.last_read_at} - Unread {unread_count}")
+
             if unread_count > 0:
                 total_unread += unread_count
                 
                 # Determina nome 
                 display_name = conv.name or "Chat"
                 if not conv.is_group:
-                    # Cerca l'altro membro
-                    # Query diretta specificata per evitare problemi di lazy loading
                     other_member_q = db.query(ConversationMember).filter(
                         ConversationMember.conversation_id == conv.id,
                         ConversationMember.user_id != current_user.id
