@@ -47,7 +47,7 @@ async def list_events(
     return events
 
 
-@router.get("/pending", response_model=List[EventResponse], summary="Eventi in Attesa")
+@router.get("/pending", summary="Eventi in Attesa")
 async def get_pending_events(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_hr_or_admin)
@@ -56,9 +56,46 @@ async def get_pending_events(
     from sqlalchemy.orm import joinedload
     events = db.query(EmployeeEvent).options(
         joinedload(EmployeeEvent.creator),
-        joinedload(EmployeeEvent.employee)  # Include employee data for name display
+        joinedload(EmployeeEvent.employee)
     ).filter(EmployeeEvent.status == "pending").all()
-    return events
+    
+    # Build response with employee data explicitly included
+    result = []
+    for e in events:
+        event_dict = {
+            "id": e.id,
+            "employee_id": e.employee_id,
+            "event_type": e.event_type,
+            "event_label": e.event_label,
+            "points": e.points,
+            "description": e.description,
+            "event_date": e.event_date.isoformat() if e.event_date else None,
+            "created_by": e.created_by,
+            "created_at": e.created_at.isoformat() if e.created_at else None,
+            "status": e.status,
+            "approved_by": e.approved_by,
+            "approved_at": e.approved_at.isoformat() if e.approved_at else None,
+            "rejection_reason": e.rejection_reason,
+            "employee": None,
+            "creator": None
+        }
+        # Include employee details
+        if e.employee:
+            event_dict["employee"] = {
+                "id": e.employee.id,
+                "first_name": e.employee.first_name,
+                "last_name": e.employee.last_name
+            }
+        # Include creator details
+        if e.creator:
+            event_dict["creator"] = {
+                "id": e.creator.id,
+                "username": e.creator.username,
+                "full_name": e.creator.full_name
+            }
+        result.append(event_dict)
+    
+    return result
 
 
 @router.post("/", response_model=EventResponse, summary="Nuovo Evento")
