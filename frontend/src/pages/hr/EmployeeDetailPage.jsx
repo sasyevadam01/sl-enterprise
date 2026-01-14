@@ -850,7 +850,7 @@ export default function EmployeeDetailPage() {
     const [employee, setEmployee] = useState({
         first_name: '',
         last_name: '',
-        fiscal_code: '',
+        // fiscal_code removed - no longer used
         current_role: '',
         department_id: '',
         contract_type: 'full_time',

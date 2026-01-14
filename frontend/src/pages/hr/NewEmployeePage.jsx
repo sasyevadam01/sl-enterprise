@@ -47,7 +47,7 @@ export default function NewEmployeePage() {
 
     const [formData, setFormData] = useState({
         // Step 1: Dati Anagrafici
-        fiscal_code: '',
+        // fiscal_code removed - no longer used
         first_name: '',
         last_name: '',
         birth_date: '',
