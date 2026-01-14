@@ -638,14 +638,6 @@ async def get_chat_notifications_summary(
             # 3. USA HELPER CONDIVISO
             unread_count = _get_unread_count(db, conv.id, current_user.id, member.last_read_at)
             
-            # AGGIUNGI DEBUG INFO
-            debug_info.append({
-                "conv_id": conv.id,
-                "user_id": current_user.id,
-                "last_read_at": str(member.last_read_at),
-                "unread_calculated": unread_count
-            })
-            
             if unread_count > 0:
                 total_unread += unread_count
                 
@@ -673,13 +665,12 @@ async def get_chat_notifications_summary(
                     "name": display_name,
                     "unread_count": unread_count,
                     "is_group": is_group,
-                    "last_message_at": conv.updated_at.isoformat() if conv.updated_at else None
+                    "last_message_at": conv.created_at.isoformat() if conv.created_at else None
                 })
         
         return {
             "total_unread": total_unread,
-            "conversations": conversations_summary,
-            "debug_info": debug_info # RITORNA IL DEBUG
+            "conversations": conversations_summary
         }
     except Exception as e:
         print(f"[Error] Notifiche summary CRASH: {e}")
