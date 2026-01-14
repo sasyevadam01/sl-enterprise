@@ -29,17 +29,29 @@ async def lifespan(app: FastAPI):
     print("[STARTUP] Inizializzazione database...")
     create_tables()
     
-    # Auto-Migration: Aggiungi colonne mancanti (Hotfix)
+    # Auto-Migration: Aggiungi colonne mancanti (Hotfix Cross-DB)
     try:
         from database import engine
-        from sqlalchemy import text
+        from sqlalchemy import text, inspect
+        
+        inspector = inspect(engine)
+        
         with engine.connect() as conn:
-             # Check banned_until
-             res = conn.execute(text("SHOW COLUMNS FROM conversation_members LIKE 'banned_until'"))
-             if not res.fetchone():
-                 print("[MIGRATION] Aggiunto campo 'banned_until' a conversation_members")
-                 conn.execute(text("ALTER TABLE conversation_members ADD COLUMN banned_until DATETIME NULL"))
-                 conn.commit()
+             # 1. banned_until su conversation_members
+             if inspector.has_table("conversation_members"):
+                 cols = [c['name'] for c in inspector.get_columns("conversation_members")]
+                 if "banned_until" not in cols:
+                     print("[MIGRATION] Aggiunto campo 'banned_until' a conversation_members")
+                     conn.execute(text("ALTER TABLE conversation_members ADD COLUMN banned_until DATETIME NULL"))
+                     conn.commit()
+
+             # 2. deleted_at su messages
+             if inspector.has_table("messages"):
+                 cols = [c['name'] for c in inspector.get_columns("messages")]
+                 if "deleted_at" not in cols:
+                     print("[MIGRATION] Aggiunto campo 'deleted_at' a messages")
+                     conn.execute(text("ALTER TABLE messages ADD COLUMN deleted_at DATETIME NULL"))
+                     conn.commit()
     except Exception as e:
         print(f"[MIGRATION WARNING] Errore auto-migration: {e}")
 
