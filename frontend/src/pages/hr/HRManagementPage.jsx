@@ -290,7 +290,6 @@ export default function HRManagementPage() {
                     </div>
 
                     <button
-                        onClick={() => setActiveTab('bonus')}
                         className={`ml-2 px-4 py-2 rounded-md text-sm font-bold uppercase transition border border-yellow-500/50 ${activeTab === 'bonus' ? 'bg-yellow-600/20 text-yellow-400 shadow-[0_0_15px_rgba(234,179,8,0.2)]' : 'text-yellow-500/70 hover:text-yellow-400 hover:bg-yellow-900/20'}`}
                         onClick={(e) => {
                             e.preventDefault();
