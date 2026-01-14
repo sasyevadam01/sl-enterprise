@@ -6,6 +6,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { chatApi } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { useUI } from '../components/ui/CustomUI';
+import useChatSocket from '../hooks/useChatSocket';
+import usePushNotifications from '../hooks/usePushNotifications';
 
 // Formatta data messaggio
 const formatTime = (dateStr) => {
@@ -71,56 +73,64 @@ const MessageBubble = ({ message, isOwn, onDelete }) => {
 };
 
 // Componente Lista Conversazioni
-const ConversationList = ({ conversations, activeId, onSelect, onNewChat }) => {
+const ConversationList = ({ conversations, activeId, onSelect, onNewChat, pushSupported, pushSubscribed, onTogglePush }) => {
     return (
         <div className="h-full flex flex-col">
-            <div className="p-4 border-b border-white/10">
+            <div className="p-4 border-b border-white/10 flex gap-2">
                 <button
                     onClick={onNewChat}
-                    className="w-full bg-blue-600 hover:bg-blue-500 text-white py-2 px-4 rounded-xl font-medium transition flex items-center justify-center gap-2"
+                    className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2 px-4 rounded-xl font-medium transition flex items-center justify-center gap-2"
                 >
                     <span>+</span> Nuova Chat
                 </button>
+                {pushSupported && (
+                    <button
+                        onClick={onTogglePush}
+                        className={`px-3 rounded-xl border border-white/10 transition ${pushSubscribed ? 'bg-green-500/20 text-green-400' : 'bg-white/5 text-gray-400 hover:text-white'}`}
+                        title={pushSubscribed ? "Notifiche attive" : "Attiva notifiche"}
+                    >
+                        🔔
+                    </button>
+                )}
             </div>
 
             <div className="flex-1 overflow-y-auto">
-                {conversations.length === 0 ? (
-                    <div className="text-center py-10 text-gray-500">
-                        <p className="text-4xl mb-2">💬</p>
-                        <p>Nessuna conversazione</p>
-                    </div>
+                <div className="text-center py-10 text-gray-500">
+                    <p className="text-4xl mb-2">💬</p>
+                    <p>Nessuna conversazione</p>
+                </div>
                 ) : (
                     conversations.map(conv => (
-                        <div
-                            key={conv.id}
-                            onClick={() => onSelect(conv)}
-                            className={`p-4 border-b border-white/5 cursor-pointer transition ${activeId === conv.id
-                                ? 'bg-blue-600/20 border-l-4 border-l-blue-500'
-                                : 'hover:bg-white/5'
-                                }`}
-                        >
-                            <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-lg font-bold text-white shrink-0">
-                                    {conv.type === 'group' ? '👥' : conv.name?.charAt(0)?.toUpperCase() || '?'}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center justify-between">
-                                        <h3 className="font-semibold text-white truncate">
-                                            {conv.name || 'Chat'}
-                                        </h3>
-                                        {conv.unread_count > 0 && (
-                                            <span className="bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                                                {conv.unread_count}
-                                            </span>
-                                        )}
-                                    </div>
-                                    <p className="text-sm text-gray-400 truncate">
-                                        {conv.last_message || 'Nessun messaggio'}
-                                    </p>
-                                </div>
-                            </div>
+                <div
+                    key={conv.id}
+                    onClick={() => onSelect(conv)}
+                    className={`p-4 border-b border-white/5 cursor-pointer transition ${activeId === conv.id
+                        ? 'bg-blue-600/20 border-l-4 border-l-blue-500'
+                        : 'hover:bg-white/5'
+                        }`}
+                >
+                    <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-lg font-bold text-white shrink-0">
+                            {conv.type === 'group' ? '👥' : conv.name?.charAt(0)?.toUpperCase() || '?'}
                         </div>
-                    ))
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                                <h3 className="font-semibold text-white truncate">
+                                    {conv.name || 'Chat'}
+                                </h3>
+                                {conv.unread_count > 0 && (
+                                    <span className="bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                                        {conv.unread_count}
+                                    </span>
+                                )}
+                            </div>
+                            <p className="text-sm text-gray-400 truncate">
+                                {conv.last_message || 'Nessun messaggio'}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                ))
                 )}
             </div>
         </div>
@@ -271,6 +281,48 @@ export default function ChatPage() {
     const [contacts, setContacts] = useState([]);
     const [showNewChat, setShowNewChat] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [typingUser, setTypingUser] = useState(null);
+
+    // Push Notifications
+    const {
+        isSupported: pushSupported,
+        isSubscribed: pushSubscribed,
+        subscribe: subscribePush,
+        permission: pushPermission
+    } = usePushNotifications();
+
+    // WebSocket Handlers
+    const handleSocketMessage = useCallback((msg) => {
+        // Se è per la conversazione corrente
+        if (activeConv && msg.conversation_id === activeConv.id) {
+            // Verifica se messaggio esiste già (per evitare duplicati con polling)
+            setMessages(prev => {
+                if (prev.some(m => m.id === msg.id)) return prev;
+                return [...prev, msg];
+            });
+            // Scroll
+            setTimeout(() => {
+                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
+
+            // Marca come letto subito
+            chatApi.markAsRead(activeConv.id);
+        }
+
+        // Ricarica sempre lista per aggiornare snippet e unread count
+        loadConversations();
+    }, [activeConv]);
+
+    const handleSocketTyping = useCallback((data) => {
+        if (activeConv && data.conversation_id === activeConv.id && data.is_typing) {
+            setTypingUser(data.user_name);
+            // Nascondi dopo 3 secondi
+            setTimeout(() => setTypingUser(null), 3000);
+        }
+    }, [activeConv]);
+
+    // WebSocket Hook
+    const { isConnected, sendTyping } = useChatSocket(user?.id, handleSocketMessage, handleSocketTyping);
 
     // Carica conversazioni
     const loadConversations = useCallback(async () => {
@@ -406,6 +458,13 @@ export default function ChatPage() {
         }
     };
 
+    // Typing effect
+    useEffect(() => {
+        if (activeConv && isConnected) {
+            sendTyping(activeConv.id, newMessage.length > 0);
+        }
+    }, [newMessage, activeConv, isConnected, sendTyping]);
+
     if (loading) {
         return (
             <div className="flex items-center justify-center h-full">
@@ -423,6 +482,9 @@ export default function ChatPage() {
                     activeId={activeConv?.id}
                     onSelect={handleSelectConv}
                     onNewChat={() => setShowNewChat(true)}
+                    pushSupported={pushSupported}
+                    pushSubscribed={pushSubscribed}
+                    onTogglePush={pushSubscribed ? () => { /* gestito automatico */ } : subscribePush}
                 />
             </div>
 
@@ -436,12 +498,20 @@ export default function ChatPage() {
                                 {activeConv.type === 'group' ? '👥' : activeConv.name?.charAt(0)?.toUpperCase() || '?'}
                             </div>
                             <div>
-                                <h2 className="text-lg font-bold text-white">{activeConv.name}</h2>
-                                <p className="text-xs text-gray-400">
-                                    {activeConv.type === 'group'
-                                        ? `${activeConv.members?.length || 0} membri`
-                                        : 'Chat diretta'}
-                                </p>
+                                <h2 className="font-semibold text-lg">
+                                    {activeConv.name}
+                                </h2>
+                                {typingUser ? (
+                                    <p className="text-xs text-green-400 font-medium animate-pulse">
+                                        {typingUser} sta scrivendo...
+                                    </p>
+                                ) : (
+                                    <p className="text-xs text-gray-400">
+                                        {activeConv.type === 'group'
+                                            ? `${activeConv.members.length} membri`
+                                            : isConnected ? 'Online' : 'Offline'}
+                                    </p>
+                                )}
                             </div>
                         </div>
 
