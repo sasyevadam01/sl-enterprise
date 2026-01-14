@@ -427,13 +427,29 @@ async def delete_conversation(
     if not (is_admin or is_creator):
          raise HTTPException(status_code=403, detail="Non hai i permessi per chiudere questa chat")
          
-    # Cancellazione a cascata (gestita da DB se Cascade c'è, altrimenti manuale)
-    # Assumiamo SQLAlchemy cascade impostato sui modelli, ma per sicurezza cancelliamo messaggi e membri
-    db.query(Message).filter(Message.conversation_id == conv_id).delete()
-    db.query(ConversationMember).filter(ConversationMember.conversation_id == conv_id).delete()
-    db.delete(conv)
-    db.commit()
-    
+    # Cancellazione a cascata manuale per sicurezza
+    try:
+        # 1. Rimuovi riferimenti ai messaggi padre (reply_to) per evitare errori FK self-referential
+        db.query(Message).filter(Message.conversation_id == conv_id).update(
+            {"reply_to_id": None}, 
+            synchronize_session=False
+        )
+        db.flush() # Applica update in transazione
+
+        # 2. Cancella messaggi
+        db.query(Message).filter(Message.conversation_id == conv_id).delete(synchronize_session=False)
+        
+        # 3. Cancella membri
+        db.query(ConversationMember).filter(ConversationMember.conversation_id == conv_id).delete(synchronize_session=False)
+        
+        # 4. Cancella conversazione
+        db.delete(conv)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        print(f"[DELETE ERROR] Errore cancellazione gruppo {conv_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Errore interno cancellazione: {str(e)}")
+
     return {"message": "Conversazione eliminata"}
 
 
