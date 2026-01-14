@@ -595,58 +595,69 @@ async def get_chat_notifications_summary(
     Usato per badge sidebar e campanella notifiche.
     """
     try:
-        # Cerca conversazioni dove ci sono messaggi non letti
-        # Query complessa: Join ConversationMember -> Conversation -> Messages
-        # Filtra messaggi creati dopo last_read_at e NON inviati dall'utente stesso
+        # LOGICA COPIATA DA get_conversations (Proclamata Funzionante)
         
-        # 1. Trova tutte le membership dell'utente
-        memberships = db.query(ConversationMember).options(
-            joinedload(ConversationMember.conversation)
-        ).filter(
+        # 1. Ottieni membership
+        memberships = db.query(ConversationMember).filter(
             ConversationMember.user_id == current_user.id
+        ).all()
+        
+        if not memberships:
+             return {"total_unread": 0, "conversations": []}
+
+        membership_map = {m.conversation_id: m for m in memberships}
+        conv_ids = [m.conversation_id for m in memberships]
+        
+        # 2. Ottieni conversazioni
+        conversations = db.query(Conversation).filter(
+            Conversation.id.in_(conv_ids)
         ).all()
         
         total_unread = 0
         conversations_summary = []
         
-        for member in memberships:
-            conv = member.conversation
-            
-            # PROTEZIONE CRITICA: Se la conversazione è stata cancellata ma il member esiste ancora
-            if not conv:
+        for conv in conversations:
+            member = membership_map.get(conv.id)
+            if not member:
                 continue
-
-            # Conta messaggi non letti - Handle NULL last_read_at
+                
+            # 3. Conta unread con logica robusta
+            # Se last_read_at è None, usa inizio tempi (tutto non letto)
+            # Nota: get_conversations ritorna 0 se last_read è None, qui cerchiamo di essere più precisi
+            # ma se il frontend si aspetta 0, allineiamoci.
+            # Tuttavia, screenshot mostra Badge, quindi last_read_at DEVE esserci.
+            
             last_read = member.last_read_at or datetime.min
             
             unread_count = db.query(func.count(Message.id)).filter(
                 Message.conversation_id == conv.id,
                 Message.created_at > last_read,
-                Message.deleted_at.is_(None),
-                Message.sender_id != current_user.id
+                Message.sender_id != current_user.id,
+                Message.deleted_at == None
             ).scalar() or 0
             
             if unread_count > 0:
                 total_unread += unread_count
                 
-                # Determina nome conversazione
-                display_name = "Chat"
-                try:
-                    if conv.is_group:
-                        display_name = conv.name or "Gruppo"
-                    else:
-                        other_member = db.query(ConversationMember).options(joinedload(ConversationMember.user)).filter(
-                            ConversationMember.conversation_id == conv.id,
-                            ConversationMember.user_id != current_user.id
-                        ).first()
-                        
-                        if other_member and other_member.user:
-                            display_name = f"{other_member.user.first_name} {other_member.user.last_name}"
-                        else:
-                            display_name = "Utente rimosso"
-                except Exception as e:
-                    display_name = "Chat Error"
+                # Determina nome 
+                display_name = conv.name or "Chat"
+                if not conv.is_group:
+                    # Cerca l'altro membro
+                    # Query diretta specificata per evitare problemi di lazy loading
+                    other_member_q = db.query(ConversationMember).filter(
+                        ConversationMember.conversation_id == conv.id,
+                        ConversationMember.user_id != current_user.id
+                    ).first()
                     
+                    if other_member_q:
+                        other_user = db.query(User).filter(User.id == other_member_q.user_id).first()
+                        if other_user:
+                            display_name = f"{other_user.first_name} {other_user.last_name}"
+                        else:
+                            display_name = "Utente sconosciuto"
+                    else:
+                        display_name = "Utente rimosso"
+                        
                 conversations_summary.append({
                     "conversation_id": conv.id,
                     "name": display_name,
@@ -660,15 +671,9 @@ async def get_chat_notifications_summary(
             "conversations": conversations_summary
         }
     except Exception as e:
-        import traceback
-        error_msg = f"{datetime.now().isoformat()} - ERROR: {str(e)}\n{traceback.format_exc()}\n"
-        print(f"[Error] Notifiche summary fallito: {e}")
-        try:
-            with open("chat_errors.log", "a") as f:
-                f.write(error_msg)
-        except:
-            pass
-        return {"total_unread": 0, "conversations": []}
+        print(f"[Error] Notifiche summary CRASH: {e}")
+        # Ritorna errore nel JSON per debug se serve, altrimenti empty
+        return {"total_unread": 0, "conversations": [], "error": str(e)}
 
 
 # Helper per invio push a utente
