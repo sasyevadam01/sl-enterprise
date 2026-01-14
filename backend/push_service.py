@@ -97,14 +97,33 @@ def send_chat_notification(
 if __name__ == "__main__":
     try:
         from py_vapid import Vapid
+        import base64
         
         vapid = Vapid()
         vapid.generate_keys()
         
+        # Funzione helper per base64url senza padding
+        def b64url(data):
+            return base64.urlsafe_b64encode(data).decode('utf-8').rstrip('=')
+
+        # Estrai bytes chiave privata
+        private_val = vapid.private_key.private_numbers().private_value
+        private_bytes = private_val.to_bytes(32, byteorder='big')
+        
+        # Estrai bytes chiave pubblica (formato non compresso: 0x04 + x + y)
+        pub_nums = vapid.public_key.public_numbers()
+        x = pub_nums.x.to_bytes(32, byteorder='big')
+        y = pub_nums.y.to_bytes(32, byteorder='big')
+        public_bytes = b'\x04' + x + y
+        
         print("\n=== CHIAVI VAPID GENERATE ===")
-        print(f"\nVAPID_PRIVATE_KEY={vapid.private_key.urlsafe_key}")
-        print(f"VAPID_PUBLIC_KEY={vapid.public_key.urlsafe_key}")
+        print(f"\nVAPID_PRIVATE_KEY={b64url(private_bytes)}")
+        print(f"VAPID_PUBLIC_KEY={b64url(public_bytes)}")
         print("\nAggiungi queste variabili al file .env del backend!")
         print("================================\n")
+        
     except ImportError:
-        print("Installa py-vapid: pip install py-vapid")
+        print("Errore importazione o libreria mancante.")
+    except Exception as e:
+        print(f"Errore generazione chiavi: {e}")
+
