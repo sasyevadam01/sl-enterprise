@@ -418,3 +418,96 @@ async def get_unread_count(
             total += count
     
     return {"unread": total}
+
+
+# ============================================================
+# WEBSOCKET ENDPOINT
+# ============================================================
+
+from fastapi import WebSocket, WebSocketDisconnect
+from websocket_manager import get_chat_manager
+import json
+
+@router.websocket("/ws/{user_id}")
+async def chat_websocket(
+    websocket: WebSocket,
+    user_id: int,
+    token: str = Query(None)
+):
+    """
+    WebSocket endpoint per chat real-time.
+    
+    Messaggi in entrata:
+    - {"type": "join", "conversation_id": 123}
+    - {"type": "leave", "conversation_id": 123}
+    - {"type": "typing", "conversation_id": 123, "is_typing": true}
+    - {"type": "message", "conversation_id": 123, "content": "Hello"}
+    
+    Messaggi in uscita:
+    - {"type": "new_message", "message": {...}}
+    - {"type": "typing", "user_id": 1, "user_name": "Mario", "is_typing": true}
+    - {"type": "message_deleted", "message_id": 123}
+    """
+    # TODO: Validare token JWT per sicurezza
+    # Per ora accettiamo la connessione (il frontend invia user_id)
+    
+    manager = get_chat_manager()
+    await manager.connect(websocket, user_id)
+    
+    try:
+        while True:
+            data = await websocket.receive_json()
+            msg_type = data.get("type")
+            conv_id = data.get("conversation_id")
+            
+            if msg_type == "join" and conv_id:
+                manager.set_viewing(user_id, conv_id)
+                
+            elif msg_type == "leave" and conv_id:
+                manager.unset_viewing(user_id, conv_id)
+                
+            elif msg_type == "typing" and conv_id:
+                # Ottieni membri della conversazione
+                from database import SessionLocal
+                db = SessionLocal()
+                try:
+                    members = db.query(ConversationMember).filter(
+                        ConversationMember.conversation_id == conv_id
+                    ).all()
+                    member_ids = [m.user_id for m in members]
+                    
+                    # Ottieni nome utente
+                    user = db.query(User).filter(User.id == user_id).first()
+                    user_name = user.full_name if user else "Unknown"
+                    
+                    await manager.notify_typing(
+                        conv_id, 
+                        member_ids, 
+                        user_id, 
+                        user_name, 
+                        data.get("is_typing", False)
+                    )
+                finally:
+                    db.close()
+                    
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, user_id)
+    except Exception as e:
+        print(f"[WS] Error: {e}")
+        manager.disconnect(websocket, user_id)
+
+
+# Helper per broadcast da altri endpoint
+async def broadcast_new_message(conv_id: int, message_data: dict, member_ids: list, sender_id: int):
+    """Invia notifica nuovo messaggio a tutti i membri connessi."""
+    manager = get_chat_manager()
+    await manager.broadcast_to_conversation(
+        conv_id,
+        member_ids,
+        {
+            "type": "new_message",
+            "message": message_data
+        },
+        exclude_user=sender_id
+    )
+
