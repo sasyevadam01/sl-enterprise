@@ -594,44 +594,52 @@ async def get_chat_notifications_summary(
     Ritorna il riepilogo delle notifiche chat (messaggi non letti).
     Usato per badge sidebar e campanella notifiche.
     """
-    members = db.query(ConversationMember).options(
-        joinedload(ConversationMember.conversation).joinedload(Conversation.members).joinedload(ConversationMember.user)
-    ).filter(
-        ConversationMember.user_id == current_user.id,
-        ConversationMember.unread_count > 0
-    ).all()
-    
-    total_unread = 0
-    conversations_summary = []
-    
-    for member in members:
-        conv = member.conversation
-        total_unread += member.unread_count
+    try:
+        members = db.query(ConversationMember).options(
+            joinedload(ConversationMember.conversation).subqueryload(Conversation.members).joinedload(ConversationMember.user)
+        ).filter(
+            ConversationMember.user_id == current_user.id,
+            ConversationMember.unread_count > 0
+        ).all()
         
-        # Determina nome conversazione
-        display_name = "Chat"
-        if conv.is_group:
-            display_name = conv.name or "Gruppo"
-        else:
-            # Trova l'altro utente
-            other_member = next((m for m in conv.members if m.user_id != current_user.id), None)
-            if other_member and other_member.user:
-                display_name = f"{other_member.user.first_name} {other_member.user.last_name}"
-            else:
-                display_name = "Utente rimosso"
-                
-        conversations_summary.append({
-            "conversation_id": conv.id,
-            "name": display_name,
-            "unread_count": member.unread_count,
-            "is_group": conv.is_group,
-            "last_message_at": conv.updated_at.isoformat() if conv.updated_at else None
-        })
+        total_unread = 0
+        conversations_summary = []
         
-    return {
-        "total_unread": total_unread,
-        "conversations": conversations_summary
-    }
+        for member in members:
+            conv = member.conversation
+            total_unread += member.unread_count
+            
+            # Determina nome conversazione
+            display_name = "Chat"
+            try:
+                if conv.is_group:
+                    display_name = conv.name or "Gruppo"
+                else:
+                    # Trova l'altro utente
+                    other_member = next((m for m in conv.members if m.user_id != current_user.id), None)
+                    if other_member and other_member.user:
+                        display_name = f"{other_member.user.first_name} {other_member.user.last_name}"
+                    else:
+                        display_name = "Utente rimosso"
+            except Exception as e:
+                print(f"[Error] Calcolo nome chat fallito per conv {conv.id}: {e}")
+                display_name = "Chat"
+
+            conversations_summary.append({
+                "conversation_id": conv.id,
+                "name": display_name,
+                "unread_count": member.unread_count,
+                "is_group": conv.is_group,
+                "last_message_at": conv.updated_at.isoformat() if conv.updated_at else None
+            })
+            
+        return {
+            "total_unread": total_unread,
+            "conversations": conversations_summary
+        }
+    except Exception as e:
+        print(f"[Error] Notifiche summary fallito: {e}")
+        return {"total_unread": 0, "conversations": []}
 
 
 # Helper per invio push a utente
