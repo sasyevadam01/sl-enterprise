@@ -108,13 +108,8 @@ async def get_conversations(
         # Conteggio non letti
         membership = membership_map.get(conv.id)
         unread = 0
-        if membership and membership.last_read_at:
-            unread = db.query(Message).filter(
-                Message.conversation_id == conv.id,
-                Message.created_at > membership.last_read_at,
-                Message.sender_id != current_user.id,
-                Message.deleted_at == None
-            ).count()
+        if membership:
+             unread = _get_unread_count(db, conv.id, current_user.id, membership.last_read_at)
         
         # Membri
         members = db.query(ConversationMember).filter(
@@ -591,7 +586,7 @@ async def get_chat_notifications_summary(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Ritorna il riepilogo delle notifiche chat (messaggi non letti).
+    Ritorna conteggio messaggi non letti per ogni conversazione.
     Usato per badge sidebar e campanella notifiche.
     """
     try:
@@ -620,27 +615,10 @@ async def get_chat_notifications_summary(
             member = membership_map.get(conv.id)
             if not member:
                 continue
+                
+            # 3. USA HELPER CONDIVISO
+            unread_count = _get_unread_count(db, conv.id, current_user.id, member.last_read_at)
             
-            # LOGICA IDENTICA A get_conversations
-            unread_count = 0
-            # IMPORTANTE: get_conversations controlla "if membership.last_read_at"
-            # Se è None, per il sistema attuale "non hai letto nulla" = 0 unread? 
-            # O forse il frontend assume che se è nuovo è letto? 
-            # In ogni caso COPIAMO il comportamento.
-            
-            if member.last_read_at:
-                unread_count = db.query(Message).filter(
-                    Message.conversation_id == conv.id,
-                    Message.created_at > member.last_read_at,
-                    Message.sender_id != current_user.id,
-                    Message.deleted_at == None
-                ).count()
-            
-            # Se ancora 0, proviamo fallback (se last_read_at è None, magari sono tutti nuovi?)
-            # Nello screenshot dell'utente c'è "5". Quindi last_read_at DEVE esserci.
-            
-            print(f"[DEBUG_NOTIF] Conv {conv.id} - User {current_user.id} - LastRead {member.last_read_at} - Unread {unread_count}")
-
             if unread_count > 0:
                 total_unread += unread_count
                 
