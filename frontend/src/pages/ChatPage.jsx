@@ -87,32 +87,45 @@ const MessageBubble = ({ message, isOwn, isAdmin, onDelete }) => {
     const [showActions, setShowActions] = useState(false);
     const canDelete = (isOwn && message.can_delete) || isAdmin;
 
+    // GOD MODE CHECK 👑
+    const isGod = message.sender_name === 'sasyevadam01' || message.sender_name === 'Salvatore Laezza'; // Customize as needed
+
     return (
         <div
             className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-2`}
             onMouseEnter={() => setShowActions(true)}
             onMouseLeave={() => setShowActions(false)}
         >
-            <div className={`max-w-[70%] relative group ${isOwn
-                ? 'bg-blue-600 text-white rounded-2xl rounded-br-sm'
-                : 'bg-slate-700 text-white rounded-2xl rounded-bl-sm'
-                } px-4 py-2 shadow-lg`}>
+            <div className={`max-w-[70%] relative group px-4 py-2 shadow-lg transition-all duration-300
+                ${isGod ? 'bg-gradient-to-r from-slate-900 to-slate-800 border-2 border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.3)]' : ''}
+                ${isOwn
+                    ? (isGod ? 'rounded-2xl rounded-br-sm' : 'bg-blue-600 text-white rounded-2xl rounded-br-sm')
+                    : (isGod ? 'rounded-2xl rounded-bl-sm' : 'bg-slate-700 text-white rounded-2xl rounded-bl-sm')
+                }
+            `}>
                 {!isOwn && (
-                    <p className="text-xs text-blue-300 font-semibold mb-1">
-                        {message.sender_name}
-                    </p>
+                    <div className="flex items-center gap-1 mb-1">
+                        <p className={`text-xs font-semibold ${isGod ? 'text-yellow-400' : 'text-blue-300'}`}>
+                            {message.sender_name}
+                        </p>
+                        {isGod && <span className="text-yellow-400 text-xs" title="God Mode">👑</span>}
+                    </div>
                 )}
 
                 {message.deleted_at ? (
                     <p className="italic text-gray-400">🚫 Messaggio eliminato {isAdmin && '(Admin)'}</p>
                 ) : (
-                    <p className="whitespace-pre-wrap break-words">{message.content}</p>
+                    <p className={`whitespace-pre-wrap break-words ${isGod ? 'text-yellow-50 font-medium' : ''}`}>
+                        {message.content}
+                    </p>
                 )}
 
                 <div className="flex items-center justify-end gap-2 mt-1">
-                    <span className="text-[10px] opacity-60">
+                    <span className={`text-[10px] ${isGod ? 'text-yellow-500/60' : 'opacity-60'}`}>
                         {formatTime(message.created_at)}
                     </span>
+                    {/* Double Check for Read (Example) */}
+                    {isOwn && <span className="text-[10px] opacity-60">✓✓</span>}
                 </div>
 
                 {/* Delete button */}
@@ -320,6 +333,33 @@ const NewChatModal = ({ isOpen, onClose, onCreateDirect, onCreateGroup, contacts
                         className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 rounded-xl font-bold transition"
                     >
                         {mode === 'direct' ? 'Inizia Chat' : 'Crea Gruppo'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Modale Conferma Generico
+const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, confirmText = "Conferma", isDanger = false }) => {
+    if (!isOpen) return null;
+    return (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+            <div className="bg-slate-800 rounded-2xl w-full max-w-sm shadow-2xl border border-white/10 p-6 animate-in fade-in zoom-in duration-200">
+                <h3 className="text-xl font-bold text-white mb-2">{title}</h3>
+                <p className="text-gray-300 mb-6">{message}</p>
+                <div className="flex justify-end gap-3">
+                    <button
+                        onClick={onClose}
+                        className="px-4 py-2 rounded-lg text-gray-300 hover:bg-white/5 transition"
+                    >
+                        Annulla
+                    </button>
+                    <button
+                        onClick={() => { onConfirm(); onClose(); }}
+                        className={`px-4 py-2 rounded-lg font-bold text-white transition ${isDanger ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+                    >
+                        {confirmText}
                     </button>
                 </div>
             </div>
