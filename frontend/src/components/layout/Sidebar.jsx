@@ -36,6 +36,7 @@ const getMenuItems = (userRole, isAdmin) => {
             { title: '📋 Task Board', path: '/hr/tasks', permission: 'manage_tasks' },
             { title: '🗓️ Gestione Turni', path: '/hr/planner', permission: 'manage_shifts' },
             { title: '📢 Bacheca Annunci', path: '/hr/announcements', permission: 'view_announcements' },
+            { title: '💬 Chat', path: '/chat', permission: null },  // Visibile a tutti
         ],
     });
 

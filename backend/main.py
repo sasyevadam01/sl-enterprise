@@ -12,7 +12,7 @@ from database import create_tables
 from routers import (
     auth, users, employees, leaves, disciplinary, notifications, expiries, fleet, returns,
     tasks, events, audit, hr_stats, shifts, announcements, facility, factory, kpi, roles,
-    admin_settings, mobile, maintenance, reports, bonuses
+    admin_settings, mobile, maintenance, reports, bonuses, chat
 )
 
 
@@ -188,6 +188,9 @@ app.include_router(maintenance.router)
 
 # Admin Settings
 app.include_router(admin_settings.router)  # Departments, Job Roles, Banchine, Workstations
+
+# Chat Interna
+app.include_router(chat.router)
 
 # ============================================================
 # STATIC FILES (per preview documenti)

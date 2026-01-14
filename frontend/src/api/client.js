@@ -404,4 +404,24 @@ export const adminApi = {
   getWorkstations: () => client.get("/admin/workstations"),
 };
 
+// Chat Interna
+export const chatApi = {
+  // Conversazioni
+  getConversations: () => client.get("/chat/conversations"),
+  createConversation: (data) => client.post("/chat/conversations", data),
+
+  // Messaggi
+  getMessages: (convId, params) => client.get(`/chat/conversations/${convId}/messages`, { params }),
+  sendMessage: (convId, data) => client.post(`/chat/conversations/${convId}/messages`, data),
+  deleteMessage: (msgId) => client.delete(`/chat/messages/${msgId}`),
+  markAsRead: (convId) => client.patch(`/chat/conversations/${convId}/read`),
+
+  // Contatti
+  getContacts: () => client.get("/chat/contacts"),
+
+  // Badge
+  getUnreadCount: () => client.get("/chat/unread-count"),
+};
+
 export default client;
+

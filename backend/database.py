@@ -22,6 +22,7 @@ from models.production import (
 )
 from models.logistics import ReturnTicket
 from models.maintenance import MaintenanceRequest
+from models.chat import Conversation, ConversationMember, Message, PushSubscription
 
 load_dotenv()
 

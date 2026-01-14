@@ -27,6 +27,7 @@ import UserManagementPage from './pages/admin/UserManagementPage';
 import SystemConfigPage from './pages/admin/SystemConfigPage';
 import MaintenancePage from './pages/factory/MaintenancePage';
 import OperatorDashboard from './pages/mobile/OperatorDashboard';
+import ChatPage from './pages/ChatPage';
 
 function App() {
   return (
@@ -71,6 +72,9 @@ function App() {
               <Route path="hr/tasks" element={<TasksPage />} />
               <Route path="hr/planner" element={<PlannerPage />} />
               <Route path="hr/announcements" element={<AnnouncementsPage />} />
+
+              {/* Chat */}
+              <Route path="chat" element={<ChatPage />} />
 
               {/* Logistics Routes */}
               <Route path="ops/returns" element={<ReturnsPage />} />
