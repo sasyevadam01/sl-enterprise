@@ -25,9 +25,24 @@ from scheduler import start_scheduler, shutdown_scheduler
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Esegue operazioni all'avvio e alla chiusura dell'app."""
-    # Startup: Crea tabelle DB
+# Startup: Crea tabelle DB
     print("[STARTUP] Inizializzazione database...")
     create_tables()
+    
+    # Auto-Migration: Aggiungi colonne mancanti (Hotfix)
+    try:
+        from database import engine
+        from sqlalchemy import text
+        with engine.connect() as conn:
+             # Check banned_until
+             res = conn.execute(text("SHOW COLUMNS FROM conversation_members LIKE 'banned_until'"))
+             if not res.fetchone():
+                 print("[MIGRATION] Aggiunto campo 'banned_until' a conversation_members")
+                 conn.execute(text("ALTER TABLE conversation_members ADD COLUMN banned_until DATETIME NULL"))
+                 conn.commit()
+    except Exception as e:
+        print(f"[MIGRATION WARNING] Errore auto-migration: {e}")
+
     print("[STARTUP] Database pronto!")
     
     # Avvio Scheduler

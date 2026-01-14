@@ -291,6 +291,11 @@ async def send_message(
     if not membership:
         raise HTTPException(status_code=403, detail="Non sei membro di questa conversazione")
     
+    # BAN CHECK: Verifica se l'utente è silenziato
+    if membership.banned_until and membership.banned_until > datetime.utcnow():
+        remaining = int((membership.banned_until - datetime.utcnow()).total_seconds())
+        raise HTTPException(status_code=403, detail=f"Sei stato silenziato temporaneamente. Attendi {remaining} secondi.")
+
     # Verifica reply_to esiste
     if data.reply_to_id:
         reply_msg = db.query(Message).filter(
@@ -336,22 +341,100 @@ async def delete_message(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Elimina un messaggio (solo entro 2 minuti)."""
+    """Elimina un messaggio (SuperAdmin cancella TUTTO e SEMPRE)."""
     message = db.query(Message).filter(Message.id == msg_id).first()
     
     if not message:
         raise HTTPException(status_code=404, detail="Messaggio non trovato")
     
-    if message.sender_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Puoi eliminare solo i tuoi messaggi")
+    # Check permessi Admin
+    is_admin = current_user.role in ['super_admin', 'admin']
     
-    if not message.can_delete:
-        raise HTTPException(status_code=400, detail="Tempo scaduto per la cancellazione (max 2 minuti)")
+    if not is_admin:
+        # Regole normali
+        if message.sender_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Puoi eliminare solo i tuoi messaggi")
+        
+        if not message.can_delete:
+            raise HTTPException(status_code=400, detail="Tempo scaduto per la cancellazione (max 2 minuti)")
     
     message.deleted_at = datetime.utcnow()
     db.commit()
     
+    # Notifica via WebSocket che il messaggio è cancellato
+    try:
+        members = db.query(ConversationMember).filter(
+            ConversationMember.conversation_id == message.conversation_id
+        ).all()
+        member_ids = [m.user_id for m in members]
+        
+        manager = get_chat_manager()
+        await manager.broadcast_to_conversation(
+            message.conversation_id,
+            member_ids,
+            {"type": "message_deleted", "message_id": msg_id}
+        )
+    except Exception as e:
+        print(f"[WS] Errore broadcast delete: {e}")
+
     return {"message": "Messaggio eliminato"}
+
+# NUOVI ENDPOINT MODERAZIONE
+
+class BanRequest(BaseModel):
+    user_id: int
+    duration_minutes: int = 1
+
+@router.post("/conversations/{conv_id}/ban", summary="Timeout Utente (Admin)")
+async def timeout_user(
+    conv_id: int,
+    data: BanRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Silenzia un utente nella chat per X minuti (Solo Admin)."""
+    if current_user.role not in ['super_admin', 'admin']:
+        raise HTTPException(status_code=403, detail="Solo gli admin possono bannare.")
+        
+    target_member = db.query(ConversationMember).filter(
+        ConversationMember.conversation_id == conv_id,
+        ConversationMember.user_id == data.user_id
+    ).first()
+    
+    if not target_member:
+        raise HTTPException(status_code=404, detail="Utente non trovato nella chat")
+        
+    until = datetime.utcnow() + timedelta(minutes=data.duration_minutes)
+    target_member.banned_until = until
+    db.commit()
+    
+    return {"message": f"Utente silenziato per {data.duration_minutes} minuti"}
+
+@router.delete("/conversations/{conv_id}", summary="Elimina/Chiudi Gruppo (Admin)")
+async def delete_conversation(
+    conv_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Chiude definitivamente una conversazione (Admin cancella QUALSIASI gruppo)."""
+    conv = db.query(Conversation).filter(Conversation.id == conv_id).first()
+    if not conv:
+        raise HTTPException(status_code=404, detail="Chat non trovata")
+        
+    is_admin = current_user.role in ['super_admin', 'admin']
+    is_creator = conv.created_by == current_user.id
+    
+    if not (is_admin or is_creator):
+         raise HTTPException(status_code=403, detail="Non hai i permessi per chiudere questa chat")
+         
+    # Cancellazione a cascata (gestita da DB se Cascade c'è, altrimenti manuale)
+    # Assumiamo SQLAlchemy cascade impostato sui modelli, ma per sicurezza cancelliamo messaggi e membri
+    db.query(Message).filter(Message.conversation_id == conv_id).delete()
+    db.query(ConversationMember).filter(ConversationMember.conversation_id == conv_id).delete()
+    db.delete(conv)
+    db.commit()
+    
+    return {"message": "Conversazione eliminata"}
 
 
 @router.patch("/conversations/{conv_id}/read", summary="Marca Come Letto")

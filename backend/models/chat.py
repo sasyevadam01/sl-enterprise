@@ -46,6 +46,9 @@ class ConversationMember(Base):
     
     # Silenziato fino a (NULL = non silenziato)
     muted_until = Column(DateTime, nullable=True)
+
+    # Ban temporaneo (Timeout) - Non può scrivere
+    banned_until = Column(DateTime, nullable=True)
     
     joined_at = Column(DateTime, default=datetime.utcnow)
     
