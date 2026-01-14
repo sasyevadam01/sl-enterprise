@@ -58,11 +58,21 @@ export default function NotificationBell() {
     useEffect(() => {
         const fetchCount = async () => {
             try {
-                // Parallel fetch
-                const [notifData, chatData] = await Promise.all([
-                    notificationsApi.getUnreadCount(),
-                    chatApi.getNotificationsSummary()
-                ]);
+                // Sequential fetch to avoid DB locking issues
+                let notifData = { unread_count: 0 };
+                let chatData = { total_unread: 0, conversations: [] };
+
+                try {
+                    notifData = await notificationsApi.getUnreadCount();
+                } catch (e) {
+                    console.error("Notif count fetch failed", e);
+                }
+
+                try {
+                    chatData = await chatApi.getNotificationsSummary();
+                } catch (e) {
+                    console.error("Chat summary fetch failed - Keeping previous state or 0", e);
+                }
 
                 const notifCount = notifData.unread_count || 0;
                 const chatCount = chatData.total_unread || 0;
