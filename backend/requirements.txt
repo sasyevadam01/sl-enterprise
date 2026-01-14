@@ -17,3 +17,4 @@ alembic
 reportlab
 pywebpush
 py-vapid
+websockets
