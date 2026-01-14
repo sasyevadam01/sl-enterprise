@@ -3,7 +3,7 @@ SL Enterprise - Chat Router
 API endpoints per messaggistica interna.
 """
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, joinedload, subqueryload
 from sqlalchemy import or_, and_, func, desc
 from typing import List, Optional
 from datetime import datetime, timedelta
