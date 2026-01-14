@@ -557,15 +557,14 @@ export default function ChatPage() {
     // Execute Ban
     const executeBanUser = async (userId) => {
         try {
-            // Usa api/client instance
-            await chatApi.client.post(`/chat/conversations/${activeConv.id}/ban`, {
-                user_id: userId,
-                duration_minutes: 1
-            });
+            // Usa api methods definiti in client.js
+            await chatApi.timeoutUser(activeConv.id, userId, 1);
             toast.success("Utente silenziato per 1 minuto");
             setShowGroupInfo(false);
         } catch (error) {
-            toast.error(error.response?.data?.detail || 'Errore ban');
+            console.error("Ban Error:", error);
+            const msg = error.response?.data?.detail || error.message || 'Errore ban';
+            toast.error(`Errore: ${msg}`);
         }
     };
 
@@ -584,13 +583,15 @@ export default function ChatPage() {
     // Execute Delete Group
     const executeDeleteGroup = async () => {
         try {
-            await chatApi.client.delete(`/chat/conversations/${activeConv.id}`);
+            await chatApi.deleteConversation(activeConv.id);
             toast.success("Chat eliminata");
             setActiveConv(null);
             loadConversations();
             setShowGroupInfo(false);
         } catch (error) {
-            toast.error(error.response?.data?.detail || 'Errore eliminazione gruppo');
+            console.error("Delete Group Error:", error);
+            const msg = error.response?.data?.detail || error.message || 'Errore eliminazione gruppo';
+            toast.error(`Errore: ${msg}`);
         }
     };
 

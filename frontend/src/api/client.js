@@ -429,6 +429,10 @@ export const chatApi = {
 
   // Notifiche e Badge
   getNotificationsSummary: () => client.get('/chat/notifications/summary'),
+
+  // Moderazione (Admin)
+  timeoutUser: (convId, userId, minutes = 1) => client.post(`/chat/conversations/${convId}/ban`, { user_id: userId, duration_minutes: minutes }),
+  deleteConversation: (convId) => client.delete(`/chat/conversations/${convId}`),
 };
 
 export default client;
