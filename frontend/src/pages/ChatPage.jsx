@@ -3,9 +3,9 @@
  * Messaggistica interna tipo WhatsApp
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { chatApi } from '../../api/client';
-import { useAuth } from '../../context/AuthContext';
-import { useUI } from '../../components/ui/CustomUI';
+import { chatApi } from '../api/client';
+import { useAuth } from '../context/AuthContext';
+import { useUI } from '../components/ui/CustomUI';
 
 // Formatta data messaggio
 const formatTime = (dateStr) => {
