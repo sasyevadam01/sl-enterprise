@@ -759,6 +759,16 @@ class EventReview(BaseModel):
     rejection_reason: Optional[str] = None
 
 
+class EmployeeMinInfo(BaseModel):
+    """Minimal employee info for event display."""
+    id: int
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
 class CreatorInfo(BaseModel):
     """Minimal user info for creator display."""
     id: int
@@ -786,6 +796,7 @@ class EventResponse(BaseModel):
     rejection_reason: Optional[str] = None
     creator: Optional[CreatorInfo] = None  # Nested creator info
     approver: Optional[CreatorInfo] = None # Nested approver info
+    employee: Optional[EmployeeMinInfo] = None  # Nested employee info for display
 
     class Config:
         from_attributes = True
