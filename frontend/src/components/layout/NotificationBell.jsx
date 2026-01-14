@@ -4,7 +4,7 @@
  */
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { notificationsApi } from '../../api/client';
+import { notificationsApi, chatApi } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { useUI } from '../ui/CustomUI';
 
@@ -55,13 +55,20 @@ export default function NotificationBell() {
     useEffect(() => {
         const fetchCount = async () => {
             try {
-                const data = await notificationsApi.getUnreadCount();
-                const newCount = data.unread_count || 0;
+                // Parallel fetch
+                const [notifData, chatData] = await Promise.all([
+                    notificationsApi.getUnreadCount(),
+                    chatApi.getNotificationsSummary()
+                ]);
 
-                if (newCount > unreadCount) {
+                const notifCount = notifData.unread_count || 0;
+                const chatCount = chatData.total_unread || 0;
+                const newTotal = notifCount + chatCount;
+
+                if (newTotal > unreadCount) {
                     playElegantSound();
                 }
-                setUnreadCount(newCount);
+                setUnreadCount(newTotal);
             } catch (error) {
                 console.error('Error fetching notification count:', error);
             }
@@ -78,8 +85,25 @@ export default function NotificationBell() {
             const fetchNotifications = async () => {
                 setLoading(true);
                 try {
-                    const data = await notificationsApi.getNotifications({ limit: 10 });
-                    setNotifications(data);
+                    // Fetch Chat Notifications
+                    const chatSummary = await chatApi.getNotificationsSummary();
+
+                    // Fetch System Notifications
+                    const notifList = await notificationsApi.getNotifications({ limit: 10 });
+
+                    // Convert chat summary to notification format
+                    const chatNotifs = (chatSummary.conversations || []).map(conv => ({
+                        id: `chat-${conv.conversation_id}`,
+                        title: `💬 Messaggio da ${conv.name}`,
+                        message: `Hai ${conv.unread_count} messaggi non letti${conv.is_group ? ' nel gruppo' : ''}`,
+                        created_at: conv.last_message_at || new Date().toISOString(),
+                        is_read: false,
+                        link_url: `/chat?conv=${conv.conversation_id}`,
+                        notif_type: 'chat',
+                        is_chat: true // Flag to handle click differently if needed
+                    }));
+
+                    setNotifications([...chatNotifs, ...notifList]);
                 } catch (error) {
                     console.error('Error fetching notifications:', error);
                 } finally {
@@ -157,6 +181,7 @@ export default function NotificationBell() {
             case 'expiry': return '⏰';
             case 'priority': return '🚨';
             case 'info': return 'ℹ️';
+            case 'chat': return '💬';
             default: return '🔔';
         }
     };
@@ -213,10 +238,12 @@ export default function NotificationBell() {
                                     key={notif.id}
                                     to={(!notif.link_url || notif.link_url === '/tasks') ? viewAllLink : notif.link_url}
                                     onClick={() => {
-                                        if (!notif.is_read) handleMarkAsRead(notif.id);
+                                        if (!notif.is_read && !notif.is_chat) handleMarkAsRead(notif.id);
                                         setIsOpen(false);
                                     }}
-                                    className={`block px-4 py-3 border-b border-white/5 hover:bg-white/5 cursor-pointer transition ${notif.notif_type === 'priority' ? 'bg-red-500/10 border-l-4 border-l-red-500' : (!notif.is_read ? 'bg-blue-500/5' : '')
+                                    className={`block px-4 py-3 border-b border-white/5 hover:bg-white/5 cursor-pointer transition ${notif.notif_type === 'priority' ? 'bg-red-500/10 border-l-4 border-l-red-500' :
+                                            notif.notif_type === 'chat' ? 'bg-blue-600/10 border-l-4 border-l-blue-500' :
+                                                (!notif.is_read ? 'bg-blue-500/5' : '')
                                         }`}
                                 >
                                     <div className="flex items-start gap-3">

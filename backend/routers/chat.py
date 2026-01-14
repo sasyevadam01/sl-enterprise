@@ -585,6 +585,55 @@ async def unsubscribe_push(
     return {"message": "Subscription rimossa"}
 
 
+@router.get("/notifications/summary", response_model=dict)
+async def get_chat_notifications_summary(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Ritorna il riepilogo delle notifiche chat (messaggi non letti).
+    Usato per badge sidebar e campanella notifiche.
+    """
+    members = db.query(ConversationMember).options(
+        joinedload(ConversationMember.conversation).joinedload(Conversation.members).joinedload(ConversationMember.user)
+    ).filter(
+        ConversationMember.user_id == current_user.id,
+        ConversationMember.unread_count > 0
+    ).all()
+    
+    total_unread = 0
+    conversations_summary = []
+    
+    for member in members:
+        conv = member.conversation
+        total_unread += member.unread_count
+        
+        # Determina nome conversazione
+        display_name = "Chat"
+        if conv.is_group:
+            display_name = conv.name or "Gruppo"
+        else:
+            # Trova l'altro utente
+            other_member = next((m for m in conv.members if m.user_id != current_user.id), None)
+            if other_member and other_member.user:
+                display_name = f"{other_member.user.first_name} {other_member.user.last_name}"
+            else:
+                display_name = "Utente rimosso"
+                
+        conversations_summary.append({
+            "conversation_id": conv.id,
+            "name": display_name,
+            "unread_count": member.unread_count,
+            "is_group": conv.is_group,
+            "last_message_at": conv.updated_at.isoformat() if conv.updated_at else None
+        })
+        
+    return {
+        "total_unread": total_unread,
+        "conversations": conversations_summary
+    }
+
+
 # Helper per invio push a utente
 async def send_push_to_user(db: Session, user_id: int, sender_name: str, message_preview: str, conv_id: int):
     """Invia notifica push a tutte le subscription dell'utente."""

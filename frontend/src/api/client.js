@@ -426,6 +426,9 @@ export const chatApi = {
   getVapidKey: () => client.get("/chat/push/vapid-key"),
   subscribePush: (data) => client.post("/chat/push/subscribe", data),
   unsubscribePush: (endpoint) => client.delete("/chat/push/unsubscribe", { params: { endpoint } }),
+
+  // Notifiche e Badge
+  getNotificationsSummary: () => client.get('/chat/notifications/summary'),
 };
 
 export default client;

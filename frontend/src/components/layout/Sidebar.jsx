@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { hrStatsApi } from '../../api/client';
+import { hrStatsApi, chatApi } from '../../api/client';
 
 // Menu items builder function - takes user role to customize
 const getMenuItems = (userRole, isAdmin) => {
@@ -156,8 +156,16 @@ function SidebarItem({ item, isOpen, pendingCounts, onItemClick }) {
                 {item.path === '/dashboard' && (pendingCounts.events + pendingCounts.leaves) > 0 && !isOpen && (
                     <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-slate-900" />
                 )}
+                {item.path === '/chat' && pendingCounts.chat > 0 && !isOpen && (
+                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-slate-900" />
+                )}
             </span>
             {isOpen && <span>{item.title}</span>}
+            {isOpen && item.path === '/chat' && pendingCounts.chat > 0 && (
+                <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                    {pendingCounts.chat}
+                </span>
+            )}
         </Link>
     );
 }
@@ -175,14 +183,27 @@ export default function Sidebar({ isOpen, onToggle, mobileOpen, setMobileOpen })
 
     useEffect(() => {
         const fetchPending = async () => {
+            let newCounts = { events: 0, leaves: 0, chat: 0 };
+
+            // HR Stats
             if (hasPermission('manage_attendance') || hasPermission('manage_employees')) {
                 try {
                     const counts = await hrStatsApi.getPendingCounts();
-                    setPendingCounts(counts);
+                    newCounts = { ...newCounts, ...counts };
                 } catch (err) {
                     console.error("Failed to fetch pending counts", err);
                 }
             }
+
+            // Chat Stats
+            try {
+                const chatData = await chatApi.getNotificationsSummary();
+                newCounts.chat = chatData.total_unread || 0;
+            } catch (err) {
+                console.error("Failed to fetch chat counts", err);
+            }
+
+            setPendingCounts(prev => ({ ...prev, ...newCounts }));
         };
 
         fetchPending();
