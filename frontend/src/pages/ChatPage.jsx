@@ -95,11 +95,11 @@ const ConversationList = ({ conversations, activeId, onSelect, onNewChat, pushSu
             </div>
 
             <div className="flex-1 overflow-y-auto">
-                <div className="text-center py-10 text-gray-500">
-                    <p className="text-4xl mb-2">💬</p>
-                    <p>Nessuna conversazione</p>
-                </div>
-                ) : (
+                {conversations.length === 0 ? (
+                    <div className="text-center py-10 text-gray-500">
+                        <p className="text-4xl mb-2">💬</p>
+                        <p>Nessuna conversazione</p>
+                    </div>
                     conversations.map(conv => (
                 <div
                     key={conv.id}
