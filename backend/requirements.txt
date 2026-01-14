@@ -15,3 +15,5 @@ python-docx
 apscheduler
 alembic
 reportlab
+pywebpush
+py-vapid

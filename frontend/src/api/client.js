@@ -421,7 +421,11 @@ export const chatApi = {
 
   // Badge
   getUnreadCount: () => client.get("/chat/unread-count"),
+
+  // Push Notifications
+  getVapidKey: () => client.get("/chat/push/vapid-key"),
+  subscribePush: (data) => client.post("/chat/push/subscribe", data),
+  unsubscribePush: (endpoint) => client.delete("/chat/push/unsubscribe", { params: { endpoint } }),
 };
 
 export default client;
-

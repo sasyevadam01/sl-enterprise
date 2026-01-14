@@ -511,3 +511,107 @@ async def broadcast_new_message(conv_id: int, message_data: dict, member_ids: li
         exclude_user=sender_id
     )
 
+
+# ============================================================
+# PUSH NOTIFICATIONS
+# ============================================================
+
+from push_service import get_vapid_public_key, send_chat_notification
+
+class PushSubscriptionCreate(BaseModel):
+    """Registra subscription push."""
+    endpoint: str
+    p256dh: str
+    auth: str
+    user_agent: Optional[str] = None
+
+
+@router.get("/push/vapid-key", summary="Chiave VAPID Pubblica")
+async def get_public_key():
+    """Ritorna la chiave pubblica VAPID per il frontend."""
+    return {"publicKey": get_vapid_public_key()}
+
+
+@router.post("/push/subscribe", summary="Registra Push Subscription")
+async def subscribe_push(
+    data: PushSubscriptionCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Registra una subscription per notifiche push."""
+    # Verifica se esiste già
+    existing = db.query(PushSubscription).filter(
+        PushSubscription.endpoint == data.endpoint
+    ).first()
+    
+    if existing:
+        # Aggiorna
+        existing.user_id = current_user.id
+        existing.p256dh_key = data.p256dh
+        existing.auth_key = data.auth
+        existing.user_agent = data.user_agent
+        existing.last_used_at = datetime.utcnow()
+    else:
+        # Crea nuova
+        sub = PushSubscription(
+            user_id=current_user.id,
+            endpoint=data.endpoint,
+            p256dh_key=data.p256dh,
+            auth_key=data.auth,
+            user_agent=data.user_agent
+        )
+        db.add(sub)
+    
+    db.commit()
+    return {"message": "Subscription registrata"}
+
+
+@router.delete("/push/unsubscribe", summary="Rimuovi Push Subscription")
+async def unsubscribe_push(
+    endpoint: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Rimuove una subscription push."""
+    sub = db.query(PushSubscription).filter(
+        PushSubscription.endpoint == endpoint,
+        PushSubscription.user_id == current_user.id
+    ).first()
+    
+    if sub:
+        db.delete(sub)
+        db.commit()
+    
+    return {"message": "Subscription rimossa"}
+
+
+# Helper per invio push a utente
+async def send_push_to_user(db: Session, user_id: int, sender_name: str, message_preview: str, conv_id: int):
+    """Invia notifica push a tutte le subscription dell'utente."""
+    subs = db.query(PushSubscription).filter(
+        PushSubscription.user_id == user_id
+    ).all()
+    
+    dead_subs = []
+    for sub in subs:
+        subscription_info = {
+            "endpoint": sub.endpoint,
+            "keys": {
+                "p256dh": sub.p256dh_key,
+                "auth": sub.auth_key
+            }
+        }
+        success = send_chat_notification(
+            subscription_info=subscription_info,
+            sender_name=sender_name,
+            message_preview=message_preview,
+            conversation_id=conv_id
+        )
+        if not success:
+            dead_subs.append(sub)
+    
+    # Cleanup subscription non valide
+    for sub in dead_subs:
+        db.delete(sub)
+    if dead_subs:
+        db.commit()
