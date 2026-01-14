@@ -651,7 +651,9 @@ async def get_chat_notifications_summary(
                 
                 # Determina nome 
                 display_name = conv.name or "Chat"
-                if not conv.is_group:
+                is_group = (conv.type == 'group')
+                
+                if not is_group:
                     other_member_q = db.query(ConversationMember).filter(
                         ConversationMember.conversation_id == conv.id,
                         ConversationMember.user_id != current_user.id
@@ -670,7 +672,7 @@ async def get_chat_notifications_summary(
                     "conversation_id": conv.id,
                     "name": display_name,
                     "unread_count": unread_count,
-                    "is_group": conv.is_group,
+                    "is_group": is_group,
                     "last_message_at": conv.updated_at.isoformat() if conv.updated_at else None
                 })
         
