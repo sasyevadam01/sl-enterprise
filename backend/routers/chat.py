@@ -612,13 +612,15 @@ async def get_chat_notifications_summary(
         for member in memberships:
             conv = member.conversation
             
-            # Conta messaggi non letti
+            # Conta messaggi non letti - Handle NULL last_read_at
+            last_read = member.last_read_at or datetime.min
+            
             unread_count = db.query(func.count(Message.id)).filter(
                 Message.conversation_id == conv.id,
-                Message.created_at > member.last_read_at,
-                Message.deleted_at.is_(None),  # Ignora cancellati
-                Message.sender_id != current_user.id # Ignora i propri messaggi
-            ).scalar()
+                Message.created_at > last_read,
+                Message.deleted_at.is_(None),
+                Message.sender_id != current_user.id
+            ).scalar() or 0
             
             if unread_count > 0:
                 total_unread += unread_count
@@ -629,7 +631,6 @@ async def get_chat_notifications_summary(
                     if conv.is_group:
                         display_name = conv.name or "Gruppo"
                     else:
-                        # Trova l'altro utente (query diretta per efficienza)
                         other_member = db.query(ConversationMember).options(joinedload(ConversationMember.user)).filter(
                             ConversationMember.conversation_id == conv.id,
                             ConversationMember.user_id != current_user.id
@@ -640,7 +641,7 @@ async def get_chat_notifications_summary(
                         else:
                             display_name = "Utente rimosso"
                 except Exception as e:
-                    print(f"[Error] Calcolo nome chat fallito: {e}")
+                    display_name = "Chat Error"
                     
                 conversations_summary.append({
                     "conversation_id": conv.id,
@@ -655,8 +656,14 @@ async def get_chat_notifications_summary(
             "conversations": conversations_summary
         }
     except Exception as e:
+        import traceback
+        error_msg = f"{datetime.now().isoformat()} - ERROR: {str(e)}\n{traceback.format_exc()}\n"
         print(f"[Error] Notifiche summary fallito: {e}")
-        # Return empty structure per evitare crash frontend
+        try:
+            with open("chat_errors.log", "a") as f:
+                f.write(error_msg)
+        except:
+            pass
         return {"total_unread": 0, "conversations": []}
 
 

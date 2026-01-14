@@ -173,7 +173,11 @@ function SidebarItem({ item, isOpen, pendingCounts, onItemClick }) {
 export default function Sidebar({ isOpen, onToggle, mobileOpen, setMobileOpen }) {
     const { user, logout, hasPermission } = useAuth();
     const navigate = useNavigate();
-    const [pendingCounts, setPendingCounts] = useState({ events: 0, leaves: 0 });
+    const [pendingCounts, setPendingCounts] = useState({ events: 0, leaves: 0, chat: 0 });
+
+    useEffect(() => {
+        console.log("🚀 SL ENTERPRISE SIDEBAR v2.0 LOADED - Notifiche attive");
+    }, []);
 
     // Determine if user is admin
     const isAdmin = ['super_admin', 'admin', 'hr_manager', 'factory_controller'].includes(user?.role);
