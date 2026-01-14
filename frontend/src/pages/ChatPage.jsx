@@ -681,19 +681,4 @@ export default function ChatPage() {
     );
 }
 
-// Redefine helpers to avoid errors in replace
-const formatTime = (dateStr) => {
-    const d = new Date(dateStr);
-    return d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-};
 
-const formatDate = (dateStr) => {
-    const d = new Date(dateStr);
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-
-    if (d.toDateString() === today.toDateString()) return 'Oggi';
-    if (d.toDateString() === yesterday.toDateString()) return 'Ieri';
-    return d.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
-};
