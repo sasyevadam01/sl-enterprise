@@ -76,6 +76,24 @@ class MemberInfo(BaseModel):
 # CONVERSATIONS
 # ============================================================
 
+def _get_unread_count(db: Session, conv_id: int, user_id: int, last_read_at: datetime) -> int:
+    """Helper condiviso per contare messaggi non letti."""
+    if not last_read_at:
+        return 0
+        
+    count = db.query(Message).filter(
+        Message.conversation_id == conv_id,
+        Message.created_at > last_read_at,
+        Message.sender_id != user_id,
+        Message.deleted_at == None
+    ).count()
+    
+    # DEBUG 
+    if count > 0:
+        print(f"[UNREAD_DEBUG] Conv {conv_id} User {user_id} LastRead {last_read_at} -> Count {count}")
+        
+    return count
+
 @router.get("/conversations", summary="Lista Conversazioni")
 async def get_conversations(
     db: Session = Depends(get_db),
