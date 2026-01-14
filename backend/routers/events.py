@@ -55,7 +55,8 @@ async def get_pending_events(
     """Eventi in attesa di approvazione (HR only)."""
     from sqlalchemy.orm import joinedload
     events = db.query(EmployeeEvent).options(
-        joinedload(EmployeeEvent.creator)
+        joinedload(EmployeeEvent.creator),
+        joinedload(EmployeeEvent.employee)  # Include employee data for name display
     ).filter(EmployeeEvent.status == "pending").all()
     return events
 

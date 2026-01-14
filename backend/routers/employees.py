@@ -123,13 +123,7 @@ async def create_employee(
     current_user: User = Depends(get_hr_or_admin)
 ):
     """Crea nuovo dipendente (wizard guidato)."""
-    # Verifica codice fiscale unico
-    existing = db.query(Employee).filter(Employee.fiscal_code == employee_data.fiscal_code).first()
-    if existing:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Codice fiscale gia esistente"
-        )
+    # [REMOVED] fiscal_code check - field is no longer used
     
     # [FIX] Link Department Name -> Department ID
     if employee_data.department_name:

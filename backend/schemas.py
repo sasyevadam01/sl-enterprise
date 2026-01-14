@@ -187,7 +187,7 @@ class MedicalOutcome(str, Enum):
 # ============================================================
 
 class EmployeeBase(BaseModel):
-    fiscal_code: str
+    fiscal_code: Optional[str] = None  # Made optional - not used anymore
     first_name: str
     last_name: str
     birth_date: Optional[datetime] = None
@@ -267,7 +267,7 @@ class EmployeeResponse(EmployeeBase):
 class EmployeeListResponse(BaseModel):
     """Schema lista dipendenti (leggero)."""
     id: int
-    fiscal_code: str
+    fiscal_code: Optional[str] = None  # Made optional - not used anymore
     first_name: str
     last_name: str
     department_id: Optional[int] = None
