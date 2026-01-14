@@ -53,15 +53,18 @@ async def get_pending_events(
     current_user: User = Depends(get_hr_or_admin)
 ):
     """Eventi in attesa di approvazione (HR only)."""
-    from sqlalchemy.orm import joinedload
-    events = db.query(EmployeeEvent).options(
-        joinedload(EmployeeEvent.creator),
-        joinedload(EmployeeEvent.employee)
-    ).filter(EmployeeEvent.status == "pending").all()
+    events = db.query(EmployeeEvent).filter(EmployeeEvent.status == "pending").all()
     
-    # Build response with employee data explicitly included
+    # Build response with employee data from explicit query
     result = []
     for e in events:
+        # Explicit query for employee - bypass ORM relationship issues
+        emp = db.query(Employee).filter(Employee.id == e.employee_id).first()
+        
+        # Explicit query for creator
+        from database import User as UserModel
+        creator = db.query(UserModel).filter(UserModel.id == e.created_by).first() if e.created_by else None
+        
         event_dict = {
             "id": e.id,
             "employee_id": e.employee_id,
@@ -76,23 +79,17 @@ async def get_pending_events(
             "approved_by": e.approved_by,
             "approved_at": e.approved_at.isoformat() if e.approved_at else None,
             "rejection_reason": e.rejection_reason,
-            "employee": None,
-            "creator": None
+            "employee": {
+                "id": emp.id,
+                "first_name": emp.first_name,
+                "last_name": emp.last_name
+            } if emp else None,
+            "creator": {
+                "id": creator.id,
+                "username": creator.username,
+                "full_name": creator.full_name
+            } if creator else None
         }
-        # Include employee details
-        if e.employee:
-            event_dict["employee"] = {
-                "id": e.employee.id,
-                "first_name": e.employee.first_name,
-                "last_name": e.employee.last_name
-            }
-        # Include creator details
-        if e.creator:
-            event_dict["creator"] = {
-                "id": e.creator.id,
-                "username": e.creator.username,
-                "full_name": e.creator.full_name
-            }
         result.append(event_dict)
     
     return result
