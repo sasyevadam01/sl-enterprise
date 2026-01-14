@@ -3,7 +3,7 @@
  * Messaggistica interna tipo WhatsApp
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { chatApi, usersApi } from '../../api/client';
+import { chatApi } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { useUI } from '../../components/ui/CustomUI';
 
@@ -35,8 +35,8 @@ const MessageBubble = ({ message, isOwn, onDelete }) => {
             onMouseLeave={() => setShowActions(false)}
         >
             <div className={`max-w-[70%] relative group ${isOwn
-                    ? 'bg-blue-600 text-white rounded-2xl rounded-br-sm'
-                    : 'bg-slate-700 text-white rounded-2xl rounded-bl-sm'
+                ? 'bg-blue-600 text-white rounded-2xl rounded-br-sm'
+                : 'bg-slate-700 text-white rounded-2xl rounded-bl-sm'
                 } px-4 py-2 shadow-lg`}>
                 {!isOwn && (
                     <p className="text-xs text-blue-300 font-semibold mb-1">
@@ -95,8 +95,8 @@ const ConversationList = ({ conversations, activeId, onSelect, onNewChat }) => {
                             key={conv.id}
                             onClick={() => onSelect(conv)}
                             className={`p-4 border-b border-white/5 cursor-pointer transition ${activeId === conv.id
-                                    ? 'bg-blue-600/20 border-l-4 border-l-blue-500'
-                                    : 'hover:bg-white/5'
+                                ? 'bg-blue-600/20 border-l-4 border-l-blue-500'
+                                : 'hover:bg-white/5'
                                 }`}
                         >
                             <div className="flex items-center gap-3">
@@ -219,13 +219,13 @@ const NewChatModal = ({ isOpen, onClose, onCreateDirect, onCreateGroup, contacts
                             key={contact.id}
                             onClick={() => toggleUser(contact.id)}
                             className={`px-4 py-3 flex items-center gap-3 cursor-pointer transition ${selectedUsers.includes(contact.id)
-                                    ? 'bg-blue-600/20'
-                                    : 'hover:bg-white/5'
+                                ? 'bg-blue-600/20'
+                                : 'hover:bg-white/5'
                                 }`}
                         >
                             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedUsers.includes(contact.id)
-                                    ? 'border-blue-500 bg-blue-500'
-                                    : 'border-gray-500'
+                                ? 'border-blue-500 bg-blue-500'
+                                : 'border-gray-500'
                                 }`}>
                                 {selectedUsers.includes(contact.id) && (
                                     <span className="text-white text-xs">✓</span>
