@@ -88,10 +88,6 @@ def _get_unread_count(db: Session, conv_id: int, user_id: int, last_read_at: dat
         Message.deleted_at == None
     ).count()
     
-    # DEBUG 
-    if count > 0:
-        print(f"[UNREAD_DEBUG] Conv {conv_id} User {user_id} LastRead {last_read_at} -> Count {count}")
-        
     return count
 
 @router.get("/conversations", summary="Lista Conversazioni")
@@ -628,7 +624,6 @@ async def get_chat_notifications_summary(
         
         total_unread = 0
         conversations_summary = []
-        debug_info = [] # LISTA DI DEBUG
         
         for conv in conversations:
             member = membership_map.get(conv.id)
@@ -654,7 +649,7 @@ async def get_chat_notifications_summary(
                     if other_member_q:
                         other_user = db.query(User).filter(User.id == other_member_q.user_id).first()
                         if other_user:
-                            display_name = f"{other_user.first_name} {other_user.last_name}"
+                            display_name = other_user.full_name or other_user.username
                         else:
                             display_name = "Utente sconosciuto"
                     else:
@@ -673,9 +668,8 @@ async def get_chat_notifications_summary(
             "conversations": conversations_summary
         }
     except Exception as e:
-        print(f"[Error] Notifiche summary CRASH: {e}")
-        # Ritorna errore nel JSON per debug se serve, altrimenti empty
-        return {"total_unread": 0, "conversations": [], "error": str(e)}
+        # Logghiamo l'errore server ma non crashiamo l'endpoint per l'utente
+        return {"total_unread": 0, "conversations": []}
 
 
 # Helper per invio push a utente
