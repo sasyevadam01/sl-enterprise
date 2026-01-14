@@ -16,6 +16,9 @@ export default function NotificationBell() {
     const [unreadCount, setUnreadCount] = useState(0);
     const [loading, setLoading] = useState(false);
     const dropdownRef = useRef(null);
+    const prevConversationsRef = useRef({}); // Traccia lo stato precedente per i Toast
+    const isFirstLoadRef = useRef(true); // Evita toast al primo caricamento
+    const { toast } = useUI();
 
     // Determine destination based on role
     const viewAllLink = ['coordinator', 'operator', 'production_manager'].includes(user?.role)
@@ -65,9 +68,30 @@ export default function NotificationBell() {
                 const chatCount = chatData.total_unread || 0;
                 const newTotal = notifCount + chatCount;
 
-                if (newTotal > unreadCount) {
-                    playElegantSound();
+                // Toast Logic per Chat
+                const currentConvs = {};
+                (chatData.conversations || []).forEach(c => {
+                    currentConvs[c.conversation_id] = c.unread_count;
+                });
+
+                if (!isFirstLoadRef.current) {
+                    (chatData.conversations || []).forEach(conv => {
+                        const prevCount = prevConversationsRef.current[conv.conversation_id] || 0;
+                        if (conv.unread_count > prevCount) {
+                            // Nuovo messaggio in questa chat!
+                            toast.info(`Nuovo messaggio da ${conv.name}`);
+                        }
+                    });
+
+                    if (newTotal > unreadCount) {
+                        playElegantSound();
+                    }
+                } else {
+                    isFirstLoadRef.current = false;
                 }
+
+                // Aggiorna Refs
+                prevConversationsRef.current = currentConvs;
                 setUnreadCount(newTotal);
             } catch (error) {
                 console.error('Error fetching notification count:', error);
@@ -242,8 +266,8 @@ export default function NotificationBell() {
                                         setIsOpen(false);
                                     }}
                                     className={`block px-4 py-3 border-b border-white/5 hover:bg-white/5 cursor-pointer transition ${notif.notif_type === 'priority' ? 'bg-red-500/10 border-l-4 border-l-red-500' :
-                                            notif.notif_type === 'chat' ? 'bg-blue-600/10 border-l-4 border-l-blue-500' :
-                                                (!notif.is_read ? 'bg-blue-500/5' : '')
+                                        notif.notif_type === 'chat' ? 'bg-blue-600/10 border-l-4 border-l-blue-500' :
+                                            (!notif.is_read ? 'bg-blue-500/5' : '')
                                         }`}
                                 >
                                     <div className="flex items-start gap-3">

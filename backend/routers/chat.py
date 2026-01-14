@@ -595,50 +595,68 @@ async def get_chat_notifications_summary(
     Usato per badge sidebar e campanella notifiche.
     """
     try:
-        members = db.query(ConversationMember).options(
-            joinedload(ConversationMember.conversation).subqueryload(Conversation.members).joinedload(ConversationMember.user)
+        # Cerca conversazioni dove ci sono messaggi non letti
+        # Query complessa: Join ConversationMember -> Conversation -> Messages
+        # Filtra messaggi creati dopo last_read_at e NON inviati dall'utente stesso
+        
+        # 1. Trova tutte le membership dell'utente
+        memberships = db.query(ConversationMember).options(
+            joinedload(ConversationMember.conversation)
         ).filter(
-            ConversationMember.user_id == current_user.id,
-            ConversationMember.unread_count > 0
+            ConversationMember.user_id == current_user.id
         ).all()
         
         total_unread = 0
         conversations_summary = []
         
-        for member in members:
+        for member in memberships:
             conv = member.conversation
-            total_unread += member.unread_count
             
-            # Determina nome conversazione
-            display_name = "Chat"
-            try:
-                if conv.is_group:
-                    display_name = conv.name or "Gruppo"
-                else:
-                    # Trova l'altro utente
-                    other_member = next((m for m in conv.members if m.user_id != current_user.id), None)
-                    if other_member and other_member.user:
-                        display_name = f"{other_member.user.first_name} {other_member.user.last_name}"
-                    else:
-                        display_name = "Utente rimosso"
-            except Exception as e:
-                print(f"[Error] Calcolo nome chat fallito per conv {conv.id}: {e}")
+            # Conta messaggi non letti
+            unread_count = db.query(func.count(Message.id)).filter(
+                Message.conversation_id == conv.id,
+                Message.created_at > member.last_read_at,
+                Message.deleted_at.is_(None),  # Ignora cancellati
+                Message.sender_id != current_user.id # Ignora i propri messaggi
+            ).scalar()
+            
+            if unread_count > 0:
+                total_unread += unread_count
+                
+                # Determina nome conversazione
                 display_name = "Chat"
-
-            conversations_summary.append({
-                "conversation_id": conv.id,
-                "name": display_name,
-                "unread_count": member.unread_count,
-                "is_group": conv.is_group,
-                "last_message_at": conv.updated_at.isoformat() if conv.updated_at else None
-            })
-            
+                try:
+                    if conv.is_group:
+                        display_name = conv.name or "Gruppo"
+                    else:
+                        # Trova l'altro utente (query diretta per efficienza)
+                        other_member = db.query(ConversationMember).options(joinedload(ConversationMember.user)).filter(
+                            ConversationMember.conversation_id == conv.id,
+                            ConversationMember.user_id != current_user.id
+                        ).first()
+                        
+                        if other_member and other_member.user:
+                            display_name = f"{other_member.user.first_name} {other_member.user.last_name}"
+                        else:
+                            display_name = "Utente rimosso"
+                except Exception as e:
+                    print(f"[Error] Calcolo nome chat fallito: {e}")
+                    
+                conversations_summary.append({
+                    "conversation_id": conv.id,
+                    "name": display_name,
+                    "unread_count": unread_count,
+                    "is_group": conv.is_group,
+                    "last_message_at": conv.updated_at.isoformat() if conv.updated_at else None
+                })
+        
         return {
             "total_unread": total_unread,
             "conversations": conversations_summary
         }
     except Exception as e:
         print(f"[Error] Notifiche summary fallito: {e}")
+        # Return empty structure per evitare crash frontend
         return {"total_unread": 0, "conversations": []}
 
 
