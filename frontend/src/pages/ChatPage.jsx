@@ -343,6 +343,16 @@ export default function ChatPage() {
     const [loading, setLoading] = useState(true);
     const [typingUser, setTypingUser] = useState(null);
 
+    // Confirmation State
+    const [confirmation, setConfirmation] = useState({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: () => { },
+        isDanger: false,
+        confirmText: "Conferma"
+    });
+
     const isAdmin = ['super_admin', 'admin'].includes(user?.role); // CHECK ROLE
 
     // Push Notifications
@@ -492,9 +502,20 @@ export default function ChatPage() {
         }
     };
 
-    // Ban User
-    const handleBanUser = async (userId) => {
-        if (!confirm("Sei sicuro di voler silenziare questo utente per 1 minuto?")) return;
+    // Trigger Ban Confirmation
+    const confirmBanUser = (userId) => {
+        setConfirmation({
+            isOpen: true,
+            title: "Timeout Utente",
+            message: "Sei sicuro di voler silenziare questo utente per 1 minuto?",
+            isDanger: true,
+            confirmText: "Silenzia",
+            onConfirm: () => executeBanUser(userId)
+        });
+    };
+
+    // Execute Ban
+    const executeBanUser = async (userId) => {
         try {
             // Usa api/client instance
             await chatApi.client.post(`/chat/conversations/${activeConv.id}/ban`, {
@@ -508,9 +529,20 @@ export default function ChatPage() {
         }
     };
 
-    // Delete Group
-    const handleDeleteGroup = async () => {
-        if (!confirm("Sei sicuro di voler ELIMINARE definitivamente questa chat?")) return;
+    // Trigger Delete Group Confirmation
+    const confirmDeleteGroup = () => {
+        setConfirmation({
+            isOpen: true,
+            title: "Elimina Chat",
+            message: "Sei sicuro di voler ELIMINARE definitivamente questa chat? L'azione è irreversibile.",
+            isDanger: true,
+            confirmText: "Elimina Chat",
+            onConfirm: () => executeDeleteGroup()
+        });
+    };
+
+    // Execute Delete Group
+    const executeDeleteGroup = async () => {
         try {
             await chatApi.client.delete(`/chat/conversations/${activeConv.id}`);
             toast.success("Chat eliminata");
@@ -523,13 +555,58 @@ export default function ChatPage() {
     };
 
     // Create handlers...
-    const handleCreateDirect = async (userId) => { /* ... same ... */ };
-    const handleCreateGroup = async (name, memberIds) => { /* ... same ... */ };
-    const handleKeyPress = (e) => { /* ... same ... */ };
+    const handleCreateDirect = async (userId) => {
+        try {
+            const result = await chatApi.createConversation({
+                type: 'direct',
+                member_ids: [userId]
+            });
+            await loadConversations();
+            const conv = conversations.find(c => c.id === result.id) ||
+                (await chatApi.getConversations()).find(c => c.id === result.id);
+            if (conv) handleSelectConv(conv);
+        } catch (error) {
+            toast.error('Errore creazione chat');
+        }
+    };
 
-    // ... Typing effect ...
+    const handleCreateGroup = async (name, memberIds) => {
+        try {
+            const result = await chatApi.createConversation({
+                type: 'group',
+                name,
+                member_ids: memberIds
+            });
+            await loadConversations();
+            const conv = conversations.find(c => c.id === result.id) ||
+                (await chatApi.getConversations()).find(c => c.id === result.id);
+            if (conv) handleSelectConv(conv);
+        } catch (error) {
+            toast.error('Errore creazione gruppo');
+        }
+    };
 
-    if (loading) { /* ... same ... */ }
+    const handleKeyPress = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSend();
+        }
+    };
+
+    // Typing effect
+    useEffect(() => {
+        if (activeConv && isConnected) {
+            sendTyping(activeConv.id, newMessage.length > 0);
+        }
+    }, [newMessage, activeConv, isConnected, sendTyping]);
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-full">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+        );
+    }
 
     return (
         <div className="h-[calc(100vh-120px)] flex rounded-2xl overflow-hidden border border-white/10 bg-slate-900/50 backdrop-blur-md">
@@ -673,12 +750,21 @@ export default function ChatPage() {
                 isOpen={showGroupInfo}
                 onClose={() => setShowGroupInfo(false)}
                 conv={activeConv}
-                onBan={handleBanUser}
-                onDeleteGroup={handleDeleteGroup}
+                onBan={confirmBanUser}
+                onDeleteGroup={confirmDeleteGroup}
                 isAdmin={isAdmin}
+            />
+
+            {/* Modal Conferma (NEW) */}
+            <ConfirmationModal
+                isOpen={confirmation.isOpen}
+                onClose={() => setConfirmation(prev => ({ ...prev, isOpen: false }))}
+                onConfirm={confirmation.onConfirm}
+                title={confirmation.title}
+                message={confirmation.message}
+                isDanger={confirmation.isDanger}
+                confirmText={confirmation.confirmText}
             />
         </div>
     );
 }
-
-
