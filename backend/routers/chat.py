@@ -612,6 +612,10 @@ async def get_chat_notifications_summary(
         for member in memberships:
             conv = member.conversation
             
+            # PROTEZIONE CRITICA: Se la conversazione è stata cancellata ma il member esiste ancora
+            if not conv:
+                continue
+
             # Conta messaggi non letti - Handle NULL last_read_at
             last_read = member.last_read_at or datetime.min
             
