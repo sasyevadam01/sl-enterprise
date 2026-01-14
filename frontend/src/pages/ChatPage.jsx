@@ -100,37 +100,38 @@ const ConversationList = ({ conversations, activeId, onSelect, onNewChat, pushSu
                         <p className="text-4xl mb-2">💬</p>
                         <p>Nessuna conversazione</p>
                     </div>
+                ) : (
                     conversations.map(conv => (
-                <div
-                    key={conv.id}
-                    onClick={() => onSelect(conv)}
-                    className={`p-4 border-b border-white/5 cursor-pointer transition ${activeId === conv.id
-                        ? 'bg-blue-600/20 border-l-4 border-l-blue-500'
-                        : 'hover:bg-white/5'
-                        }`}
-                >
-                    <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-lg font-bold text-white shrink-0">
-                            {conv.type === 'group' ? '👥' : conv.name?.charAt(0)?.toUpperCase() || '?'}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between">
-                                <h3 className="font-semibold text-white truncate">
-                                    {conv.name || 'Chat'}
-                                </h3>
-                                {conv.unread_count > 0 && (
-                                    <span className="bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                                        {conv.unread_count}
-                                    </span>
-                                )}
+                        <div
+                            key={conv.id}
+                            onClick={() => onSelect(conv)}
+                            className={`p-4 border-b border-white/5 cursor-pointer transition ${activeId === conv.id
+                                ? 'bg-blue-600/20 border-l-4 border-l-blue-500'
+                                : 'hover:bg-white/5'
+                                }`}
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-lg font-bold text-white shrink-0">
+                                    {conv.type === 'group' ? '👥' : conv.name?.charAt(0)?.toUpperCase() || '?'}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="font-semibold text-white truncate">
+                                            {conv.name || 'Chat'}
+                                        </h3>
+                                        {conv.unread_count > 0 && (
+                                            <span className="bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                                                {conv.unread_count}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <p className="text-sm text-gray-400 truncate">
+                                        {conv.last_message || 'Nessun messaggio'}
+                                    </p>
+                                </div>
                             </div>
-                            <p className="text-sm text-gray-400 truncate">
-                                {conv.last_message || 'Nessun messaggio'}
-                            </p>
                         </div>
-                    </div>
-                </div>
-                ))
+                    ))
                 )}
             </div>
         </div>
