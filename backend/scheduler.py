@@ -65,10 +65,46 @@ def auto_cleanup_notifications():
     finally:
         db.close()
 
+
+from models.chat import Message
+
+def auto_cleanup_chats():
+    """
+    Job pianificato per pulire messaggi chat vecchi (> 7 giorni).
+    """
+    logger.info("Avvio procedura di pulizia chat...")
+    db = SessionLocal()
+    try:
+        cutoff_date = datetime.now() - timedelta(days=7)
+        
+        # Elimina messaggi vecchi
+        # Nota: per sicurezza facciamo in 2 step (FK reply_to)
+        
+        # 1. Nullifica reply_to
+        db.query(Message).filter(Message.created_at < cutoff_date).update(
+            {"reply_to_id": None}, synchronize_session=False
+        )
+        db.flush()
+        
+        # 2. Cancella
+        deleted = db.query(Message).filter(Message.created_at < cutoff_date).delete(synchronize_session=False)
+        db.commit()
+        
+        if deleted > 0:
+            logger.info(f"Pulizia chat completata: eliminati {deleted} messaggi.")
+        else:
+            logger.info("Nessun messaggio chat da eliminare.")
+            
+    except Exception as e:
+        logger.error(f"Errore durante pulizia chat: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
 def start_scheduler():
     """Avvia lo scheduler e aggiunge i job."""
     if not scheduler.running:
-        # Esegui pulizia ogni 24 ore
+        # Esegui pulizia notifiche ogni 24 ore
         scheduler.add_job(
             auto_cleanup_notifications,
             trigger=IntervalTrigger(hours=24),
@@ -76,8 +112,15 @@ def start_scheduler():
             name='Pulizia notifiche vecchie',
             replace_existing=True
         )
-        # Eseguiamo anche subito all'avvio (opzionale, magari meglio di no per non rallentare startup)
-        # scheduler.add_job(auto_cleanup_notifications, 'date', run_date=datetime.now() + timedelta(seconds=10))
+        
+        # Esegui pulizia CHAT ogni 24 ore (alle 04:00 di notte ideale, ma interval va bene)
+        scheduler.add_job(
+            auto_cleanup_chats,
+            trigger=IntervalTrigger(hours=24),
+            id='cleanup_chats',
+            name='Pulizia chat vecchie',
+            replace_existing=True
+        )
         
         scheduler.start()
         logger.info("Scheduler avviato correttamente.")
