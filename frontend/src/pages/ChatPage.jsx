@@ -1,6 +1,6 @@
 /**
- * SL Enterprise - Chat Page (DEBUG VERSION)
- * Isolating ReferenceError
+ * SL Enterprise - Chat Page (DEBUG VERSION - HOOKS ENABLED)
+ * Isolating ReferenceError - EmojiPicker still DISABLED
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 // import EmojiPicker from 'emoji-picker-react'; // DISABLED
@@ -9,8 +9,8 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { chatApi } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { useUI } from '../components/ui/CustomUI';
-// import useChatSocket from '../hooks/useChatSocket'; // DISABLED
-// import usePushNotifications from '../hooks/usePushNotifications'; // DISABLED
+import useChatSocket from '../hooks/useChatSocket'; // ENABLED
+import usePushNotifications from '../hooks/usePushNotifications'; // ENABLED
 import { formatTime, formatDate } from '../utils/chatUtils';
 
 // =========================================================================================
@@ -271,13 +271,13 @@ export default function ChatPage() {
     // EXTRAS STATES
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [mentionQuery, setMentionQuery] = useState(null);
-    // const [mentionIndex, setMentionIndex] = useState(-1);
+    const [mentionIndex, setMentionIndex] = useState(-1);
 
     const [contacts, setContacts] = useState([]);
     const [showNewChat, setShowNewChat] = useState(false);
     const [showGroupInfo, setShowGroupInfo] = useState(false);
     const [loading, setLoading] = useState(true);
-    // const [typingUser, setTypingUser] = useState(null);
+    const [typingUser, setTypingUser] = useState(null);
 
     // Confirmation State
     const [confirmation, setConfirmation] = useState({
@@ -291,14 +291,51 @@ export default function ChatPage() {
 
     const isAdmin = ['super_admin', 'admin'].includes(user?.role);
 
-    // DISABLED PUSH
-    const pushSupported = false;
-    const pushSubscribed = false;
-    const subscribePush = () => { };
+    // Push Notifications
+    const {
+        isSupported: pushSupported,
+        isSubscribed: pushSubscribed,
+        subscribe: subscribePush,
+        permission: pushPermission
+    } = usePushNotifications();
 
-    // DISABLED SOCKET
-    const isConnected = false;
-    const sendTyping = () => { };
+    // WebSocket Handlers
+    const handleSocketMessage = useCallback((msg) => {
+        // Handle Delete via WS
+        if (msg.type === 'message_deleted') {
+            setMessages(prev => prev.map(m =>
+                m.id === msg.message_id ? { ...m, deleted_at: new Date().toISOString() } : m
+            ));
+            return;
+        }
+
+        // Se è per la conversazione corrente
+        if (activeConv && msg.conversation_id === activeConv.id) {
+            setMessages(prev => {
+                if (prev.some(m => m.id === msg.id)) return prev;
+                return [...prev, msg];
+            });
+            setTimeout(() => {
+                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
+
+            // Marca come letto subito
+            chatApi.markAsRead(activeConv.id);
+        }
+
+        // Ricarica sempre lista per aggiornare snippet
+        loadConversations();
+    }, [activeConv, loadConversations]);
+
+    const handleSocketTyping = useCallback((data) => {
+        if (activeConv && data.conversation_id === activeConv.id && data.is_typing) {
+            setTypingUser(data.user_name);
+            setTimeout(() => setTypingUser(null), 3000);
+        }
+    }, [activeConv]);
+
+    // WebSocket Hook
+    const { isConnected, sendTyping } = useChatSocket(user?.id, handleSocketMessage, handleSocketTyping);
 
     // Carica conversazioni
     const loadConversations = useCallback(async () => {
@@ -500,6 +537,13 @@ export default function ChatPage() {
         }
     };
 
+    // Typing effect
+    useEffect(() => {
+        if (activeConv && isConnected) {
+            sendTyping(activeConv.id, newMessage.length > 0);
+        }
+    }, [newMessage, activeConv, isConnected, sendTyping]);
+
     if (loading) {
         return (
             <div className="flex items-center justify-center h-full">
@@ -535,9 +579,17 @@ export default function ChatPage() {
                                 </div>
                                 <div>
                                     <h2 className="font-semibold text-lg">{activeConv.name}</h2>
-                                    <p className="text-xs text-gray-400">
-                                        {activeConv.type === 'group' ? `${activeConv.members.length} membri` : 'Chat'}
-                                    </p>
+                                    {typingUser ? (
+                                        <p className="text-xs text-green-400 font-medium animate-pulse">
+                                            {typingUser} sta scrivendo...
+                                        </p>
+                                    ) : (
+                                        <p className="text-xs text-gray-400">
+                                            {activeConv.type === 'group'
+                                                ? `${activeConv.members.length} membri`
+                                                : isConnected ? 'Online' : 'Offline'}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                             <button onClick={() => setShowGroupInfo(true)} className="p-2 hover:bg-white/10 rounded-full transition">ℹ️</button>
