@@ -571,7 +571,7 @@ export default function BonusManagementPanel() {
                 )}
             </div>
 
-            {/* EVENT BONUS MODAL - Styled Premium */}
+            {/* EVENT BONUS MODAL */}
             <AnimatePresence>
                 {eventModal.isOpen && eventModal.event && (
                     <motion.div
@@ -588,7 +588,6 @@ export default function BonusManagementPanel() {
                             onClick={e => e.stopPropagation()}
                             className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-yellow-500/50 rounded-2xl p-6 w-full max-w-md shadow-[0_0_60px_rgba(234,179,8,0.2)]"
                         >
-                            {/* Header */}
                             <div className="text-center mb-6">
                                 <div className="text-5xl mb-3">💰</div>
                                 <h3 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-yellow-400 to-yellow-600 uppercase tracking-wider">
@@ -597,7 +596,6 @@ export default function BonusManagementPanel() {
                                 <p className="text-gray-400 mt-1">{eventModal.event.employee_name}</p>
                             </div>
 
-                            {/* Event Info */}
                             <div className="bg-yellow-900/20 border border-yellow-500/20 rounded-lg p-3 mb-4">
                                 <div className="text-sm text-yellow-400 font-medium">{eventModal.event.event_type}</div>
                                 <div className="text-xs text-gray-400 mt-1">
@@ -605,7 +603,6 @@ export default function BonusManagementPanel() {
                                 </div>
                             </div>
 
-                            {/* Amount Input */}
                             <div className="mb-4">
                                 <label className="block text-xs text-gray-400 mb-2 uppercase tracking-wider">Importo Bonus (€)</label>
                                 <div className="relative">
@@ -622,7 +619,6 @@ export default function BonusManagementPanel() {
                                 </div>
                             </div>
 
-                            {/* Description */}
                             <div className="mb-6">
                                 <label className="block text-xs text-gray-400 mb-2 uppercase tracking-wider">Note / Motivazione</label>
                                 <input
@@ -634,7 +630,6 @@ export default function BonusManagementPanel() {
                                 />
                             </div>
 
-                            {/* Buttons */}
                             <div className="flex gap-3">
                                 <button
                                     onClick={() => setEventModal({ isOpen: false, event: null, amount: '50', description: '' })}
@@ -654,7 +649,7 @@ export default function BonusManagementPanel() {
                 )}
             </AnimatePresence>
 
-            {/* DELETE CONFIRMATION MODAL */}
+            {/* DELETE BONUS MODAL */}
             <AnimatePresence>
                 {deleteModal.isOpen && deleteModal.bonus && (
                     <motion.div
@@ -725,7 +720,6 @@ export default function BonusManagementPanel() {
                                 <p className="text-gray-400 mt-1">{editModal.bonus.employee_name}</p>
                             </div>
 
-                            {/* Amount Input */}
                             <div className="mb-4">
                                 <label className="block text-xs text-gray-400 mb-2 uppercase tracking-wider">Importo (€)</label>
                                 <div className="relative">
@@ -742,7 +736,6 @@ export default function BonusManagementPanel() {
                                 </div>
                             </div>
 
-                            {/* Description */}
                             <div className="mb-6">
                                 <label className="block text-xs text-gray-400 mb-2 uppercase tracking-wider">Note / Motivazione</label>
                                 <input
