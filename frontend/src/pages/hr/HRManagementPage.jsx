@@ -123,11 +123,17 @@ export default function HRManagementPage() {
             }
         });
 
-        const sorted = Object.values(empScores).filter(e => e.eventCount > 0).sort((a, b) => b.score - a.score);
+        const activeEmployees = Object.values(empScores).filter(e => e.eventCount > 0);
+
+        // Strict Separation:
+        // Top 5 = Only Positive Scores (> 0) sorted Descending
+        // Bottom 5 = Only Negative Scores (< 0) sorted Ascending (Lowest first)
+        const positive = activeEmployees.filter(e => e.score > 0).sort((a, b) => b.score - a.score);
+        const negative = activeEmployees.filter(e => e.score < 0).sort((a, b) => a.score - b.score);
 
         return {
-            top5: sorted.slice(0, 5),
-            bottom5: sorted.slice(-5).reverse()
+            top5: positive.slice(0, 5),
+            bottom5: negative.slice(0, 5)
         };
     }, [events, employees]);
 
