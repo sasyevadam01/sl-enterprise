@@ -433,6 +433,15 @@ export const chatApi = {
   // Moderazione (Admin)
   timeoutUser: (convId, userId, minutes = 1) => client.post(`/chat/conversations/${convId}/ban`, { user_id: userId, duration_minutes: minutes }),
   deleteConversation: (convId) => client.delete(`/chat/conversations/${convId}`),
+
+  // Allegati
+  uploadAttachment: (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return client.post("/chat/upload", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
 };
 
 export default client;

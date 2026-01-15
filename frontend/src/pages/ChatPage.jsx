@@ -86,9 +86,14 @@ const GroupInfoModal = ({ isOpen, onClose, conv, onBan, onDeleteGroup, isAdmin }
 const MessageBubble = ({ message, isOwn, isAdmin, onDelete }) => {
     const [showActions, setShowActions] = useState(false);
     const canDelete = (isOwn && message.can_delete) || isAdmin;
+    // FIX: useUI might not be available here directly if CustomUI is standard context. 
+    // Assuming context is available globally or we use local state. 
+    // Actually MessageBubble uses simple props. We'll skip useUI here for now.
 
     // GOD MODE CHECK 👑
-    const isGod = message.sender_name === 'sasyevadam01' || message.sender_name === 'Salvatore Laezza'; // Customize as needed
+    const isGod = message.sender_name === 'sasyevadam01' || message.sender_name === 'Salvatore Laezza';
+
+    const isImage = message.message_type === 'image' || (message.attachment_url && message.attachment_url.match(/\.(jpeg|jpg|gif|png)$/i));
 
     return (
         <div
@@ -115,9 +120,34 @@ const MessageBubble = ({ message, isOwn, isAdmin, onDelete }) => {
                 {message.deleted_at ? (
                     <p className="italic text-gray-400">🚫 Messaggio eliminato {isAdmin && '(Admin)'}</p>
                 ) : (
-                    <p className={`whitespace-pre-wrap break-words ${isGod ? 'text-yellow-50 font-medium' : ''}`}>
-                        {message.content}
-                    </p>
+                    <div className="flex flex-col gap-2">
+                        {message.attachment_url && (
+                            <div className="rounded-lg overflow-hidden my-1">
+                                {isImage ? (
+                                    <img
+                                        src={`${import.meta.env.VITE_API_URL || ''}${message.attachment_url}`}
+                                        alt="Allegato"
+                                        className="max-h-60 w-auto object-cover cursor-pointer hover:scale-105 transition"
+                                        onClick={() => window.open(`${import.meta.env.VITE_API_URL || ''}${message.attachment_url}`, '_blank')}
+                                    />
+                                ) : (
+                                    <a
+                                        href={`${import.meta.env.VITE_API_URL || ''}${message.attachment_url}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-2 bg-black/20 p-2 rounded hover:bg-black/30 transition text-sm"
+                                    >
+                                        📎 Scarica Allegato
+                                    </a>
+                                )}
+                            </div>
+                        )}
+                        {message.content && (
+                            <p className={`whitespace-pre-wrap break-words ${isGod ? 'text-yellow-50 font-medium' : ''}`}>
+                                {message.content}
+                            </p>
+                        )}
+                    </div>
                 )}
 
                 <div className="flex items-center justify-end gap-2 mt-1">
@@ -372,11 +402,15 @@ export default function ChatPage() {
     const { user } = useAuth();
     const { toast } = useUI();
     const messagesEndRef = useRef(null);
+    const fileInputRef = useRef(null); // Ref for file input
 
     const [conversations, setConversations] = useState([]);
     const [activeConv, setActiveConv] = useState(null);
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
+    const [attachment, setAttachment] = useState(null); // New state for file
+    const [uploading, setUploading] = useState(false); // Helper for spinner
+
     const [contacts, setContacts] = useState([]);
     const [showNewChat, setShowNewChat] = useState(false);
     const [showGroupInfo, setShowGroupInfo] = useState(false); // NEW
@@ -431,7 +465,7 @@ export default function ChatPage() {
 
         // Ricarica sempre lista per aggiornare snippet e unread count
         loadConversations();
-    }, [activeConv]);
+    }, [activeConv, loadConversations]);
 
     const handleSocketTyping = useCallback((data) => {
         if (activeConv && data.conversation_id === activeConv.id && data.is_typing) {
@@ -513,18 +547,45 @@ export default function ChatPage() {
         setShowGroupInfo(false);
     };
 
+    // File Selection
+    const handleFileSelect = (e) => {
+        if (e.target.files && e.target.files[0]) {
+            setAttachment(e.target.files[0]);
+        }
+    };
+
     // Invia messaggio
     const handleSend = async () => {
-        if (!newMessage.trim() || !activeConv) return;
+        if ((!newMessage.trim() && !attachment) || !activeConv) return;
 
+        setUploading(true);
         try {
-            await chatApi.sendMessage(activeConv.id, { content: newMessage.trim() });
+            let attachmentUrl = null;
+            let msgType = 'text';
+
+            if (attachment) {
+                const uploadRes = await chatApi.uploadAttachment(attachment);
+                attachmentUrl = uploadRes.url;
+                msgType = attachment.type.startsWith('image/') ? 'image' : 'file';
+            }
+
+            await chatApi.sendMessage(activeConv.id, {
+                content: newMessage.trim(),
+                attachment_url: attachmentUrl,
+                message_type: msgType
+            });
+
             setNewMessage('');
+            setAttachment(null);
+            if (fileInputRef.current) fileInputRef.current.value = ''; // Reset input
+
             loadMessages(activeConv.id);
             loadConversations(); // Aggiorna preview
         } catch (error) {
             const msg = error.response?.data?.detail || 'Errore invio messaggio';
             toast.error(msg);
+        } finally {
+            setUploading(false);
         }
     };
 
@@ -739,29 +800,54 @@ export default function ChatPage() {
                             )}
                         </div>
 
+                        {/* Preview Attachment */}
+                        {attachment && (
+                            <div className="px-4 py-2 bg-slate-800 border-t border-white/10 flex items-center justify-between animate-in slide-in-from-bottom-2">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-blue-500/20 rounded flex items-center justify-center text-blue-400">
+                                        📎
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-white font-medium truncate max-w-[200px]">{attachment.name}</p>
+                                        <p className="text-xs text-gray-400">{(attachment.size / 1024).toFixed(1)} KB</p>
+                                    </div>
+                                </div>
+                                <button onClick={() => { setAttachment(null); if (fileInputRef.current) fileInputRef.current.value = ''; }} className="text-gray-400 hover:text-white">&times;</button>
+                            </div>
+                        )}
+
                         {/* Input */}
                         <div className="p-4 border-t border-white/10 bg-slate-800/50">
-                            <div className="flex gap-3">
+                            <div className="flex gap-3 items-end">
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    onChange={handleFileSelect}
+                                    className="hidden"
+                                    accept="image/*,.pdf,.doc,.docx,.txt"
+                                />
+                                <button
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="p-3 bg-slate-700 hover:bg-slate-600 rounded-xl text-gray-300 transition"
+                                    title="Allega file"
+                                >
+                                    📎
+                                </button>
+
                                 <textarea
                                     value={newMessage}
                                     onChange={(e) => setNewMessage(e.target.value)}
-                                    // NO onKeyPress per evitare invio mentre si va a capo, o meglio:
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' && !e.shiftKey) {
-                                            e.preventDefault();
-                                            handleSend();
-                                        }
-                                    }}
+                                    onKeyDown={handleKeyPress}
                                     placeholder="Scrivi un messaggio..."
                                     rows={1}
                                     className="flex-1 bg-slate-700 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-400 resize-none focus:ring-2 focus:ring-blue-500 focus:outline-none"
                                 />
                                 <button
                                     onClick={handleSend}
-                                    disabled={!newMessage.trim()}
-                                    className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white px-6 rounded-xl font-bold transition"
+                                    disabled={(!newMessage.trim() && !attachment) || uploading}
+                                    className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white px-6 py-3 rounded-xl font-bold transition flex items-center gap-2"
                                 >
-                                    ➤
+                                    {uploading ? <span className="animate-spin">⌛</span> : '➤'}
                                 </button>
                             </div>
                         </div>
@@ -771,7 +857,6 @@ export default function ChatPage() {
                         <div className="text-center">
                             <p className="text-6xl mb-4">💬</p>
                             <p className="text-xl">Seleziona una conversazione</p>
-                            <p className="text-sm mt-2">O inizia una nuova chat</p>
                         </div>
                     </div>
                 )}

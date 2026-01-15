@@ -27,11 +27,47 @@ class ConversationCreate(BaseModel):
     member_ids: List[int]  # ID utenti da aggiungere
 
 
+
+from fastapi import File, UploadFile
+import shutil
+import os
+import uuid
+
+UPLOAD_DIR = "uploads/chat"
+
 class MessageCreate(BaseModel):
     """Invia nuovo messaggio."""
-    content: str
-    message_type: str = "text"
+    content: Optional[str] = None # Content is optional if attachment present
+    message_type: str = "text" # 'text', 'image', 'file'
     reply_to_id: Optional[int] = None
+    attachment_url: Optional[str] = None # URL allegato
+
+# ... (Previous code)
+
+@router.post("/upload", summary="Carica Allegato")
+async def upload_attachment(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user)
+):
+    """Carica un file o immagine per la chat."""
+    # Validate Size/Type (Basic)
+    # TODO: Implement stricter checks
+    
+    # Create unique filename
+    ext = os.path.splitext(file.filename)[1]
+    filename = f"{uuid.uuid4()}{ext}"
+    file_path = os.path.join(UPLOAD_DIR, filename)
+    
+    # Ensure dir exists (redundant check but safe)
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+        
+    # Return URL (relative to static mount)
+    # Assumiamo che /static/chat/ o simile sia montato. 
+    # In main.py: app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+    return {"url": f"/uploads/chat/{filename}", "filename": file.filename}
 
 
 class MessageResponse(BaseModel):
