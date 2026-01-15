@@ -31,9 +31,9 @@ export default function TaskFilters({ currentFilter, onFilterChange, quickFilter
                 </div>
             </div>
 
-            {/* Horizontal Scrollable Pills */}
-            <div className="overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
-                <div className="flex gap-2 min-w-max">
+            {/* Horizontal Scrollable Pills (Mobile) / Wrap (Desktop) */}
+            <div className="overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 md:overflow-visible">
+                <div className="flex gap-2 min-w-max md:flex-wrap md:min-w-0">
                     {/* Status Tabs (Segmented Control style) */}
                     <div className="flex bg-slate-900 rounded-lg p-1 border border-white/5 mr-2">
                         {filters.map(f => (
@@ -41,8 +41,8 @@ export default function TaskFilters({ currentFilter, onFilterChange, quickFilter
                                 key={f.id}
                                 onClick={() => onFilterChange(f.id)}
                                 className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${currentFilter === f.id
-                                        ? 'bg-slate-700 text-white shadow'
-                                        : 'text-gray-500 hover:text-gray-300'
+                                    ? 'bg-slate-700 text-white shadow'
+                                    : 'text-gray-500 hover:text-gray-300'
                                     }`}
                             >
                                 {f.label}
@@ -50,7 +50,7 @@ export default function TaskFilters({ currentFilter, onFilterChange, quickFilter
                         ))}
                     </div>
 
-                    <div className="w-px bg-white/10 mx-1"></div>
+                    <div className="hidden md:block w-px bg-white/10 mx-1"></div>
 
                     {/* Quick Toggles */}
                     {quickToggles.map(q => (
@@ -58,8 +58,8 @@ export default function TaskFilters({ currentFilter, onFilterChange, quickFilter
                             key={q.id}
                             onClick={() => onQuickFilterToggle(q.id)}
                             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold transition-all whitespace-nowrap ${quickFilters[q.id]
-                                    ? q.activeColor
-                                    : 'bg-slate-800/50 border-white/5 text-gray-400 hover:bg-slate-800'
+                                ? q.activeColor
+                                : 'bg-slate-800/50 border-white/5 text-gray-400 hover:bg-slate-800'
                                 }`}
                         >
                             <span>{q.icon}</span>
