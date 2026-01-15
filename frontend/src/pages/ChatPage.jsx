@@ -140,10 +140,9 @@ function ConversationList({ conversations, activeId, onSelect, onNewChat, pushSu
         <div className="h-full flex flex-col">
             <div className="p-4 border-b border-white/10 flex gap-2">
                 <button onClick={onNewChat} className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2 px-4 rounded-xl font-medium transition flex items-center justify-center gap-2"><span>+</span> Nuova Chat</button>
-                {/* DISABLED PUSH UI FOR NOW */}
-                {/* {pushSupported && (
+                {pushSupported && (
                     <button onClick={onTogglePush} className={`px-3 rounded-xl border border-white/10 transition ${pushSubscribed ? 'bg-green-500/20 text-green-400' : 'bg-white/5 text-gray-400 hover:text-white'}`} title={pushSubscribed ? "Notifiche attive" : "Attiva notifiche"}>🔔</button>
-                )} */}
+                )}
             </div>
             <div className="flex-1 overflow-y-auto">
                 {(conversations || []).length === 0 ? (
