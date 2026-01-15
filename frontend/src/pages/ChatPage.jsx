@@ -2,13 +2,15 @@
  * SL Enterprise - Chat Page
  * Messaggistica interna tipo WhatsApp
  */
-import { useState, useEffect, useRef, useCallback } from 'react';
-import EmojiPicker from 'emoji-picker-react';
+import React, { useState, useEffect, useRef, useCallback, Suspense } from 'react';
+const EmojiPicker = React.lazy(() => import('emoji-picker-react'));
+
 import { chatApi } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { useUI } from '../components/ui/CustomUI';
 import useChatSocket from '../hooks/useChatSocket';
 import usePushNotifications from '../hooks/usePushNotifications';
+import { formatTime, formatDate } from '../utils/chatUtils';
 
 // Imported Components
 import MessageBubble from '../components/chat/MessageBubble';
@@ -17,22 +19,6 @@ import GroupInfoModal from '../components/chat/GroupInfoModal';
 import NewChatModal from '../components/chat/NewChatModal';
 import ConfirmationModal from '../components/chat/ConfirmationModal';
 
-// Formatta data messaggio (Helpers)
-const formatTime = (dateStr) => {
-    const d = new Date(dateStr);
-    return d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-};
-
-const formatDate = (dateStr) => {
-    const d = new Date(dateStr);
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-
-    if (d.toDateString() === today.toDateString()) return 'Oggi';
-    if (d.toDateString() === yesterday.toDateString()) return 'Ieri';
-    return d.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
-};
 
 // Pagina principale
 export default function ChatPage() {
@@ -486,12 +472,14 @@ export default function ChatPage() {
                                 <div className="absolute bottom-20 left-4 z-50">
                                     <div className="fixed inset-0 z-40" onClick={() => setShowEmojiPicker(false)} /> {/* Backdrop */}
                                     <div className="relative z-50">
-                                        <EmojiPicker
-                                            theme="dark"
-                                            onEmojiClick={(e) => setNewMessage(prev => prev + e.emoji)}
-                                            width={300}
-                                            height={400}
-                                        />
+                                        <Suspense fallback={<div className="p-4 text-center text-white">Caricamento Emoji...</div>}>
+                                            <EmojiPicker
+                                                theme="dark"
+                                                onEmojiClick={(e) => setNewMessage(prev => prev + e.emoji)}
+                                                width={300}
+                                                height={400}
+                                            />
+                                        </Suspense>
                                     </div>
                                 </div>
                             )}

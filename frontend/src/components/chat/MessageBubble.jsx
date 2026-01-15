@@ -1,14 +1,7 @@
 import React, { useState } from 'react';
 
-// Formatta data messaggio (Duplicato qui o passato come prop? Meglio utils, ma per ora copio helper locale se serve o uso import date-fns se disponibile. FormatTime era nel main file. Lo includo qui per semplicità o lo passo. 
-// FormatTime is used inside. Let's include the helper or use props. 
-// The original used a helper function 'formatTime' defined in ChatPage. 
-// Better to simple Include it here for now to avoid breaking.)
+import { formatTime } from '../../utils/chatUtils';
 
-const formatTime = (dateStr) => {
-    const d = new Date(dateStr);
-    return d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-};
 
 export default function MessageBubble({ message, isOwn, isAdmin, onDelete }) {
     const [showActions, setShowActions] = useState(false);
