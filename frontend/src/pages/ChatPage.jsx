@@ -1,28 +1,27 @@
 /**
- * SL Enterprise - Chat Page
- * Messaggistica interna tipo WhatsApp
- * 
- * NOTE: Components are defined in this file to prevent Circular Dependency / ReferenceError issues
- * during the Vite build process.
+ * SL Enterprise - Chat Page (DEBUG VERSION)
+ * Isolating ReferenceError
  */
-import React, { useState, useEffect, useRef, useCallback, Suspense } from 'react';
-const EmojiPicker = React.lazy(() => import('emoji-picker-react'));
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+// import EmojiPicker from 'emoji-picker-react'; // DISABLED
+// const EmojiPicker = React.lazy(() => import('emoji-picker-react')); // DISABLED
 
 import { chatApi } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { useUI } from '../components/ui/CustomUI';
-import useChatSocket from '../hooks/useChatSocket';
-import usePushNotifications from '../hooks/usePushNotifications';
+// import useChatSocket from '../hooks/useChatSocket'; // DISABLED
+// import usePushNotifications from '../hooks/usePushNotifications'; // DISABLED
 import { formatTime, formatDate } from '../utils/chatUtils';
 
 // =========================================================================================
-// 1. CONFIRMATION MODAL
+// COMPONENTS (Consolidated)
 // =========================================================================================
+
 function ConfirmationModal({ isOpen, onClose, onConfirm, title, message, confirmText = "Conferma", isDanger = false }) {
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-            <div className="bg-slate-800 rounded-2xl w-full max-w-sm shadow-2xl border border-white/10 p-6 animate-in fade-in zoom-in duration-200">
+            <div className="bg-slate-800 rounded-2xl w-full max-w-sm shadow-2xl border border-white/10 p-6">
                 <h3 className="text-xl font-bold text-white mb-2">{title}</h3>
                 <p className="text-gray-300 mb-6">{message}</p>
                 <div className="flex justify-end gap-3">
@@ -34,9 +33,6 @@ function ConfirmationModal({ isOpen, onClose, onConfirm, title, message, confirm
     );
 }
 
-// =========================================================================================
-// 2. NEW CHAT MODAL
-// =========================================================================================
 function NewChatModal({ isOpen, onClose, onCreateDirect, onCreateGroup, contacts }) {
     const [mode, setMode] = useState('direct');
     const [selectedUsers, setSelectedUsers] = useState([]);
@@ -44,7 +40,7 @@ function NewChatModal({ isOpen, onClose, onCreateDirect, onCreateGroup, contacts
     const [search, setSearch] = useState('');
 
     if (!isOpen) return null;
-    const filteredContacts = contacts.filter(c => c.full_name?.toLowerCase().includes(search.toLowerCase()) || c.username.toLowerCase().includes(search.toLowerCase()));
+    const filteredContacts = (contacts || []).filter(c => c.full_name?.toLowerCase().includes(search.toLowerCase()) || c.username.toLowerCase().includes(search.toLowerCase()));
 
     const toggleUser = (userId) => {
         if (mode === 'direct') { setSelectedUsers([userId]); }
@@ -88,9 +84,6 @@ function NewChatModal({ isOpen, onClose, onCreateDirect, onCreateGroup, contacts
     );
 }
 
-// =========================================================================================
-// 3. GROUP INFO MODAL
-// =========================================================================================
 function GroupInfoModal({ isOpen, onClose, conv, onBan, onDeleteGroup, isAdmin }) {
     if (!isOpen || !conv) return null;
     return (
@@ -142,20 +135,18 @@ function GroupInfoModal({ isOpen, onClose, conv, onBan, onDeleteGroup, isAdmin }
     );
 }
 
-// =========================================================================================
-// 4. CONVERSATION LIST
-// =========================================================================================
 function ConversationList({ conversations, activeId, onSelect, onNewChat, pushSupported, pushSubscribed, onTogglePush }) {
     return (
         <div className="h-full flex flex-col">
             <div className="p-4 border-b border-white/10 flex gap-2">
                 <button onClick={onNewChat} className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2 px-4 rounded-xl font-medium transition flex items-center justify-center gap-2"><span>+</span> Nuova Chat</button>
-                {pushSupported && (
+                {/* DISABLED PUSH UI FOR NOW */}
+                {/* {pushSupported && (
                     <button onClick={onTogglePush} className={`px-3 rounded-xl border border-white/10 transition ${pushSubscribed ? 'bg-green-500/20 text-green-400' : 'bg-white/5 text-gray-400 hover:text-white'}`} title={pushSubscribed ? "Notifiche attive" : "Attiva notifiche"}>🔔</button>
-                )}
+                )} */}
             </div>
             <div className="flex-1 overflow-y-auto">
-                {conversations.length === 0 ? (
+                {(conversations || []).length === 0 ? (
                     <div className="text-center py-10 text-gray-500"><p className="text-4xl mb-2">💬</p><p>Nessuna conversazione</p></div>
                 ) : (
                     conversations.map(conv => (
@@ -180,18 +171,13 @@ function ConversationList({ conversations, activeId, onSelect, onNewChat, pushSu
     );
 }
 
-// =========================================================================================
-// 5. MESSAGE BUBBLE
-// =========================================================================================
 function MessageBubble({ message, isOwn, isAdmin, onDelete }) {
     const [showActions, setShowActions] = useState(false);
     const canDelete = (isOwn && message.can_delete) || isAdmin;
 
-    // GOD MODE CHECK 👑
     const isGod = message.sender_name === 'sasyevadam01' || message.sender_name === 'Salvatore Laezza';
     const isImage = message.message_type === 'image' || (message.attachment_url && message.attachment_url.match(/\.(jpeg|jpg|gif|png)$/i));
 
-    // Highlight Mentions
     const renderContent = (content) => {
         if (!content) return null;
         const parts = content.split(/(@\w+)/g);
@@ -224,7 +210,6 @@ function MessageBubble({ message, isOwn, isAdmin, onDelete }) {
                         {isGod && <span className="text-yellow-400 text-xs" title="God Mode">👑</span>}
                     </div>
                 )}
-
                 {message.deleted_at ? (
                     <p className="italic text-gray-400">🚫 Messaggio eliminato {isAdmin && '(Admin)'}</p>
                 ) : (
@@ -257,16 +242,12 @@ function MessageBubble({ message, isOwn, isAdmin, onDelete }) {
                         )}
                     </div>
                 )}
-
                 <div className="flex items-center justify-end gap-2 mt-1">
                     <span className={`text-[10px] ${isGod ? 'text-yellow-500/60' : 'opacity-60'}`}>
                         {formatTime(message.created_at)}
                     </span>
                     {isOwn && <span className="text-[10px] opacity-60">✓✓</span>}
                 </div>
-                {canDelete && showActions && (!message.deleted_at || isAdmin) && (
-                    <button onClick={() => onDelete(message.id)} className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white text-xs w-6 h-6 rounded-full shadow-lg flex items-center justify-center transition z-10" title="Elimina messaggio">×</button>
-                )}
             </div>
         </div>
     );
@@ -291,13 +272,13 @@ export default function ChatPage() {
     // EXTRAS STATES
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [mentionQuery, setMentionQuery] = useState(null);
-    const [mentionIndex, setMentionIndex] = useState(-1);
+    // const [mentionIndex, setMentionIndex] = useState(-1);
 
     const [contacts, setContacts] = useState([]);
     const [showNewChat, setShowNewChat] = useState(false);
     const [showGroupInfo, setShowGroupInfo] = useState(false);
     const [loading, setLoading] = useState(true);
-    const [typingUser, setTypingUser] = useState(null);
+    // const [typingUser, setTypingUser] = useState(null);
 
     // Confirmation State
     const [confirmation, setConfirmation] = useState({
@@ -311,57 +292,20 @@ export default function ChatPage() {
 
     const isAdmin = ['super_admin', 'admin'].includes(user?.role);
 
-    // Push Notifications
-    const {
-        isSupported: pushSupported,
-        isSubscribed: pushSubscribed,
-        subscribe: subscribePush,
-        permission: pushPermission
-    } = usePushNotifications();
+    // DISABLED PUSH
+    const pushSupported = false;
+    const pushSubscribed = false;
+    const subscribePush = () => { };
 
-    // WebSocket Handlers
-    const handleSocketMessage = useCallback((msg) => {
-        // Handle Delete via WS
-        if (msg.type === 'message_deleted') {
-            setMessages(prev => prev.map(m =>
-                m.id === msg.message_id ? { ...m, deleted_at: new Date().toISOString() } : m
-            ));
-            return;
-        }
-
-        // Se è per la conversazione corrente
-        if (activeConv && msg.conversation_id === activeConv.id) {
-            setMessages(prev => {
-                if (prev.some(m => m.id === msg.id)) return prev;
-                return [...prev, msg];
-            });
-            setTimeout(() => {
-                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-            }, 100);
-
-            // Marca come letto subito
-            chatApi.markAsRead(activeConv.id);
-        }
-
-        // Ricarica sempre lista per aggiornare snippet
-        loadConversations();
-    }, [activeConv, loadConversations]); // Fixed dep warning might be here, removed loadConversations
-
-    const handleSocketTyping = useCallback((data) => {
-        if (activeConv && data.conversation_id === activeConv.id && data.is_typing) {
-            setTypingUser(data.user_name);
-            setTimeout(() => setTypingUser(null), 3000);
-        }
-    }, [activeConv]);
-
-    // WebSocket Hook
-    const { isConnected, sendTyping } = useChatSocket(user?.id, handleSocketMessage, handleSocketTyping);
+    // DISABLED SOCKET
+    const isConnected = false;
+    const sendTyping = () => { };
 
     // Carica conversazioni
     const loadConversations = useCallback(async () => {
         try {
             const data = await chatApi.getConversations();
-            setConversations(data);
+            setConversations(data || []);
         } catch (error) {
             console.error('Error loading conversations:', error);
         } finally {
@@ -373,7 +317,7 @@ export default function ChatPage() {
     const loadMessages = useCallback(async (convId) => {
         try {
             const data = await chatApi.getMessages(convId, { limit: 50 });
-            setMessages(data);
+            setMessages(data || []);
             setTimeout(() => {
                 messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
             }, 100);
@@ -386,7 +330,7 @@ export default function ChatPage() {
     const loadContacts = useCallback(async () => {
         try {
             const data = await chatApi.getContacts();
-            setContacts(data);
+            setContacts(data || []);
         } catch (error) {
             console.error('Error loading contacts:', error);
         }
@@ -396,9 +340,9 @@ export default function ChatPage() {
     useEffect(() => {
         loadConversations();
         loadContacts();
-    }, [loadConversations, loadContacts]); // Removed deps to avoid loop if loadConversations isn't stable. But it is via useCallback.
+    }, [loadConversations, loadContacts]);
 
-    // Polling messaggi (ogni 3 sec)
+    // Polling messaggi (ogni 3 sec) - SOCKET REPLACEMENT FOR NOW
     useEffect(() => {
         if (!activeConv) return;
         const interval = setInterval(() => {
@@ -411,26 +355,22 @@ export default function ChatPage() {
     useEffect(() => {
         const interval = setInterval(() => {
             loadConversations();
-            // loadContacts(); // Removed to save calls
         }, 5000);
         return () => clearInterval(interval);
     }, [loadConversations]);
 
-    // Seleziona conversazione
     const handleSelectConv = (conv) => {
         setActiveConv(conv);
         loadMessages(conv.id);
         setShowGroupInfo(false);
     };
 
-    // File Selection
     const handleFileSelect = (e) => {
         if (e.target.files && e.target.files[0]) {
             setAttachment(e.target.files[0]);
         }
     };
 
-    // Invia messaggio
     const handleSend = async () => {
         if ((!newMessage.trim() && !attachment) || !activeConv) return;
 
@@ -465,7 +405,6 @@ export default function ChatPage() {
         }
     };
 
-    // Elimina messaggio
     const handleDelete = async (msgId) => {
         try {
             await chatApi.deleteMessage(msgId);
@@ -478,7 +417,6 @@ export default function ChatPage() {
         }
     };
 
-    // Trigger Ban Confirmation
     const confirmBanUser = (userId) => {
         setConfirmation({
             isOpen: true,
@@ -490,20 +428,17 @@ export default function ChatPage() {
         });
     };
 
-    // Execute Ban
     const executeBanUser = async (userId) => {
         try {
             await chatApi.timeoutUser(activeConv.id, userId, 1);
             toast.success("Utente silenziato per 1 minuto");
             setShowGroupInfo(false);
         } catch (error) {
-            console.error("Ban Error:", error);
             const msg = error.response?.data?.detail || error.message || 'Errore ban';
             toast.error(`Errore: ${msg}`);
         }
     };
 
-    // Trigger Delete Group Confirmation
     const confirmDeleteGroup = () => {
         setConfirmation({
             isOpen: true,
@@ -515,7 +450,6 @@ export default function ChatPage() {
         });
     };
 
-    // Execute Delete Group
     const executeDeleteGroup = async () => {
         try {
             await chatApi.deleteConversation(activeConv.id);
@@ -524,7 +458,6 @@ export default function ChatPage() {
             loadConversations();
             setShowGroupInfo(false);
         } catch (error) {
-            console.error("Delete Group Error:", error);
             const msg = error.response?.data?.detail || error.message || 'Errore eliminazione gruppo';
             toast.error(`Errore: ${msg}`);
         }
@@ -537,7 +470,7 @@ export default function ChatPage() {
                 member_ids: [userId]
             });
             await loadConversations();
-            const conv = conversations.find(c => c.id === result.id) ||
+            const conv = (conversations || []).find(c => c.id === result.id) ||
                 (await chatApi.getConversations()).find(c => c.id === result.id);
             if (conv) handleSelectConv(conv);
         } catch (error) {
@@ -553,7 +486,7 @@ export default function ChatPage() {
                 member_ids: memberIds
             });
             await loadConversations();
-            const conv = conversations.find(c => c.id === result.id) ||
+            const conv = (conversations || []).find(c => c.id === result.id) ||
                 (await chatApi.getConversations()).find(c => c.id === result.id);
             if (conv) handleSelectConv(conv);
         } catch (error) {
@@ -568,13 +501,6 @@ export default function ChatPage() {
         }
     };
 
-    // Typing effect
-    useEffect(() => {
-        if (activeConv && isConnected) {
-            sendTyping(activeConv.id, newMessage.length > 0);
-        }
-    }, [newMessage, activeConv, isConnected, sendTyping]);
-
     if (loading) {
         return (
             <div className="flex items-center justify-center h-full">
@@ -585,7 +511,7 @@ export default function ChatPage() {
 
     return (
         <div className="h-[calc(100vh-120px)] flex rounded-2xl overflow-hidden border border-white/10 bg-slate-900/50 backdrop-blur-md">
-            {/* Sidebar Conversazioni */}
+            {/* Sidebar */}
             <div className="w-80 border-r border-white/10 bg-slate-800/50">
                 <ConversationList
                     conversations={conversations}
@@ -609,30 +535,13 @@ export default function ChatPage() {
                                     {activeConv.type === 'group' ? '👥' : activeConv.name?.charAt(0)?.toUpperCase() || '?'}
                                 </div>
                                 <div>
-                                    <h2 className="font-semibold text-lg">
-                                        {activeConv.name}
-                                    </h2>
-                                    {typingUser ? (
-                                        <p className="text-xs text-green-400 font-medium animate-pulse">
-                                            {typingUser} sta scrivendo...
-                                        </p>
-                                    ) : (
-                                        <p className="text-xs text-gray-400">
-                                            {activeConv.type === 'group'
-                                                ? `${activeConv.members.length} membri`
-                                                : isConnected ? 'Online' : 'Offline'}
-                                        </p>
-                                    )}
+                                    <h2 className="font-semibold text-lg">{activeConv.name}</h2>
+                                    <p className="text-xs text-gray-400">
+                                        {activeConv.type === 'group' ? `${activeConv.members.length} membri` : 'Chat'}
+                                    </p>
                                 </div>
                             </div>
-
-                            {/* Info Button */}
-                            <button
-                                onClick={() => setShowGroupInfo(true)}
-                                className="p-2 hover:bg-white/10 rounded-full transition"
-                            >
-                                ℹ️
-                            </button>
+                            <button onClick={() => setShowGroupInfo(true)} className="p-2 hover:bg-white/10 rounded-full transition">ℹ️</button>
                         </div>
 
                         {/* Messaggi */}
@@ -646,10 +555,7 @@ export default function ChatPage() {
                             ) : (
                                 <>
                                     {messages.map((msg, idx) => {
-                                        // Date separator
-                                        const showDate = idx === 0 ||
-                                            formatDate(msg.created_at) !== formatDate(messages[idx - 1].created_at);
-
+                                        const showDate = idx === 0 || formatDate(msg.created_at) !== formatDate(messages[idx - 1].created_at);
                                         return (
                                             <div key={msg.id}>
                                                 {showDate && (
@@ -677,117 +583,35 @@ export default function ChatPage() {
                         {attachment && (
                             <div className="px-4 py-2 bg-slate-800 border-t border-white/10 flex items-center justify-between animate-in slide-in-from-bottom-2">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-blue-500/20 rounded flex items-center justify-center text-blue-400">
-                                        📎
-                                    </div>
-                                    <div>
-                                        <p className="text-sm text-white font-medium truncate max-w-[200px]">{attachment.name}</p>
-                                        <p className="text-xs text-gray-400">{(attachment.size / 1024).toFixed(1)} KB</p>
-                                    </div>
+                                    <div className="w-10 h-10 bg-blue-500/20 rounded flex items-center justify-center text-blue-400">📎</div>
+                                    <div><p className="text-sm text-white font-medium truncate max-w-[200px]">{attachment.name}</p><p className="text-xs text-gray-400">{(attachment.size / 1024).toFixed(1)} KB</p></div>
                                 </div>
                                 <button onClick={() => { setAttachment(null); if (fileInputRef.current) fileInputRef.current.value = ''; }} className="text-gray-400 hover:text-white">&times;</button>
                             </div>
                         )}
 
-                        {/* MENTIONS POPUP */}
-                        {mentionQuery !== null && (
-                            <div className="absolute bottom-24 left-14 bg-slate-800 border border-white/10 rounded-xl shadow-xl w-64 max-h-48 overflow-y-auto z-50 animate-in slide-in-from-bottom-2">
-                                {activeConv?.members
-                                    ?.filter(m => m.username.toLowerCase().includes(mentionQuery.toLowerCase()) || m.full_name?.toLowerCase().includes(mentionQuery.toLowerCase()))
-                                    .map((m, idx) => (
-                                        <button
-                                            key={m.user_id}
-                                            onClick={() => {
-                                                const parts = newMessage.split('@');
-                                                parts.pop(); // Rimuovi parte parziale
-                                                setNewMessage(parts.join('@') + '@' + m.username + ' ');
-                                                setMentionQuery(null);
-                                            }}
-                                            className={`w-full text-left px-4 py-2 flex items-center gap-2 hover:bg-white/10 transition ${idx === mentionIndex ? 'bg-blue-600/20' : ''}`}
-                                        >
-                                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-[10px] font-bold text-white">
-                                                {m.full_name?.charAt(0) || '?'}
-                                            </div>
-                                            <div>
-                                                <p className="text-white text-sm font-medium">{m.username}</p>
-                                                <p className="text-gray-400 text-xs">{m.full_name}</p>
-                                            </div>
-                                        </button>
-                                    ))}
-                                {activeConv?.members?.filter(m => m.username.toLowerCase().includes(mentionQuery.toLowerCase())).length === 0 && (
-                                    <p className="p-3 text-gray-500 text-xs text-center">Nessun utente trovato</p>
-                                )}
-                            </div>
-                        )}
-
                         {/* Area Input */}
                         <div className="p-4 border-t border-white/10 bg-slate-800/50 relative">
-                            {/* Emoji Picker Popup */}
-                            {showEmojiPicker && (
-                                <div className="absolute bottom-20 left-4 z-50">
-                                    <div className="fixed inset-0 z-40" onClick={() => setShowEmojiPicker(false)} /> {/* Backdrop */}
-                                    <div className="relative z-50">
-                                        <Suspense fallback={<div className="p-4 text-center text-white">Caricamento Emoji...</div>}>
-                                            <EmojiPicker
-                                                theme="dark"
-                                                onEmojiClick={(e) => setNewMessage(prev => prev + e.emoji)}
-                                                width={300}
-                                                height={400}
-                                            />
-                                        </Suspense>
-                                    </div>
-                                </div>
-                            )}
-
+                            {/* Emoji Picker DISABLED */}
                             <div className="flex gap-3 items-end">
-                                <input
-                                    type="file"
-                                    ref={fileInputRef}
-                                    onChange={handleFileSelect}
-                                    className="hidden"
-                                    accept="image/*,.pdf,.doc,.docx,.txt"
-                                />
-
-                                {/* Bottone Emoji */}
-                                <button
-                                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                                    className={`p-3 rounded-xl transition ${showEmojiPicker ? 'bg-blue-600 text-white' : 'bg-slate-700 text-gray-300 hover:bg-slate-600'}`}
-                                >
-                                    😊
-                                </button>
-
-                                <button
-                                    onClick={() => fileInputRef.current?.click()}
-                                    className="p-3 bg-slate-700 hover:bg-slate-600 rounded-xl text-gray-300 transition"
-                                    title="Allega file"
-                                >
-                                    📎
-                                </button>
-
+                                <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" accept="image/*,.pdf,.doc,.docx,.txt" />
+                                <button onClick={() => toast.info("Emoji momentaneamente disabilitate per manutenzione.")} className="p-3 rounded-xl bg-slate-700 text-gray-300 hover:bg-slate-600 transition">😊</button>
+                                <button onClick={() => fileInputRef.current?.click()} className="p-3 bg-slate-700 hover:bg-slate-600 rounded-xl text-gray-300 transition" title="Allega file">📎</button>
                                 <textarea
                                     value={newMessage}
                                     onChange={(e) => {
                                         const val = e.target.value;
                                         setNewMessage(val);
-
-                                        // Detect Mention
+                                        // Mentions logic stripped for now
                                         const lastWord = val.split(' ').pop();
-                                        if (lastWord.startsWith('@') && lastWord.length > 1) {
-                                            setMentionQuery(lastWord.slice(1));
-                                        } else {
-                                            setMentionQuery(null);
-                                        }
+                                        if (lastWord.startsWith('@') && lastWord.length > 1) { setMentionQuery(lastWord.slice(1)); } else { setMentionQuery(null); }
                                     }}
                                     onKeyDown={handleKeyPress}
-                                    placeholder="Scrivi un messaggio... (@ per menzionare)"
+                                    placeholder="Scrivi un messaggio..."
                                     rows={1}
                                     className="flex-1 bg-slate-700 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-400 resize-none focus:ring-2 focus:ring-blue-500 focus:outline-none"
                                 />
-                                <button
-                                    onClick={handleSend}
-                                    disabled={(!newMessage.trim() && !attachment) || uploading}
-                                    className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white px-6 py-3 rounded-xl font-bold transition flex items-center gap-2"
-                                >
+                                <button onClick={handleSend} disabled={(!newMessage.trim() && !attachment) || uploading} className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white px-6 py-3 rounded-xl font-bold transition flex items-center gap-2">
                                     {uploading ? <span className="animate-spin">⌛</span> : '➤'}
                                 </button>
                             </div>
@@ -803,35 +627,9 @@ export default function ChatPage() {
                 )}
             </div>
 
-            {/* Modal Nuova Chat */}
-            <NewChatModal
-                isOpen={showNewChat}
-                onClose={() => setShowNewChat(false)}
-                onCreateDirect={handleCreateDirect}
-                onCreateGroup={handleCreateGroup}
-                contacts={contacts}
-            />
-
-            {/* Modal Info */}
-            <GroupInfoModal
-                isOpen={showGroupInfo}
-                onClose={() => setShowGroupInfo(false)}
-                conv={activeConv}
-                onBan={confirmBanUser}
-                onDeleteGroup={confirmDeleteGroup}
-                isAdmin={isAdmin}
-            />
-
-            {/* Modal Conferma */}
-            <ConfirmationModal
-                isOpen={confirmation.isOpen}
-                onClose={() => setConfirmation(prev => ({ ...prev, isOpen: false }))}
-                onConfirm={confirmation.onConfirm}
-                title={confirmation.title}
-                message={confirmation.message}
-                isDanger={confirmation.isDanger}
-                confirmText={confirmation.confirmText}
-            />
+            <NewChatModal isOpen={showNewChat} onClose={() => setShowNewChat(false)} onCreateDirect={handleCreateDirect} onCreateGroup={handleCreateGroup} contacts={contacts} />
+            <GroupInfoModal isOpen={showGroupInfo} onClose={() => setShowGroupInfo(false)} conv={activeConv} onBan={confirmBanUser} onDeleteGroup={confirmDeleteGroup} isAdmin={isAdmin} />
+            <ConfirmationModal isOpen={confirmation.isOpen} onClose={() => setConfirmation(prev => ({ ...prev, isOpen: false }))} onConfirm={confirmation.onConfirm} title={confirmation.title} message={confirmation.message} isDanger={confirmation.isDanger} confirmText={confirmation.confirmText} />
         </div>
     );
 }
