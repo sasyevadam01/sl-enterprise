@@ -170,6 +170,19 @@ function SidebarItem({ item, isOpen, pendingCounts, onItemClick }) {
     );
 }
 
+function RealTimeClock() {
+    const [time, setTime] = useState(new Date());
+    useEffect(() => {
+        const timer = setInterval(() => setTime(new Date()), 1000);
+        return () => clearInterval(timer);
+    }, []);
+    return (
+        <span className="text-xs text-blue-400 font-mono">
+            {time.toLocaleTimeString('it-IT')}
+        </span>
+    );
+}
+
 export default function Sidebar({ isOpen, onToggle, mobileOpen, setMobileOpen }) {
     const { user, logout, hasPermission } = useAuth();
     const navigate = useNavigate();
@@ -229,7 +242,12 @@ export default function Sidebar({ isOpen, onToggle, mobileOpen, setMobileOpen })
             w-64`}>
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-white/10">
-                {isOpen && <h1 className="text-xl font-bold text-white">SL Enterprise</h1>}
+                {isOpen && (
+                    <div className="flex flex-col">
+                        <h1 className="text-xl font-bold text-white">SL Enterprise</h1>
+                        <RealTimeClock />
+                    </div>
+                )}
 
                 {/* Desktop Toggle */}
                 <button onClick={onToggle} className="hidden md:block p-2 text-gray-400 hover:text-white transition">

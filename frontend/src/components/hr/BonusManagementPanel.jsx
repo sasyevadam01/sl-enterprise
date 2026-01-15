@@ -57,6 +57,7 @@ export default function BonusManagementPanel() {
 
     // Delete Modal State
     const [deleteModal, setDeleteModal] = useState({ isOpen: false, bonus: null });
+    const [deleteEventModal, setDeleteEventModal] = useState({ isOpen: false, event: null });
 
     // Edit Modal State
     const [editModal, setEditModal] = useState({
@@ -227,6 +228,18 @@ export default function BonusManagementPanel() {
             loadData();
         } catch (e) {
             alert('Errore eliminazione');
+        }
+    };
+
+    // Confirm DELETE EVENT
+    const handleConfirmDeleteEvent = async () => {
+        if (!deleteEventModal.event) return;
+        try {
+            await api.delete(`/events/${deleteEventModal.event.id}`);
+            setDeleteEventModal({ isOpen: false, event: null });
+            loadData();
+        } catch (e) {
+            alert('Errore eliminazione evento: ' + (e.response?.data?.detail || e.message));
         }
     };
 
@@ -465,14 +478,28 @@ export default function BonusManagementPanel() {
                                 <div>
                                     <div className="font-medium text-white">{ev.employee_name}</div>
                                     <div className="text-sm text-emerald-400">{ev.event_type} • +{ev.points} punti</div>
-                                    <div className="text-xs text-gray-500">Richiesto da: {ev.created_by_name} • {ev.event_date}</div>
+                                    {(ev.notes || ev.description) && (
+                                        <div className="text-xs text-gray-300 mt-1 italic border-l-2 border-emerald-500/30 pl-2">
+                                            "{ev.notes || ev.description}"
+                                        </div>
+                                    )}
+                                    <div className="text-xs text-gray-500 mt-1">Richiesto da: {ev.created_by_name} • {ev.event_date}</div>
                                 </div>
-                                <button
-                                    onClick={() => handleAssignFromEvent(ev)}
-                                    className="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-black font-bold rounded-lg"
-                                >
-                                    💰 Assegna Bonus
-                                </button>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => setDeleteEventModal({ isOpen: true, event: ev })}
+                                        className="px-3 py-2 bg-red-900/40 hover:bg-red-900/60 border border-red-500/30 text-red-500 hover:text-red-400 font-bold rounded-lg transition"
+                                        title="Elimina Evento"
+                                    >
+                                        🗑️
+                                    </button>
+                                    <button
+                                        onClick={() => handleAssignFromEvent(ev)}
+                                        className="px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-black font-bold rounded-lg"
+                                    >
+                                        💰 Assegna Bonus
+                                    </button>
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -739,6 +766,53 @@ export default function BonusManagementPanel() {
                                     className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-black uppercase rounded-xl transition shadow-lg"
                                 >
                                     ✓ Salva
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* DELETE EVENT CONFIRMATION MODAL */}
+            <AnimatePresence>
+                {deleteEventModal.isOpen && deleteEventModal.event && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+                        onClick={() => setDeleteEventModal({ isOpen: false, event: null })}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            onClick={e => e.stopPropagation()}
+                            className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-red-500/50 rounded-2xl p-6 w-full max-w-sm shadow-[0_0_60px_rgba(239,68,68,0.2)]"
+                        >
+                            <div className="text-center mb-6">
+                                <div className="text-5xl mb-3">⚠️</div>
+                                <h3 className="text-xl font-black text-red-400 uppercase tracking-wider">
+                                    Elimina Evento
+                                </h3>
+                                <p className="text-gray-400 mt-2">
+                                    Stai per eliminare l'evento <span className="text-white font-bold">{deleteEventModal.event.event_type}</span> di <span className="text-white">{deleteEventModal.event.employee_name}</span>.
+                                    <br /><span className="text-xs text-red-500/80">Questa azione rimuoverà anche i punti associati.</span>
+                                </p>
+                            </div>
+
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setDeleteEventModal({ isOpen: false, event: null })}
+                                    className="flex-1 px-6 py-3 bg-slate-700 hover:bg-slate-600 text-gray-300 font-bold uppercase rounded-xl transition"
+                                >
+                                    Annulla
+                                </button>
+                                <button
+                                    onClick={handleConfirmDeleteEvent}
+                                    className="flex-1 px-6 py-3 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white font-black uppercase rounded-xl transition shadow-lg"
+                                >
+                                    🗑️ Elimina
                                 </button>
                             </div>
                         </motion.div>
