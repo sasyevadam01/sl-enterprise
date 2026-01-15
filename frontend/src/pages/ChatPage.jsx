@@ -3,6 +3,7 @@
  * Messaggistica interna tipo WhatsApp
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
+import EmojiPicker from 'emoji-picker-react'; // Import EmojiPicker
 import { chatApi } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { useUI } from '../components/ui/CustomUI';
@@ -95,6 +96,19 @@ const MessageBubble = ({ message, isOwn, isAdmin, onDelete }) => {
 
     const isImage = message.message_type === 'image' || (message.attachment_url && message.attachment_url.match(/\.(jpeg|jpg|gif|png)$/i));
 
+    // Highlight Mentions
+    const renderContent = (content) => {
+        if (!content) return null;
+        // Regex per trovare @username
+        const parts = content.split(/(@\w+)/g);
+        return parts.map((part, i) => {
+            if (part.match(/^@\w+$/)) {
+                return <span key={i} className="text-blue-300 font-bold bg-blue-500/20 px-1 rounded mx-0.5">{part}</span>;
+            }
+            return part;
+        });
+    };
+
     return (
         <div
             className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-2`}
@@ -144,7 +158,7 @@ const MessageBubble = ({ message, isOwn, isAdmin, onDelete }) => {
                         )}
                         {message.content && (
                             <p className={`whitespace-pre-wrap break-words ${isGod ? 'text-yellow-50 font-medium' : ''}`}>
-                                {message.content}
+                                {renderContent(message.content)}
                             </p>
                         )}
                     </div>
@@ -410,6 +424,11 @@ export default function ChatPage() {
     const [newMessage, setNewMessage] = useState('');
     const [attachment, setAttachment] = useState(null); // New state for file
     const [uploading, setUploading] = useState(false); // Helper for spinner
+
+    // EXTRAS STATES
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const [mentionQuery, setMentionQuery] = useState(null); // Stringa dopo @
+    const [mentionIndex, setMentionIndex] = useState(-1);   // Keyboard nav
 
     const [contacts, setContacts] = useState([]);
     const [showNewChat, setShowNewChat] = useState(false);
@@ -816,8 +835,56 @@ export default function ChatPage() {
                             </div>
                         )}
 
-                        {/* Input */}
-                        <div className="p-4 border-t border-white/10 bg-slate-800/50">
+                        {/* MENTIONS POPUP */}
+                        {mentionQuery !== null && (
+                            <div className="absolute bottom-24 left-14 bg-slate-800 border border-white/10 rounded-xl shadow-xl w-64 max-h-48 overflow-y-auto z-50 animate-in slide-in-from-bottom-2">
+                                {activeConv?.members
+                                    ?.filter(m => m.username.toLowerCase().includes(mentionQuery.toLowerCase()) || m.full_name?.toLowerCase().includes(mentionQuery.toLowerCase()))
+                                    .map((m, idx) => (
+                                        <button
+                                            key={m.user_id}
+                                            onClick={() => {
+                                                const parts = newMessage.split('@');
+                                                parts.pop(); // Rimuovi parte parziale
+                                                setNewMessage(parts.join('@') + '@' + m.username + ' ');
+                                                setMentionQuery(null);
+                                                // Focus back
+                                                // fileInputRef.current?.focus(); // Idealmente focus textarea
+                                            }}
+                                            className={`w-full text-left px-4 py-2 flex items-center gap-2 hover:bg-white/10 transition ${idx === mentionIndex ? 'bg-blue-600/20' : ''}`}
+                                        >
+                                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-[10px] font-bold text-white">
+                                                {m.full_name?.charAt(0) || '?'}
+                                            </div>
+                                            <div>
+                                                <p className="text-white text-sm font-medium">{m.username}</p>
+                                                <p className="text-gray-400 text-xs">{m.full_name}</p>
+                                            </div>
+                                        </button>
+                                    ))}
+                                {activeConv?.members?.filter(m => m.username.toLowerCase().includes(mentionQuery.toLowerCase())).length === 0 && (
+                                    <p className="p-3 text-gray-500 text-xs text-center">Nessun utente trovato</p>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Area Input */}
+                        <div className="p-4 border-t border-white/10 bg-slate-800/50 relative">
+                            {/* Emoji Picker Popup */}
+                            {showEmojiPicker && (
+                                <div className="absolute bottom-20 left-4 z-50">
+                                    <div className="fixed inset-0 z-40" onClick={() => setShowEmojiPicker(false)} /> {/* Backdrop */}
+                                    <div className="relative z-50">
+                                        <EmojiPicker
+                                            theme="dark"
+                                            onEmojiClick={(e) => setNewMessage(prev => prev + e.emoji)}
+                                            width={300}
+                                            height={400}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="flex gap-3 items-end">
                                 <input
                                     type="file"
@@ -826,6 +893,15 @@ export default function ChatPage() {
                                     className="hidden"
                                     accept="image/*,.pdf,.doc,.docx,.txt"
                                 />
+
+                                {/* Bottone Emoji */}
+                                <button
+                                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                                    className={`p-3 rounded-xl transition ${showEmojiPicker ? 'bg-blue-600 text-white' : 'bg-slate-700 text-gray-300 hover:bg-slate-600'}`}
+                                >
+                                    😊
+                                </button>
+
                                 <button
                                     onClick={() => fileInputRef.current?.click()}
                                     className="p-3 bg-slate-700 hover:bg-slate-600 rounded-xl text-gray-300 transition"
@@ -836,9 +912,20 @@ export default function ChatPage() {
 
                                 <textarea
                                     value={newMessage}
-                                    onChange={(e) => setNewMessage(e.target.value)}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setNewMessage(val);
+
+                                        // Detect Mention
+                                        const lastWord = val.split(' ').pop();
+                                        if (lastWord.startsWith('@') && lastWord.length > 1) {
+                                            setMentionQuery(lastWord.slice(1));
+                                        } else {
+                                            setMentionQuery(null);
+                                        }
+                                    }}
                                     onKeyDown={handleKeyPress}
-                                    placeholder="Scrivi un messaggio..."
+                                    placeholder="Scrivi un messaggio... (@ per menzionare)"
                                     rows={1}
                                     className="flex-1 bg-slate-700 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-400 resize-none focus:ring-2 focus:ring-blue-500 focus:outline-none"
                                 />
@@ -861,6 +948,8 @@ export default function ChatPage() {
                     </div>
                 )}
             </div>
+
+            {/* Click outside to close emoji picker not implemented for brevity but recommended */}
 
             {/* Modal Nuova Chat */}
             <NewChatModal
