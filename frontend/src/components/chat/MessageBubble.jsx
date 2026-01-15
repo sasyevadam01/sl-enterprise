@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-
 import { formatTime } from '../../utils/chatUtils';
-
 
 export default function MessageBubble({ message, isOwn, isAdmin, onDelete }) {
     const [showActions, setShowActions] = useState(false);
