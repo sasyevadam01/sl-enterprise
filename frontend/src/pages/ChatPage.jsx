@@ -1,6 +1,9 @@
 /**
  * SL Enterprise - Chat Page
  * Messaggistica interna tipo WhatsApp
+ * 
+ * NOTE: Components are defined in this file to prevent Circular Dependency / ReferenceError issues
+ * during the Vite build process.
  */
 import React, { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 const EmojiPicker = React.lazy(() => import('emoji-picker-react'));
@@ -12,15 +15,266 @@ import useChatSocket from '../hooks/useChatSocket';
 import usePushNotifications from '../hooks/usePushNotifications';
 import { formatTime, formatDate } from '../utils/chatUtils';
 
-// Imported Components
-import MessageBubble from '../components/chat/MessageBubble';
-import ConversationList from '../components/chat/ConversationList';
-import GroupInfoModal from '../components/chat/GroupInfoModal';
-import NewChatModal from '../components/chat/NewChatModal';
-import ConfirmationModal from '../components/chat/ConfirmationModal';
+// =========================================================================================
+// 1. CONFIRMATION MODAL
+// =========================================================================================
+function ConfirmationModal({ isOpen, onClose, onConfirm, title, message, confirmText = "Conferma", isDanger = false }) {
+    if (!isOpen) return null;
+    return (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+            <div className="bg-slate-800 rounded-2xl w-full max-w-sm shadow-2xl border border-white/10 p-6 animate-in fade-in zoom-in duration-200">
+                <h3 className="text-xl font-bold text-white mb-2">{title}</h3>
+                <p className="text-gray-300 mb-6">{message}</p>
+                <div className="flex justify-end gap-3">
+                    <button onClick={onClose} className="px-4 py-2 rounded-lg text-gray-300 hover:bg-white/5 transition">Annulla</button>
+                    <button onClick={() => { onConfirm(); onClose(); }} className={`px-4 py-2 rounded-lg font-bold text-white transition ${isDanger ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}>{confirmText}</button>
+                </div>
+            </div>
+        </div>
+    );
+}
 
+// =========================================================================================
+// 2. NEW CHAT MODAL
+// =========================================================================================
+function NewChatModal({ isOpen, onClose, onCreateDirect, onCreateGroup, contacts }) {
+    const [mode, setMode] = useState('direct');
+    const [selectedUsers, setSelectedUsers] = useState([]);
+    const [groupName, setGroupName] = useState('');
+    const [search, setSearch] = useState('');
 
-// Pagina principale
+    if (!isOpen) return null;
+    const filteredContacts = contacts.filter(c => c.full_name?.toLowerCase().includes(search.toLowerCase()) || c.username.toLowerCase().includes(search.toLowerCase()));
+
+    const toggleUser = (userId) => {
+        if (mode === 'direct') { setSelectedUsers([userId]); }
+        else { setSelectedUsers(prev => prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]); }
+    };
+    const handleCreate = () => {
+        if (mode === 'direct' && selectedUsers.length === 1) { onCreateDirect(selectedUsers[0]); }
+        else if (mode === 'group' && selectedUsers.length > 0 && groupName.trim()) { onCreateGroup(groupName, selectedUsers); }
+        onClose();
+    };
+
+    return (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-slate-800 rounded-2xl w-full max-w-md shadow-2xl border border-white/10">
+                <div className="p-4 border-b border-white/10 flex items-center justify-between">
+                    <h2 className="text-xl font-bold text-white">Nuova Conversazione</h2>
+                    <button onClick={onClose} className="text-gray-400 hover:text-white text-2xl">&times;</button>
+                </div>
+                <div className="p-4 flex gap-2">
+                    <button onClick={() => { setMode('direct'); setSelectedUsers([]); }} className={`flex-1 py-2 rounded-lg font-medium transition ${mode === 'direct' ? 'bg-blue-600 text-white' : 'bg-slate-700 text-gray-400'}`}>👤 Chat Diretta</button>
+                    <button onClick={() => { setMode('group'); setSelectedUsers([]); }} className={`flex-1 py-2 rounded-lg font-medium transition ${mode === 'group' ? 'bg-blue-600 text-white' : 'bg-slate-700 text-gray-400'}`}>👥 Gruppo</button>
+                </div>
+                {mode === 'group' && (
+                    <div className="px-4 pb-2"><input type="text" placeholder="Nome del gruppo..." value={groupName} onChange={(e) => setGroupName(e.target.value)} className="w-full bg-slate-700 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-gray-400" /></div>
+                )}
+                <div className="px-4 pb-2"><input type="text" placeholder="Cerca contatto..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full bg-slate-900 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-gray-400" /></div>
+                <div className="max-h-60 overflow-y-auto">
+                    {filteredContacts.map(contact => (
+                        <div key={contact.id} onClick={() => toggleUser(contact.id)} className={`px-4 py-3 flex items-center gap-3 cursor-pointer transition ${selectedUsers.includes(contact.id) ? 'bg-blue-600/20' : 'hover:bg-white/5'}`}>
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${selectedUsers.includes(contact.id) ? 'border-blue-500 bg-blue-500' : 'border-gray-500'}`}>{selectedUsers.includes(contact.id) && <span className="text-white text-xs">✓</span>}</div>
+                            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold">{contact.full_name?.charAt(0) || contact.username.charAt(0).toUpperCase()}</div>
+                            <div><p className="text-white font-medium">{contact.full_name || contact.username}</p><p className="text-gray-400 text-xs">@{contact.username}</p></div>
+                        </div>
+                    ))}
+                </div>
+                <div className="p-4 border-t border-white/10">
+                    <button onClick={handleCreate} disabled={(mode === 'direct' && selectedUsers.length !== 1) || (mode === 'group' && (selectedUsers.length === 0 || !groupName.trim()))} className="w-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 rounded-xl font-bold transition">{mode === 'direct' ? 'Inizia Chat' : 'Crea Gruppo'}</button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// =========================================================================================
+// 3. GROUP INFO MODAL
+// =========================================================================================
+function GroupInfoModal({ isOpen, onClose, conv, onBan, onDeleteGroup, isAdmin }) {
+    if (!isOpen || !conv) return null;
+    return (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-slate-800 rounded-2xl w-full max-w-md shadow-2xl border border-white/10">
+                <div className="p-4 border-b border-white/10 flex items-center justify-between">
+                    <h2 className="text-xl font-bold text-white">Info {conv.type === 'group' ? 'Gruppo' : 'Chat'}</h2>
+                    <button onClick={onClose} className="text-gray-400 hover:text-white text-2xl">&times;</button>
+                </div>
+                <div className="p-4">
+                    <h3 className="text-sm font-semibold text-gray-400 mb-2 uppercase">Membri ({conv.members?.length})</h3>
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {conv.members?.map(m => (
+                            <div key={m.user_id} className="flex items-center justify-between bg-white/5 p-2 rounded-lg">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-xs font-bold text-white">
+                                        {m.full_name?.charAt(0) || '?'}
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-white font-medium">{m.full_name || m.username}</p>
+                                        <p className="text-[10px] text-gray-400">{m.role}</p>
+                                    </div>
+                                </div>
+                                {isAdmin && m.role !== 'admin' && (
+                                    <button
+                                        onClick={() => onBan(m.user_id)}
+                                        className="text-xs bg-orange-500/20 text-orange-400 hover:bg-orange-500/40 px-2 py-1 rounded"
+                                        title="Banna per 1 minuto"
+                                    >
+                                        🔇 1m
+                                    </button>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                {isAdmin && (
+                    <div className="p-4 border-t border-white/10">
+                        <button
+                            onClick={onDeleteGroup}
+                            className="w-full bg-red-600/20 hover:bg-red-600/40 text-red-500 py-3 rounded-xl font-bold transition flex items-center justify-center gap-2"
+                        >
+                            🗑️ Elimina Completamente {conv.type === 'group' ? 'Gruppo' : 'Chat'}
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// =========================================================================================
+// 4. CONVERSATION LIST
+// =========================================================================================
+function ConversationList({ conversations, activeId, onSelect, onNewChat, pushSupported, pushSubscribed, onTogglePush }) {
+    return (
+        <div className="h-full flex flex-col">
+            <div className="p-4 border-b border-white/10 flex gap-2">
+                <button onClick={onNewChat} className="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2 px-4 rounded-xl font-medium transition flex items-center justify-center gap-2"><span>+</span> Nuova Chat</button>
+                {pushSupported && (
+                    <button onClick={onTogglePush} className={`px-3 rounded-xl border border-white/10 transition ${pushSubscribed ? 'bg-green-500/20 text-green-400' : 'bg-white/5 text-gray-400 hover:text-white'}`} title={pushSubscribed ? "Notifiche attive" : "Attiva notifiche"}>🔔</button>
+                )}
+            </div>
+            <div className="flex-1 overflow-y-auto">
+                {conversations.length === 0 ? (
+                    <div className="text-center py-10 text-gray-500"><p className="text-4xl mb-2">💬</p><p>Nessuna conversazione</p></div>
+                ) : (
+                    conversations.map(conv => (
+                        <div key={conv.id} onClick={() => onSelect(conv)} className={`p-4 border-b border-white/5 cursor-pointer transition ${activeId === conv.id ? 'bg-blue-600/20 border-l-4 border-l-blue-500' : 'hover:bg-white/5'}`}>
+                            <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-lg font-bold text-white shrink-0">
+                                    {conv.type === 'group' ? '👥' : conv.name?.charAt(0)?.toUpperCase() || '?'}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="font-semibold text-white truncate">{conv.name || 'Chat'}</h3>
+                                        {conv.unread_count > 0 && <span className="bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{conv.unread_count}</span>}
+                                    </div>
+                                    <p className="text-sm text-gray-400 truncate">{conv.last_message || 'Nessun messaggio'}</p>
+                                </div>
+                            </div>
+                        </div>
+                    ))
+                )}
+            </div>
+        </div>
+    );
+}
+
+// =========================================================================================
+// 5. MESSAGE BUBBLE
+// =========================================================================================
+function MessageBubble({ message, isOwn, isAdmin, onDelete }) {
+    const [showActions, setShowActions] = useState(false);
+    const canDelete = (isOwn && message.can_delete) || isAdmin;
+
+    // GOD MODE CHECK 👑
+    const isGod = message.sender_name === 'sasyevadam01' || message.sender_name === 'Salvatore Laezza';
+    const isImage = message.message_type === 'image' || (message.attachment_url && message.attachment_url.match(/\.(jpeg|jpg|gif|png)$/i));
+
+    // Highlight Mentions
+    const renderContent = (content) => {
+        if (!content) return null;
+        const parts = content.split(/(@\w+)/g);
+        return parts.map((part, i) => {
+            if (part.match(/^@\w+$/)) {
+                return <span key={i} className="text-blue-300 font-bold bg-blue-500/20 px-1 rounded mx-0.5">{part}</span>;
+            }
+            return part;
+        });
+    };
+
+    return (
+        <div
+            className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-2`}
+            onMouseEnter={() => setShowActions(true)}
+            onMouseLeave={() => setShowActions(false)}
+        >
+            <div className={`max-w-[70%] relative group px-4 py-2 shadow-lg transition-all duration-300
+                ${isGod ? 'bg-gradient-to-r from-slate-900 to-slate-800 border-2 border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.3)]' : ''}
+                ${isOwn
+                    ? (isGod ? 'rounded-2xl rounded-br-sm' : 'bg-blue-600 text-white rounded-2xl rounded-br-sm')
+                    : (isGod ? 'rounded-2xl rounded-bl-sm' : 'bg-slate-700 text-white rounded-2xl rounded-bl-sm')
+                }
+            `}>
+                {!isOwn && (
+                    <div className="flex items-center gap-1 mb-1">
+                        <p className={`text-xs font-semibold ${isGod ? 'text-yellow-400' : 'text-blue-300'}`}>
+                            {message.sender_name}
+                        </p>
+                        {isGod && <span className="text-yellow-400 text-xs" title="God Mode">👑</span>}
+                    </div>
+                )}
+
+                {message.deleted_at ? (
+                    <p className="italic text-gray-400">🚫 Messaggio eliminato {isAdmin && '(Admin)'}</p>
+                ) : (
+                    <div className="flex flex-col gap-2">
+                        {message.attachment_url && (
+                            <div className="rounded-lg overflow-hidden my-1">
+                                {isImage ? (
+                                    <img
+                                        src={`${import.meta.env.VITE_API_URL || ''}${message.attachment_url}`}
+                                        alt="Allegato"
+                                        className="max-h-60 w-auto object-cover cursor-pointer hover:scale-105 transition"
+                                        onClick={() => window.open(`${import.meta.env.VITE_API_URL || ''}${message.attachment_url}`, '_blank')}
+                                    />
+                                ) : (
+                                    <a
+                                        href={`${import.meta.env.VITE_API_URL || ''}${message.attachment_url}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-2 bg-black/20 p-2 rounded hover:bg-black/30 transition text-sm"
+                                    >
+                                        📎 Scarica Allegato
+                                    </a>
+                                )}
+                            </div>
+                        )}
+                        {message.content && (
+                            <p className={`whitespace-pre-wrap break-words ${isGod ? 'text-yellow-50 font-medium' : ''}`}>
+                                {renderContent(message.content)}
+                            </p>
+                        )}
+                    </div>
+                )}
+
+                <div className="flex items-center justify-end gap-2 mt-1">
+                    <span className={`text-[10px] ${isGod ? 'text-yellow-500/60' : 'opacity-60'}`}>
+                        {formatTime(message.created_at)}
+                    </span>
+                    {isOwn && <span className="text-[10px] opacity-60">✓✓</span>}
+                </div>
+                {canDelete && showActions && (!message.deleted_at || isAdmin) && (
+                    <button onClick={() => onDelete(message.id)} className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white text-xs w-6 h-6 rounded-full shadow-lg flex items-center justify-center transition z-10" title="Elimina messaggio">×</button>
+                )}
+            </div>
+        </div>
+    );
+}
+
+// =========================================================================================
+// MAIN PAGE COMPONENT
+// =========================================================================================
 export default function ChatPage() {
     const { user } = useAuth();
     const { toast } = useUI();
@@ -91,7 +345,7 @@ export default function ChatPage() {
 
         // Ricarica sempre lista per aggiornare snippet
         loadConversations();
-    }, [activeConv, loadConversations]);
+    }, [activeConv, loadConversations]); // Fixed dep warning might be here, removed loadConversations
 
     const handleSocketTyping = useCallback((data) => {
         if (activeConv && data.conversation_id === activeConv.id && data.is_typing) {
@@ -142,7 +396,7 @@ export default function ChatPage() {
     useEffect(() => {
         loadConversations();
         loadContacts();
-    }, [loadConversations, loadContacts]);
+    }, [loadConversations, loadContacts]); // Removed deps to avoid loop if loadConversations isn't stable. But it is via useCallback.
 
     // Polling messaggi (ogni 3 sec)
     useEffect(() => {
@@ -157,6 +411,7 @@ export default function ChatPage() {
     useEffect(() => {
         const interval = setInterval(() => {
             loadConversations();
+            // loadContacts(); // Removed to save calls
         }, 5000);
         return () => clearInterval(interval);
     }, [loadConversations]);
