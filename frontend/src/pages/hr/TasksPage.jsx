@@ -15,6 +15,7 @@ export default function TasksPage() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [usersList, setUsersList] = useState([]);
+  const [onlineUsers, setOnlineUsers] = useState([]); // FOR SIDEBAR
 
   // UI State
   const [selectedTaskId, setSelectedTaskId] = useState(null);
@@ -45,17 +46,23 @@ export default function TasksPage() {
   const canManageAll = ["super_admin", "admin", "factory_controller", "hr_manager"].includes(user?.role);
   const isManager = canManageAll;
 
-  // --- INITIAL LOAD ---
+  // --- INITIAL LOAD & POLLING ---
   useEffect(() => {
     const init = async () => {
       try {
         const tData = await tasksApi.getTasks({});
         setTasks(Array.isArray(tData) ? tData : []);
 
-        // Try load users for assignment
         try {
           const uData = await usersApi.getUsers();
           setUsersList(Array.isArray(uData) ? uData : uData?.data || []);
+
+          // Initial Online Users Fetch
+          try {
+            const online = await usersApi.getOnlineUsers();
+            setOnlineUsers(Array.isArray(online) ? online : []);
+          } catch (e) { }
+
         } catch (e) {
           console.warn("Could not load users list");
         }
@@ -66,18 +73,20 @@ export default function TasksPage() {
       }
     };
     init();
-  }, []);
 
-  // Polling
-  useEffect(() => {
+    // Polling for Tasks & Online Users
     const interval = setInterval(async () => {
       try {
         const data = await tasksApi.getTasks({});
-        // Simple update strategy: replace list but try to maintain order if possible
-        // Ideally here we would merge data to avoid jitter, but full replace is safer for sync
         setTasks(current => Array.isArray(data) ? data : current);
+
+        // Refresh online users
+        if (window.innerWidth >= 1024) { // Only needed for sidebar on desktop
+          const online = await usersApi.getOnlineUsers();
+          setOnlineUsers(Array.isArray(online) ? online : []);
+        }
       } catch (e) { }
-    }, 5000); // 5s polling
+    }, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -92,21 +101,12 @@ export default function TasksPage() {
     try {
       let payload = updates;
       if (typeof updates === 'string') {
-        // Handle string status updates
         payload = { status: updates };
       }
-
       await tasksApi.updateTask(taskId, payload);
-
-      // Optimistic Update
       setTasks(prev => prev.map(t => t.id === taskId ? { ...t, ...payload } : t));
-
       if (updates === 'completed' || payload.status === 'completed') {
         toast.success("Task completato! 🎉");
-        // Auto deselect if completed and filter hides completed
-        if (filterMode === 'active') {
-          // Wait a bit for animation ?? No, instant is fine
-        }
       }
     } catch (err) {
       toast.error("Errore aggiornamento task");
@@ -148,8 +148,13 @@ export default function TasksPage() {
       const created = await tasksApi.createTask(payload);
       setTasks(prev => [created, ...prev]);
       setShowCreateModal(false);
+
+      // Auto-select the new task to allow adding details immediately
+      setSelectedTaskId(created.id);
+      setIsMobileDetailOpen(true);
+
       setNewTask({ title: "", description: "", priority: 5, assigned_to: "", deadline: "", category: "Generale" });
-      toast.success("Task creato!");
+      toast.success("Task creato! Aggiungi ora checklist e file.");
     } catch (e) {
       toast.error("Errore creazione task");
     }
@@ -159,7 +164,6 @@ export default function TasksPage() {
   const filteredTasks = useMemo(() => {
     let result = tasks;
 
-    // 1. Search
     if (searchQuery.length > 1) {
       const q = searchQuery.toLowerCase();
       result = result.filter(t =>
@@ -169,11 +173,9 @@ export default function TasksPage() {
       );
     }
 
-    // 2. Status Mode
     if (filterMode === 'active') result = result.filter(t => t.status !== 'completed');
     if (filterMode === 'completed') result = result.filter(t => t.status === 'completed');
 
-    // 3. Quick Filters
     if (quickFilters.mine) result = result.filter(t => String(t.assigned_to) === String(user?.id));
     if (quickFilters.urgent) result = result.filter(t => t.priority >= 8);
     if (quickFilters.today) {
@@ -181,11 +183,9 @@ export default function TasksPage() {
       result = result.filter(t => t.deadline && new Date(t.deadline).toDateString() === today);
     }
     if (quickFilters.delegated) {
-      // Logic: Created by me but NOT assigned to me
       result = result.filter(t => String(t.author_id) === String(user?.id) && String(t.assigned_to) !== String(user?.id));
     }
 
-    // Sort: Urgent first, then date
     return result.sort((a, b) => b.priority - a.priority || new Date(a.deadline) - new Date(b.deadline));
   }, [tasks, searchQuery, filterMode, quickFilters, user?.id]);
 
@@ -194,9 +194,9 @@ export default function TasksPage() {
   return (
     <div className="h-[calc(100vh-64px)] bg-slate-950 overflow-hidden flex relative">
 
-      {/* === LEFT COLUMN: NAVIGATION & FILTERS (Desktop Only) === */}
-      <div className="hidden lg:flex flex-col w-64 border-r border-white/5 bg-slate-900/50 p-4 gap-4">
-        <div className="mb-4">
+      {/* === LEFT COLUMN: NAVIGATION & ONLINE USERS (Desktop Only) === */}
+      <div className="hidden lg:flex flex-col w-64 border-r border-white/5 bg-slate-900/50 p-4 gap-6 overflow-y-auto scrollbar-hide">
+        <div>
           <h2 className="text-xl font-black text-white tracking-widest uppercase mb-1">TASKS</h2>
           <div className="text-xs text-gray-500 font-mono">PRODUCTIVITY HUB</div>
         </div>
@@ -216,11 +216,32 @@ export default function TasksPage() {
             ✅ Completati
           </button>
         </nav>
+
+        {/* ONLINE USERS SECTION */}
+        <div className="flex-grow">
+          <h3 className="text-xs font-black text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+            Online ({onlineUsers.length})
+          </h3>
+          <div className="space-y-2">
+            {onlineUsers.map(u => (
+              <div key={u.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-white/5 cursor-pointer group transition">
+                <div className="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center text-[10px] font-bold text-gray-300 group-hover:bg-blue-600 group-hover:text-white transition">
+                  {u.username.substring(0, 2).toUpperCase()}
+                </div>
+                <span className="text-sm font-medium text-gray-400 group-hover:text-white truncate">{u.fullName}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* === MIDDLE COLUMN: LIST === */}
       <div className={`flex flex-col flex-grow lg:w-96 lg:flex-none border-r border-white/5 bg-slate-950 transition-all ${selectedTaskId ? 'hidden md:flex' : 'flex'}`}>
         <div className="p-4 border-b border-white/5 bg-slate-900/30 backdrop-blur-sm z-10">
+          {/* On Desktop, we might want to hide pills if side-nav covers it, but Search is needed.
+                    Let's adapt TaskFilters style via CSS/Props in future, for now it wraps gracefully.
+                */}
           <TaskFilters
             currentFilter={filterMode}
             onFilterChange={setFilterMode}
@@ -244,11 +265,12 @@ export default function TasksPage() {
                 task={task}
                 isSelected={selectedTaskId === task.id}
                 onClick={() => handleTaskSelect(task)}
+                currentUserId={user?.id}
               />
             ))
           )}
           {/* Spacer for FAB */}
-          <div className="h-20 md:h-0"></div>
+          <div className="h-32 lg:h-0"></div>
         </div>
       </div>
 
@@ -291,13 +313,13 @@ export default function TasksPage() {
       {/* === FAB === */}
       <button
         onClick={() => setShowCreateModal(true)}
-        className="fixed bottom-6 right-6 z-40 bg-blue-600 hover:bg-blue-500 text-white w-14 h-14 rounded-full shadow-[0_4px_20px_rgba(37,99,235,0.4)] flex items-center justify-center text-3xl transition-transform hover:scale-110 active:scale-95"
+        className="fixed bottom-24 lg:bottom-10 right-6 z-40 bg-blue-600 hover:bg-blue-500 text-white w-14 h-14 rounded-full shadow-[0_4px_20px_rgba(37,99,235,0.4)] flex items-center justify-center text-3xl transition-transform hover:scale-110 active:scale-95"
         title="Nuovo Task"
       >
         +
       </button>
 
-      {/* === CREATE MODAL (Simplificato) === */}
+      {/* === CREATE MODAL (Enhanced) === */}
       <AnimatePresence>
         {showCreateModal && (
           <motion.div className="fixed inset-0 z-[60] flex items-end md:items-center justify-center bg-black/80 backdrop-blur-sm p-4 md:p-0">
@@ -338,38 +360,63 @@ export default function TasksPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs text-gray-500 uppercase font-bold mb-1 block">Priorità</label>
-                    <div className="flex bg-slate-800 rounded-lg border border-white/10 p-1">
-                      {[1, 5, 8].map(p => (
-                        <button
-                          key={p}
-                          type="button"
-                          onClick={() => setNewTask({ ...newTask, priority: p })}
-                          className={`flex-1 text-xs py-1.5 rounded font-bold transition ${newTask.priority === p ? (p >= 8 ? 'bg-red-500 text-white' : (p >= 5 ? 'bg-yellow-500 text-black' : 'bg-emerald-500 text-white')) : 'text-gray-400'}`}
-                        >
-                          {p >= 8 ? '!!!' : (p >= 5 ? '!!' : '!')}
-                        </button>
-                      ))}
-                    </div>
+                    <label className="text-xs text-gray-500 uppercase font-bold mb-1 block">Categoria</label>
+                    <select
+                      className="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-white"
+                      value={newTask.category}
+                      onChange={e => setNewTask({ ...newTask, category: e.target.value })}
+                    >
+                      <option value="Generale">Generale</option>
+                      <option value="Produzione">Produzione</option>
+                      <option value="Manutenzione">Manutenzione</option>
+                      <option value="HR">HR</option>
+                      <option value="Amministrazione">Amministrazione</option>
+                      <option value="Sicurezza">Sicurezza</option>
+                    </select>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs text-gray-500 uppercase font-bold mb-1 block">Scadenza</label>
-                    <input
-                      type="datetime-local"
-                      className="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-white text-sm"
-                      value={newTask.deadline}
-                      onChange={e => setNewTask({ ...newTask, deadline: e.target.value })}
-                    />
+                <div>
+                  <label className="text-xs text-gray-500 uppercase font-bold mb-1 block flex justify-between">
+                    <span>Priorità (1-10)</span>
+                    <span className={`font-mono ${newTask.priority >= 8 ? 'text-red-400' : 'text-blue-400'}`}>
+                      Valore: {newTask.priority}
+                      {newTask.priority >= 8 && " (URGENTE)"}
+                    </span>
+                  </label>
+                  <input
+                    type="range"
+                    min="1"
+                    max="10"
+                    step="1"
+                    className="w-full accent-blue-500 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                    value={newTask.priority}
+                    onChange={e => setNewTask({ ...newTask, priority: parseInt(e.target.value) })}
+                  />
+                  <div className="flex justify-between text-[10px] text-gray-500 mt-1 uppercase font-bold">
+                    <span>Bassa</span>
+                    <span>Media</span>
+                    <span>Alta</span>
                   </div>
+                </div>
+
+                <div>
+                  <label className="text-xs text-gray-500 uppercase font-bold mb-1 block">Scadenza</label>
+                  <input
+                    type="datetime-local"
+                    className="w-full bg-slate-800 border border-white/10 rounded-lg px-3 py-2 text-white text-sm"
+                    value={newTask.deadline}
+                    onChange={e => setNewTask({ ...newTask, deadline: e.target.value })}
+                  />
                 </div>
 
                 <div className="pt-4 flex gap-3">
                   <button type="button" onClick={() => setShowCreateModal(false)} className="flex-1 py-3 text-gray-400 hover:bg-slate-800 rounded-lg font-bold">Annulla</button>
                   <button type="submit" className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold shadow-lg">Crea Task</button>
                 </div>
+                <p className="text-center text-[10px] text-gray-500 mt-2">
+                  * Checklist e file potranno essere aggiunti dopo la creazione.
+                </p>
               </form>
             </motion.div>
           </motion.div>
