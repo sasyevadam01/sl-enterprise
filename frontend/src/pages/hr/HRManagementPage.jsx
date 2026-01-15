@@ -462,7 +462,9 @@ export default function HRManagementPage() {
                                                             <div className="text-[10px] text-gray-500">{emp.department_name}</div>
                                                         </div>
                                                     </div>
-                                                    <div className="text-emerald-400 font-bold font-mono text-xl">{emp.score > 0 ? '+' : ''}{emp.score}</div>
+                                                    <div className={`font-bold font-mono text-xl ${emp.score >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                                        {emp.score > 0 ? '+' : ''}{emp.score}
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>
@@ -484,7 +486,9 @@ export default function HRManagementPage() {
                                                             <div className="text-[10px] text-gray-500">{emp.department_name}</div>
                                                         </div>
                                                     </div>
-                                                    <div className="text-red-400 font-bold font-mono text-xl">{emp.score}</div>
+                                                    <div className={`font-bold font-mono text-xl ${emp.score >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                                        {emp.score > 0 ? '+' : ''}{emp.score}
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>
