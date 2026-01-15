@@ -1,0 +1,13 @@
+@echo off
+set "PATH=%PATH%;C:\Program Files\nodejs"
+cd frontend
+echo 🚀 Scaffolding React App...
+call npm create vite@latest . -- --template react
+echo 📦 Installing Dependencies...
+call npm install
+echo 🌐 Installing Router & Axios...
+call npm install axios react-router-dom
+echo 🎨 Installing TailwindCSS...
+call npm install -D tailwindcss postcss autoprefixer
+call npx tailwindcss init -p
+echo ✅ Frontend Setup Complete!

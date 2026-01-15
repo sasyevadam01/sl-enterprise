@@ -1,0 +1,395 @@
+/**
+ * SL Enterprise - New Request Page
+ * Unified creation for HR Events and Leave Requests
+ */
+import { useState, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { eventsApi, employeesApi, leavesApi } from '../../api/client';
+import { useAuth } from '../../context/AuthContext';
+
+const LEAVE_TYPES = [
+    { value: 'vacation', label: 'Ferie', icon: '🏖️', color: 'blue' },
+    { value: 'sick', label: 'Malattia', icon: '🏥', color: 'red' },
+    { value: 'permit', label: 'Permesso', icon: '📝', color: 'purple' },
+    { value: 'maternity', label: 'Maternità', icon: '👶', color: 'pink' },
+    { value: 'paternity', label: 'Paternità', icon: '👨‍👧', color: 'cyan' },
+    { value: 'wedding', label: 'Matrimonio', icon: '💒', color: 'yellow' },
+    { value: 'bereavement', label: 'Lutto', icon: '🕯️', color: 'gray' },
+    { value: 'other', label: 'Altro', icon: '📋', color: 'slate' },
+].sort((a, b) => a.label.localeCompare(b.label)); // Alphabetical sort requested
+
+export default function NewEventPage() {
+    const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const preselectedEmployee = searchParams.get('employee');
+    const { user } = useAuth();
+
+    // Role-aware navigation: coordinators don't have access to approvals page
+    const isManager = ['super_admin', 'admin', 'hr_manager', 'factory_controller'].includes(user?.role);
+    const afterSubmitPath = isManager ? '/hr/approvals' : '/hr/tasks';
+
+    const preselectedTab = searchParams.get('tab');
+    const [activeTab, setActiveTab] = useState(preselectedTab === 'leave' ? 'leave' : 'event');
+    const [loading, setLoading] = useState(false);
+    const [employees, setEmployees] = useState([]);
+    const [eventTypes, setEventTypes] = useState([]);
+    const [error, setError] = useState(null);
+    const [success, setSuccess] = useState(null); // 'event' | 'leave'
+    const [selectedEmployeeName, setSelectedEmployeeName] = useState('');
+
+    // Event Form Data
+    const [eventForm, setEventForm] = useState({
+        employee_id: preselectedEmployee || '',
+        event_type: '',
+        event_date: new Date().toISOString().split('T')[0],
+        description: ''
+    });
+
+    // Leave Form Data
+    const [leaveForm, setLeaveForm] = useState({
+        employee_id: preselectedEmployee || '',
+        leave_type: LEAVE_TYPES[0].value,
+        start_date: '',
+        end_date: '',
+        reason: ''
+    });
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [emps, types] = await Promise.all([
+                    employeesApi.getEmployees(),
+                    eventsApi.getTypes()
+                ]);
+                setEmployees(emps);
+                setEventTypes(types);
+
+                if (types.length > 0) {
+                    setEventForm(prev => ({ ...prev, event_type: types[0].value }));
+                }
+
+                if (preselectedEmployee) {
+                    const emp = emps.find(e => e.id === parseInt(preselectedEmployee));
+                    if (emp) {
+                        setSelectedEmployeeName(`${emp.first_name} ${emp.last_name}`);
+                    }
+                }
+            } catch (err) {
+                console.error('Error fetching data:', err);
+            }
+        };
+        fetchData();
+    }, [preselectedEmployee]);
+
+    const handleEventSubmit = async (e) => {
+        e.preventDefault();
+        setError(null);
+        if (!eventForm.employee_id || !eventForm.event_type) return;
+
+        setLoading(true);
+        try {
+            await eventsApi.createEvent({
+                employee_id: parseInt(eventForm.employee_id),
+                event_type: eventForm.event_type,
+                event_date: eventForm.event_date,
+                description: eventForm.description || null
+            });
+            setSuccess('event');
+            setTimeout(() => navigate(afterSubmitPath), 1500);
+        } catch (err) {
+            setError(err.response?.data?.detail || 'Errore nella creazione evento');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleLeaveSubmit = async (e) => {
+        e.preventDefault();
+        setError(null);
+        if (!leaveForm.employee_id || !leaveForm.start_date || !leaveForm.end_date) return;
+
+        setLoading(true);
+        try {
+            await leavesApi.createLeave(leaveForm.employee_id, {
+                leave_type: leaveForm.leave_type,
+                start_date: leaveForm.start_date,
+                end_date: leaveForm.end_date,
+                reason: leaveForm.reason || null
+            });
+            setSuccess('leave');
+            setTimeout(() => navigate(afterSubmitPath), 1500);
+        } catch (err) {
+            setError(err.response?.data?.detail || 'Errore nella creazione richiesta');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const selectedType = eventTypes.find(t => t.value === eventForm.event_type);
+
+    return (
+        <div className="max-w-2xl mx-auto">
+            {/* Header */}
+            <div className="mb-6">
+                {user?.role === 'super_admin' && (
+                    <Link
+                        to="/hr/approvals"
+                        className="text-gray-400 hover:text-white transition flex items-center gap-2 mb-2"
+                    >
+                        ← Torna al Centro Approvazioni
+                    </Link>
+                )}
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-2xl font-bold text-white">📝 Nuova Richiesta</h1>
+                        <p className="text-gray-400 mt-1">Crea un nuovo evento HR o inserisci una richiesta di assenza</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Preselected Employee Banner */}
+            {selectedEmployeeName && (
+                <div className="mb-6 px-4 py-3 bg-blue-500/20 border border-blue-500/50 rounded-lg text-blue-400 flex items-center gap-2">
+                    <span className="text-xl">👤</span>
+                    Per dipendente: <span className="font-semibold text-white">{selectedEmployeeName}</span>
+                </div>
+            )}
+
+            {/* Success Messages */}
+            {success === 'event' && (
+                <div className="mb-6 px-4 py-3 bg-green-500/20 border border-green-500/50 rounded-lg text-green-400 flex items-center gap-2">
+                    <span className="text-xl">✅</span>
+                    Evento creato con successo! In attesa di approvazione.
+                </div>
+            )}
+            {success === 'leave' && (
+                <div className="mb-6 px-4 py-3 bg-green-500/20 border border-green-500/50 rounded-lg text-green-400 flex items-center gap-2">
+                    <span className="text-xl">✅</span>
+                    Richiesta di assenza inserita con successo!
+                </div>
+            )}
+
+            {/* Tabs */}
+            <div className="flex gap-4 border-b border-white/10 mb-6">
+                <button
+                    onClick={() => setActiveTab('event')}
+                    className={`pb-3 px-4 relative transition font-medium text-lg ${activeTab === 'event'
+                        ? 'text-blue-400 border-b-2 border-blue-400'
+                        : 'text-gray-400 hover:text-white'
+                        }`}
+                >
+                    ✨ Evento / Bonus / Malus
+                </button>
+                <button
+                    onClick={() => setActiveTab('leave')}
+                    className={`pb-3 px-4 relative transition font-medium text-lg ${activeTab === 'leave'
+                        ? 'text-blue-400 border-b-2 border-blue-400'
+                        : 'text-gray-400 hover:text-white'
+                        }`}
+                >
+                    🏖️ Assenza / Ferie
+                </button>
+            </div>
+
+            <div className="bg-slate-800/50 rounded-2xl border border-white/10 p-6">
+                {activeTab === 'event' ? (
+                    /* EVENT FORM */
+                    <form onSubmit={handleEventSubmit} className="space-y-6">
+                        {/* Employee */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-400 mb-2">
+                                👤 Dipendente *
+                            </label>
+                            <select
+                                value={eventForm.employee_id}
+                                onChange={(e) => setEventForm(prev => ({ ...prev, employee_id: e.target.value }))}
+                                className="w-full px-4 py-3 bg-slate-700 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                required
+                            >
+                                <option value="">-- Seleziona Dipendente --</option>
+                                {employees.map(emp => (
+                                    <option key={emp.id} value={emp.id}>
+                                        {emp.last_name} {emp.first_name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Event Tyle */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-400 mb-3">
+                                📋 Tipo Evento *
+                            </label>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {eventTypes.map(type => {
+                                    const isPositive = type.points > 0;
+                                    const isSelected = eventForm.event_type === type.value;
+
+                                    return (
+                                        <button
+                                            key={type.value}
+                                            type="button"
+                                            onClick={() => setEventForm(prev => ({ ...prev, event_type: type.value }))}
+                                            className={`p-3 rounded-xl border-2 text-left transition-all ${isSelected
+                                                ? isPositive
+                                                    ? 'border-green-500 bg-green-500/20'
+                                                    : 'border-red-500 bg-red-500/20'
+                                                : 'border-white/10 bg-slate-700/50 hover:border-white/30'
+                                                }`}
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <span className="font-medium text-white">{type.label}</span>
+                                                <span className={`font-bold ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
+                                                    {type.points > 0 ? '+' : ''}{type.points}
+                                                </span>
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Date & Desc */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-400 mb-2">
+                                    📅 Data Evento
+                                </label>
+                                <input
+                                    type="date"
+                                    value={eventForm.event_date}
+                                    onChange={(e) => setEventForm(prev => ({ ...prev, event_date: e.target.value }))}
+                                    className="w-full px-4 py-3 bg-slate-700 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-400 mb-2">
+                                    📝 Note
+                                </label>
+                                <input
+                                    type="text"
+                                    value={eventForm.description}
+                                    onChange={(e) => setEventForm(prev => ({ ...prev, description: e.target.value }))}
+                                    className="w-full px-4 py-3 bg-slate-700 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                    placeholder="Opzionale..."
+                                />
+                            </div>
+                        </div>
+
+                        {/* Submit Event */}
+                        <button
+                            type="submit"
+                            disabled={loading || success}
+                            className={`w-full py-4 rounded-xl font-bold transition flex items-center justify-center gap-2 ${selectedType?.points > 0
+                                ? 'bg-green-600 hover:bg-green-700 text-white'
+                                : 'bg-red-600 hover:bg-red-700 text-white'
+                                } disabled:opacity-50`}
+                        >
+                            {loading ? 'Salvataggio...' : 'Registra Evento'}
+                        </button>
+                    </form>
+                ) : (
+                    /* LEAVE FORM */
+                    <form onSubmit={handleLeaveSubmit} className="space-y-6">
+                        {/* Employee */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-400 mb-2">
+                                👤 Dipendente *
+                            </label>
+                            <select
+                                value={leaveForm.employee_id}
+                                onChange={(e) => setLeaveForm(prev => ({ ...prev, employee_id: e.target.value }))}
+                                className="w-full px-4 py-3 bg-slate-700 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                required
+                            >
+                                <option value="">-- Seleziona Dipendente --</option>
+                                {employees.map(emp => (
+                                    <option key={emp.id} value={emp.id}>
+                                        {emp.last_name} {emp.first_name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Leave Type */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-400 mb-2">
+                                🏖️ Tipo Assenza *
+                            </label>
+                            <select
+                                value={leaveForm.leave_type}
+                                onChange={(e) => setLeaveForm(prev => ({ ...prev, leave_type: e.target.value }))}
+                                className="w-full px-4 py-3 bg-slate-700 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                required
+                            >
+                                {LEAVE_TYPES.map(t => (
+                                    <option key={t.value} value={t.value}>
+                                        {t.icon} {t.label}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Dates */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-400 mb-2">
+                                    Dal *
+                                </label>
+                                <input
+                                    type="date"
+                                    value={leaveForm.start_date}
+                                    onChange={(e) => setLeaveForm(prev => ({ ...prev, start_date: e.target.value }))}
+                                    className="w-full px-4 py-3 bg-slate-700 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-400 mb-2">
+                                    Al *
+                                </label>
+                                <input
+                                    type="date"
+                                    value={leaveForm.end_date}
+                                    onChange={(e) => setLeaveForm(prev => ({ ...prev, end_date: e.target.value }))}
+                                    className="w-full px-4 py-3 bg-slate-700 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        {/* Reason */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-400 mb-2">
+                                📝 Motivazione (opzionale)
+                            </label>
+                            <textarea
+                                value={leaveForm.reason}
+                                onChange={(e) => setLeaveForm(prev => ({ ...prev, reason: e.target.value }))}
+                                className="w-full px-4 py-3 bg-slate-700 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"
+                                rows={3}
+                                placeholder="Dettagli aggiuntivi..."
+                            />
+                        </div>
+
+                        {/* Submit Leave */}
+                        <button
+                            type="submit"
+                            disabled={loading || success}
+                            className="w-full py-4 rounded-xl font-bold bg-blue-600 hover:bg-blue-700 text-white transition flex items-center justify-center gap-2 disabled:opacity-50"
+                        >
+                            {loading ? 'Salvataggio...' : 'Invia Richiesta Assenza'}
+                        </button>
+                    </form>
+                )}
+
+                {/* Generic Error */}
+                {error && (
+                    <div className="mt-4 px-4 py-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400">
+                        {error}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
