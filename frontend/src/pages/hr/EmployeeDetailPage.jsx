@@ -962,9 +962,12 @@ const AbsenceTab = ({ employeeId, employeeName }) => {
                                 </button>
                             </div>
                         </div>
-                    ))}
+                    );
+                })}
+                {absences.length === 0 && (
+                    <p className="text-gray-500 text-center py-8">Nessun dato presente in storico.</p>
+                )}
             </div>
-            )}
         </div>
     );
 };
