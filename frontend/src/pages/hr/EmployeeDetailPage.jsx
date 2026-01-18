@@ -945,7 +945,11 @@ const AbsenceTab = ({ employeeId, employeeName }) => {
                                         </span>
                                     </div>
                                     <p className="text-gray-400 text-sm">Dal {dateRange} {leave.hours ? `(${leave.hours}h)` : ''}</p>
-                                    {leave.reason && <p className="text-gray-500 text-xs italic mt-1">"{leave.reason}"</p>}
+                                    {leave.reason && (
+                                        <div className="mt-2 text-sm text-white font-medium bg-slate-800/50 p-2 rounded border-l-2 border-blue-400">
+                                            "{leave.reason}"
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
