@@ -24,6 +24,7 @@ import StaffingWidget from '../../components/dashboard/StaffingWidget';
 import ProductionTrendWidget from '../../components/dashboard/ProductionTrendWidget';
 import QuickActions from '../../components/dashboard/QuickActions';
 import ActivityTimeline from '../../components/dashboard/ActivityTimeline';
+import WeatherWidget from '../../components/dashboard/WeatherWidget';
 
 export default function DashboardPage() {
     const { user } = useAuth();
@@ -146,39 +147,40 @@ export default function DashboardPage() {
                 <CommandCenter stats={stats} user={user} />
             </motion.div>
 
-            {/* 2. Factory Pulse Row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:h-64 h-auto">
-                <motion.div variants={itemVariants} className="h-full">
+            {/* 2. Top Row: Weather & Critical Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 h-auto md:h-48">
+                <motion.div variants={itemVariants} className="md:col-span-1 h-full">
+                    <WeatherWidget />
+                </motion.div>
+                <motion.div variants={itemVariants} className="md:col-span-1 h-full">
                     <PerformanceGauge />
+                </motion.div>
+                <motion.div variants={itemVariants} className="md:col-span-2 h-full">
+                    <MachineStatusWidget />
+                </motion.div>
+            </div>
+
+            {/* 3. Operational Row */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-auto md:h-80">
+                <motion.div variants={itemVariants} className="h-full">
+                    <StaffingWidget />
                 </motion.div>
                 <motion.div variants={itemVariants} className="h-full">
                     <ProductionTrendWidget data={trendData} />
                 </motion.div>
                 <motion.div variants={itemVariants} className="h-full">
-                    <MachineStatusWidget />
+                    <ActivityTimeline activities={activities} />
                 </motion.div>
             </div>
 
-            {/* 3. HR & Productivity Row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:h-80 h-auto">
-                <motion.div variants={itemVariants} className="h-full">
-                    <StaffingWidget />
-                </motion.div>
-                <motion.div variants={itemVariants} className="h-full">
-                    <DepartmentEfficiencyWidget />
-                </motion.div>
-                <motion.div variants={itemVariants} className="h-full">
+            {/* 4. Tasks & Actions */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <motion.div variants={itemVariants} className="md:col-span-1 h-80">
                     <MyTasksWidget />
                 </motion.div>
-            </div>
-
-            {/* 4. Action & Timeline Row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:h-80 h-auto">
-                <motion.div variants={itemVariants} className="md:col-span-2 h-full">
+                <motion.div variants={itemVariants} className="md:col-span-2 h-full flex flex-col justify-end">
+                    {/* Quick Actions now compact at bottom */}
                     <QuickActions pendingCounts={pendingCounts} />
-                </motion.div>
-                <motion.div variants={itemVariants} className="h-full">
-                    <ActivityTimeline activities={activities} />
                 </motion.div>
             </div>
 

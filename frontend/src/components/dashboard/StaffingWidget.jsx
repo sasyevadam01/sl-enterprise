@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { kpiApi, leavesApi } from '../../api/client';
+import { kpiApi, leavesApi, employeesApi } from '../../api/client';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
 
@@ -17,30 +17,35 @@ export default function StaffingWidget() {
             try {
                 const today = format(new Date(), 'yyyy-MM-dd');
 
-                // Fetch Staffing Numbers (Present/Required)
-                const panoramica = await kpiApi.getPanoramica(today) || {};
+                // Parallel Fetch: Panoramica, Leaves, AND Employees (for names)
+                const [panoramica, leavesResponse, employees] = await Promise.all([
+                    kpiApi.getPanoramica(today).catch(() => ({})),
+                    leavesApi.getLeaves({
+                        status_filter: 'approved',
+                        start_date: today,
+                        end_date: today
+                    }).catch(() => []),
+                    employeesApi.getEmployees().catch(() => []) // Fetch employees list
+                ]);
 
-                // Fetch Absentees Details (Approved Leaves for Today)
-                const response = await leavesApi.getLeaves({
-                    status_filter: 'approved',
-                    start_date: today,
-                    end_date: today
-                });
-                const leaves = Array.isArray(response) ? response : [];
+                const leaves = Array.isArray(leavesResponse) ? leavesResponse : [];
 
-                // Filter leaves that actually cover today (double check as API range match might be inclusive)
+                // Filter leaves that actually cover today
                 const todayLeaves = leaves.filter(l => {
                     const start = new Date(l.start_date);
                     const end = new Date(l.end_date);
                     const t = new Date(today);
                     return t >= start && t <= end;
+                }).map(l => {
+                    // Enrich with name
+                    const emp = employees.find(e => e.id === l.employee_id);
+                    return {
+                        ...l,
+                        employee_name: emp ? `${emp.last_name} ${emp.first_name}` : 'Dipendente'
+                    };
                 });
 
-                // Use panoramica stats
-                // Assuming panoramica returns objects like { total_staffing: { present, required } } or similar
-                // If not, we might need to sum up sector requirements.
-                // Let's assume panoramica.staffing_summary exists based on my previous analysis or I calculate it from sectors.
-
+                // Calculate Stats from Panoramica
                 let present = 0;
                 let required = 0;
 
