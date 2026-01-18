@@ -8,6 +8,7 @@ import { useAuth } from '../../context/AuthContext';
 import { format, startOfWeek, endOfWeek, addDays, subDays, isSameDay, isSunday, getYear } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { useUI } from '../../components/ui/CustomUI';
+import TodayAbsencesPanel from '../../components/hr/TodayAbsencesPanel';
 
 // --- HOLIDAY LOGIC (PRESERVED) ---
 const getItalianHolidays = (year) => {
@@ -279,6 +280,9 @@ export default function PlannerPage() {
 
     return (
         <div className="space-y-4 pb-24 md:pb-20">
+            {/* --- ABSENCES PANEL (for coordinators) --- */}
+            <TodayAbsencesPanel />
+
             {/* --- HEADER CONTROLS --- */}
             <div className="bg-slate-800 p-4 rounded-xl border border-white/10 shadow-lg flex flex-col md:flex-row gap-4 justify-between items-center sticky top-0 z-20 md:static backdrop-blur-md md:backdrop-blur-none bg-slate-800/90 md:bg-slate-800">
 
