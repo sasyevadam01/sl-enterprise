@@ -94,7 +94,7 @@ export const notificationsApi = {
 
 export const tasksApi = {
   getTasks: (params) => client.get("/tasks/", { params }),
-  getMyTasks: () => client.get("/tasks/my/"),
+  getMyTasks: () => client.get("/tasks/my"),
   getStats: () => client.get("/tasks/stats/"),
   createTask: (data) => client.post("/tasks/", data),
   updateTask: (id, data) => client.patch(`/tasks/${id}`, data),

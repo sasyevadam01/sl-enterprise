@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 export default function MyTasksWidget() {
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         const fetchTasks = async () => {
@@ -15,6 +16,7 @@ export default function MyTasksWidget() {
                 setLoading(false);
             } catch (err) {
                 console.error("My Tasks Error", err);
+                setError(err.message || "Errore caricamento");
                 setLoading(false);
             }
         };
@@ -54,6 +56,7 @@ export default function MyTasksWidget() {
                     <div className="flex flex-col items-center justify-center h-full text-gray-500">
                         <span className="text-2xl mb-1">🎉</span>
                         <p className="text-xs">Nessun task in sospeso</p>
+                        {error && <p className="text-[10px] text-red-400 mt-2 bg-red-900/20 px-2 py-1 rounded">Err: {error}</p>}
                     </div>
                 ) : (
                     tasks.map(task => (
