@@ -111,10 +111,10 @@ export default function DashboardPage() {
 
             {/* 2. Row 1: Weather + I Miei Task */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <motion.div variants={itemVariants} className="md:col-span-1 h-56">
+                <motion.div variants={itemVariants} className="md:col-span-1 h-80">
                     <WeatherWidget />
                 </motion.div>
-                <motion.div variants={itemVariants} className="md:col-span-2 h-56">
+                <motion.div variants={itemVariants} className="md:col-span-2 h-80">
                     <MyTasksWidget />
                 </motion.div>
             </div>

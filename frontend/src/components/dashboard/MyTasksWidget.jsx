@@ -56,16 +56,23 @@ export default function MyTasksWidget() {
                             <div className="mt-1 text-slate-500">📌</div>
 
                             <div className="flex-1 min-w-0">
-                                <p className="text-sm text-gray-200 group-hover:text-white transition truncate font-medium">{task.title}</p>
-                                <div className="flex items-center gap-2 mt-0.5">
+                                <div className="flex justify-between items-start">
+                                    <p className="text-sm font-semibold text-gray-100 group-hover:text-white transition truncate">{task.title}</p>
+                                    {task.priority >= 8 && <span className="text-[10px] text-red-400 font-bold ml-2">ALTA</span>}
+                                </div>
+                                <p className="text-xs text-gray-400 line-clamp-2 mt-0.5 leading-snug">{task.description || "Nessuna descrizione"}</p>
+
+                                <div className="flex items-center gap-2 mt-1.5">
                                     {task.due_date && (
-                                        <span className="text-[10px] text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded font-mono">
-                                            Scade: {format(new Date(task.due_date), 'dd/MM')}
+                                        <span className="text-[10px] text-blue-300 bg-blue-500/10 px-1.5 py-0.5 rounded font-mono">
+                                            📅 {format(new Date(task.due_date), 'dd/MM')}
                                         </span>
                                     )}
-                                    <span className={`text-[10px] px-1.5 py-0.5 rounded border ${task.priority >= 8 ? 'border-red-500/30 text-red-400' : 'border-slate-600 text-gray-500'}`}>
-                                        {task.priority >= 8 ? 'Alta' : 'Normal'}
-                                    </span>
+                                    {task.assigned_by_name && (
+                                        <span className="text-[10px] text-gray-500">
+                                            da: {task.author_name || "Admin"}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                         </Link>
