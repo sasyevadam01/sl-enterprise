@@ -4,14 +4,14 @@ Questo documento contiene tutte le informazioni essenziali per gestire, aggiorna
 
 ## 1. 📂 Repository & Codice Sorgente
 *   **Repository Ufficiale GitHub:** `https://github.com/sasyevadam01/sl-enterprise.git`
-*   **Branch Principale:** `master`
+*   **Branch Principale:** `main`
 *   **Percorso Locale Utente:** `c:\Users\sasys\OneDrive\Desktop\SL Project`
 
 ### Flusso di Lavoro Standard (Git)
 Per salvare modifiche fatte in locale:
 1.  `git add .` (Aggiunge tutti i file modificati)
 2.  `git commit -m "Descrizione modifica"` (Salva in locale)
-3.  `git push origin master` (Invia al cloud GitHub)
+3.  `git push origin main` (Invia al cloud GitHub)
 
 ---
 
@@ -25,7 +25,7 @@ Una volta loggati nel server, eseguire sempre questi comandi nella cartella del 
 #### A. Aggiornare il Codice (Deploy)
 Dopo aver fatto `git push` dal PC locale, sul server eseguire:
 ```bash
-git pull origin master
+git pull origin main
 ```
 
 #### B. Riavviare i Servizi
