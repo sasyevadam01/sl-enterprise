@@ -34,7 +34,6 @@ export default function QuickActions({ pendingCounts }) {
     ];
 
     return (
-    return (
         <div className="bg-slate-800/60 backdrop-blur-md rounded-2xl border border-white/10 overflow-hidden shadow-xl p-3">
             <div className="flex items-center justify-between gap-4 h-full">
                 <div className="hidden md:flex items-center gap-2 px-4 border-r border-white/10 h-full">
@@ -64,6 +63,5 @@ export default function QuickActions({ pendingCounts }) {
                 </div>
             </div>
         </div>
-    );
     );
 }
