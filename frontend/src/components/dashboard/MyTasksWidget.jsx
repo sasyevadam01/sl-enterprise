@@ -11,7 +11,7 @@ export default function MyTasksWidget() {
         const fetchTasks = async () => {
             try {
                 const myTasks = await tasksApi.getMyTasks();
-                setTasks(Array.isArray(myTasks) ? myTasks.slice(0, 5) : []); // Limit to 5
+                setTasks(Array.isArray(myTasks) ? myTasks.slice(0, 3) : []); // Limit to 3 as requested
                 setLoading(false);
             } catch (err) {
                 console.error("My Tasks Error", err);
@@ -44,7 +44,7 @@ export default function MyTasksWidget() {
         <div className="bg-slate-800/40 backdrop-blur-md rounded-2xl border border-white/10 p-6 h-full flex flex-col relative overflow-hidden shadow-xl">
             <div className="flex justify-between items-center mb-4">
                 <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider flex items-center gap-2">
-                    ✅ I Miei Task
+                    ✅ I Miei Task (Prioritari)
                 </h3>
                 {tasks.length > 0 && <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded-full font-bold">{tasks.length}</span>}
             </div>

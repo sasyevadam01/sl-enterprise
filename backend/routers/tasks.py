@@ -116,6 +116,32 @@ def get_tasks(
         
     return tasks
 
+@router.get("/my", response_model=List[TaskResponse])
+def get_my_tasks(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """
+    Ritorna i task assegnati all'utente corrente che sono ancora 'pending' o 'in_progress'.
+    Ordinati per priorità (DESC) e scadenza (ASC).
+    """
+    tasks = db.query(Task).options(
+        joinedload(Task.assignee),
+        joinedload(Task.author),
+        joinedload(Task.locker),
+        joinedload(Task.comments).joinedload(TaskComment.author),
+        joinedload(Task.attachments).joinedload(TaskAttachment.uploader)
+    ).filter(
+        Task.assigned_to == current_user.id,
+        Task.status.in_(["pending", "in_progress"])
+    ).order_by(
+        desc(Task.priority), 
+        Task.deadline
+    ).all()
+
+    # Enrichment
+    for t in tasks:
+        t.author_name = t.author.full_name if t.author else "Unknown"
+        t.assignee_name = t.assignee.full_name if t.assignee else "Unassigned"
+    
+    return tasks
 @router.post("/", response_model=TaskResponse)
 def create_task(task_in: TaskCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Crea un nuovo task."""
