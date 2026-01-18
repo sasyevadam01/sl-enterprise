@@ -122,6 +122,7 @@ def get_my_tasks(current_user: User = Depends(get_current_user), db: Session = D
     Ritorna i task assegnati all'utente corrente che sono ancora 'pending' o 'in_progress'.
     Ordinati per priorità (DESC) e scadenza (ASC).
     """
+    from sqlalchemy import or_
     tasks = db.query(Task).options(
         joinedload(Task.assignee),
         joinedload(Task.author),
@@ -129,7 +130,10 @@ def get_my_tasks(current_user: User = Depends(get_current_user), db: Session = D
         joinedload(Task.comments).joinedload(TaskComment.author),
         joinedload(Task.attachments).joinedload(TaskAttachment.uploader)
     ).filter(
-        Task.assigned_to == current_user.id,
+        or_(
+            Task.assigned_to == current_user.id,
+            Task.assigned_by == current_user.id
+        ),
         Task.status.in_(["pending", "in_progress"])
     ).order_by(
         desc(Task.priority), 
