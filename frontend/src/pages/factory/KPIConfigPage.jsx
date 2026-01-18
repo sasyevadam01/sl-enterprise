@@ -199,8 +199,8 @@ export default function KpiConfigPage() {
 
     // Calculate derived values
     const calculated = useMemo(() => {
-        // Logica orario centrale: -1 ora break automatica
-        const deduction = selectedShift === 'custom' ? 1.0 : 0.0;
+        // Logica orario centrale: Nessuna deduzione automatica (l'utente inserisce ore nette)
+        const deduction = 0.0;
 
         const hoursNet = Math.max(0, (form.hoursTotal || 0) - (form.hoursDowntime || 0) - deduction);
         const qty = parseInt(form.quantityProduced) || 0;

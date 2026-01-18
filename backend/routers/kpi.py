@@ -314,10 +314,8 @@ def create_kpi_entry(
     
     # Calcola campi derivati
     deduction = 0.0
-    if data.shift_type == 'custom':
-        # Se turno > 5 ore, togli 1 ora pausa, altrimenti 0 (es. Sabato 4.5h)
-        if data.hours_total > 5.0:
-            deduction = 1.0
+    deduction = 0.0
+
             
     hours_net = data.hours_total - data.hours_downtime - deduction
     

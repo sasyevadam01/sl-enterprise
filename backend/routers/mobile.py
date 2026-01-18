@@ -58,7 +58,7 @@ def aggregate_kpi_production(db: Session, assignment: ShiftAssignment, qty: int,
     entry.quantity_produced += qty
     
     # Ricalcola metriche
-    deduction = 1.0 if shift == 'custom' else 0.0
+    deduction = 0.0
     entry.hours_net = entry.hours_total - entry.hours_downtime - deduction
     entry.quantity_per_hour = entry.quantity_produced / entry.hours_net if entry.hours_net > 0 else 0
     entry.efficiency_percent = (entry.quantity_per_hour / config.kpi_target_hourly * 100) if config.kpi_target_hourly else 0
@@ -101,7 +101,7 @@ def aggregate_kpi_downtime(db: Session, assignment: ShiftAssignment, minutes: in
     entry.hours_downtime += hours_add
     
     # Ricalcola metriche
-    deduction = 1.0 if shift == 'custom' else 0.0
+    deduction = 0.0
     entry.hours_net = entry.hours_total - entry.hours_downtime - deduction
     entry.quantity_per_hour = entry.quantity_produced / entry.hours_net if entry.hours_net > 0 else 0
     entry.efficiency_percent = (entry.quantity_per_hour / config.kpi_target_hourly * 100) if config.kpi_target_hourly else 0
