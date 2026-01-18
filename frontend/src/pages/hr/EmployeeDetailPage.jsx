@@ -832,6 +832,9 @@ const AbsenceTab = ({ employeeId, employeeName }) => {
         try {
             await leavesApi.deleteLeave(leave.id);
             toast.success("Assenza eliminata definitivamente");
+            // Rimuovi subito dalla lista per feedback immediato
+            setAbsences(prev => prev.filter(l => l.id !== leave.id));
+            // Ricarica comunque per sicurezza
             loadAbsences();
         } catch (e) {
             toast.error("Errore durante l'eliminazione");
