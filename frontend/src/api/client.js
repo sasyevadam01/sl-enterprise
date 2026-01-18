@@ -175,7 +175,8 @@ export const leavesApi = {
     client.post(`/leaves/?employee_id=${empId}`, data),
   updateLeave: (id, data) => client.patch(`/leaves/${id}`, data),
   reviewLeave: (id, data) => client.patch(`/leaves/${id}/review`, data),
-  cancelLeave: (id) => client.delete(`/leaves/${id}`),
+  cancelLeave: (id) => client.delete(`/leaves/${id}`),  // Alias for compatibility
+  deleteLeave: (id) => client.delete(`/leaves/${id}`),  // Hard delete
   // Monte Ore Permessi
   getEmployeeHours: (empId, year) =>
     client.get(`/leaves/hours/${empId}`, { params: { year } }),

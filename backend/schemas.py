@@ -414,6 +414,15 @@ class LeaveRequestCreate(BaseModel):
     reason: Optional[str] = None
 
 
+class LeaveRequestUpdate(BaseModel):
+    """Schema per modificare una richiesta esistente."""
+    leave_type: Optional[str] = None
+    start_date: Optional[datetime] = None
+    end_date: Optional[datetime] = None
+    hours: Optional[float] = None
+    reason: Optional[str] = None
+
+
 class LeaveRequestResponse(BaseModel):
     id: int
     employee_id: int

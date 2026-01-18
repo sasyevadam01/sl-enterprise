@@ -822,19 +822,19 @@ const AbsenceTab = ({ employeeId, employeeName }) => {
     const handleDelete = async (leave) => {
         const typeLabel = LEAVE_LABELS[leave.leave_type] || leave.leave_type;
         const confirmed = await showConfirm({
-            title: "Annulla Assenza",
-            message: `Sei sicuro di voler cancellare L'ASSENZA "${typeLabel}" per ${employeeName}?`,
+            title: "Elimina Assenza",
+            message: `Sei sicuro di voler ELIMINARE DEFINITIVAMENTE l'assenza "${typeLabel}" per ${employeeName}? Questa azione non può essere annullata.`,
             type: "danger",
-            confirmText: "Annulla Assenza"
+            confirmText: "Elimina Definitivamente"
         });
         if (!confirmed) return;
 
         try {
-            await leavesApi.cancelLeave(leave.id);
-            toast.success("Assenza annullata");
+            await leavesApi.deleteLeave(leave.id);
+            toast.success("Assenza eliminata definitivamente");
             loadAbsences();
         } catch (e) {
-            toast.error("Errore durante l'annullamento");
+            toast.error("Errore durante l'eliminazione");
         }
     };
 
@@ -958,7 +958,7 @@ const AbsenceTab = ({ employeeId, employeeName }) => {
                                     onClick={() => handleDelete(leave)}
                                     className="flex-1 md:flex-none px-3 py-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded hover:bg-red-500/20 transition flex items-center justify-center gap-2"
                                 >
-                                    🗑️ Annulla
+                                    🗑️ Elimina
                                 </button>
                             </div>
                         </div>

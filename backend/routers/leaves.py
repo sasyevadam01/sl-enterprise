@@ -9,7 +9,7 @@ from datetime import datetime
 
 from database import get_db, LeaveRequest, Employee, User, Notification
 from schemas import (
-    LeaveRequestCreate, LeaveRequestResponse, LeaveReviewRequest, MessageResponse
+    LeaveRequestCreate, LeaveRequestResponse, LeaveReviewRequest, LeaveRequestUpdate, MessageResponse
 )
 from security import get_current_user, get_hr_or_admin
 
@@ -143,25 +143,52 @@ async def review_leave_request(
     return leave_req
 
 
-@router.delete("/{request_id}", response_model=MessageResponse, summary="Annulla Richiesta")
-async def cancel_leave_request(
+@router.patch("/{request_id}", response_model=LeaveRequestResponse, summary="Modifica Richiesta")
+async def update_leave_request(
     request_id: int,
+    update_data: LeaveRequestUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Annulla richiesta (solo se pending)."""
+    """Modifica una richiesta ferie/permesso esistente."""
     leave_req = db.query(LeaveRequest).filter(LeaveRequest.id == request_id).first()
     if not leave_req:
         raise HTTPException(status_code=404, detail="Richiesta non trovata")
     
-    # Permetti cancellazione anche se approvata (logica di storno)
-    # if leave_req.status != "pending":
-    #     raise HTTPException(status_code=400, detail="Impossibile annullare richiesta gia processata")
+    # Update fields if provided
+    if update_data.leave_type is not None:
+        leave_req.leave_type = update_data.leave_type
+    if update_data.start_date is not None:
+        leave_req.start_date = update_data.start_date
+    if update_data.end_date is not None:
+        leave_req.end_date = update_data.end_date
+    if update_data.hours is not None:
+        leave_req.hours = update_data.hours
+    if update_data.reason is not None:
+        leave_req.reason = update_data.reason
     
-    leave_req.status = "cancelled"
+    db.commit()
+    db.refresh(leave_req)
+    
+    return leave_req
+
+
+@router.delete("/{request_id}", response_model=MessageResponse, summary="Elimina Richiesta")
+async def delete_leave_request(
+    request_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Elimina definitivamente una richiesta ferie/permesso."""
+    leave_req = db.query(LeaveRequest).filter(LeaveRequest.id == request_id).first()
+    if not leave_req:
+        raise HTTPException(status_code=404, detail="Richiesta non trovata")
+    
+    # Hard delete - rimuove completamente dal database
+    db.delete(leave_req)
     db.commit()
     
-    return {"message": "Richiesta annullata", "success": True}
+    return {"message": "Richiesta eliminata definitivamente", "success": True}
 
 
 # ============================================================
