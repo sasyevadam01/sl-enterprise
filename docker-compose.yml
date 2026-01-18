@@ -10,6 +10,7 @@ services:
     volumes:
       - ./backend/sl_enterprise.db:/app/sl_enterprise.db
       - ./backend/uploads:/app/uploads
+      - ./backend/backups:/app/backups
     env_file:
       - ./backend/.env
 
