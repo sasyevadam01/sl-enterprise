@@ -834,8 +834,7 @@ const AbsenceTab = ({ employeeId, employeeName }) => {
             toast.success("Assenza eliminata definitivamente");
             // Rimuovi subito dalla lista per feedback immediato
             setAbsences(prev => prev.filter(l => l.id !== leave.id));
-            // Ricarica comunque per sicurezza
-            loadAbsences();
+            // Non ricarichiamo loadAbsences() per evitare race condition dove il server restituisce ancora il dato vecchio
         } catch (e) {
             toast.error("Errore durante l'eliminazione");
         }
