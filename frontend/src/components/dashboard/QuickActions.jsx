@@ -23,13 +23,6 @@ export default function QuickActions({ pendingCounts }) {
             to: '/hr/planner',
             color: 'teal',
             badge: null
-        },
-        {
-            label: 'Scadenze',
-            icon: '⚠️',
-            to: '/hr/security',
-            color: 'orange',
-            badge: pendingCounts.expiries > 0 ? pendingCounts.expiries : null
         }
     ];
 

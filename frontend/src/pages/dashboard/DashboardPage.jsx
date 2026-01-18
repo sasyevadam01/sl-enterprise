@@ -1,102 +1,64 @@
 /**
- * SL Enterprise - Dashboard 3.0 (Premium)
- * Re-tooled with "Control Room" Philosophy
+ * SL Enterprise - Dashboard 4.0 (Redesigned)
+ * Simplified & Functional Layout
  */
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
-    expiriesApi,
-    eventsApi,
     leavesApi,
-    employeesApi,
-    kpiApi
+    employeesApi
 } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
-import { format, addDays, startOfWeek } from 'date-fns';
+import { format, isToday, parseISO } from 'date-fns';
 
 // Components
 import CommandCenter from '../../components/dashboard/CommandCenter';
-import PerformanceGauge from '../../components/dashboard/PerformanceGauge';
-import MachineStatusWidget from '../../components/dashboard/MachineStatusWidget';
-import DepartmentEfficiencyWidget from '../../components/dashboard/DepartmentEfficiencyWidget';
 import MyTasksWidget from '../../components/dashboard/MyTasksWidget';
 import StaffingWidget from '../../components/dashboard/StaffingWidget';
-import ProductionTrendWidget from '../../components/dashboard/ProductionTrendWidget';
 import QuickActions from '../../components/dashboard/QuickActions';
-import ActivityTimeline from '../../components/dashboard/ActivityTimeline';
 import WeatherWidget from '../../components/dashboard/WeatherWidget';
+import RecentLeavesWidget from '../../components/dashboard/RecentLeavesWidget';
+import RecentEventsWidget from '../../components/dashboard/RecentEventsWidget';
 
 export default function DashboardPage() {
     const { user } = useAuth();
     const [loading, setLoading] = useState(true);
 
     // Data States
-    const [stats, setStats] = useState({ totalEmployees: 0, pendingLeaves: 0, pendingEvents: 0 });
-    const [trendData, setTrendData] = useState([]);
-    const [activities, setActivities] = useState([]);
-    const [pendingCounts, setPendingCounts] = useState({ leaves: 0, events: 0, expiries: 0 });
-    const [expiries, setExpiries] = useState({});
+    const [stats, setStats] = useState({ totalEmployees: 0, permessiOggi: 0 });
+    const [pendingCounts, setPendingCounts] = useState({ leaves: 0, events: 0 });
 
     // Fetch Effect
     useEffect(() => {
         const fetchDashboardData = async () => {
             try {
                 // Parallel Fetching
-                const [
-                    employees,
-                    pendingLeaves,
-                    pendingEvents,
-                    expiriesData,
-                    trendResult
-                ] = await Promise.all([
+                const [employees, approvedLeaves] = await Promise.all([
                     employeesApi.getEmployees().catch(() => []),
-                    leavesApi.getPending().catch(() => []),
-                    eventsApi.getPending().catch(() => []),
-                    expiriesApi.getExpiries().catch(() => ({})),
-                    kpiApi.getTrend(
-                        format(addDays(new Date(), -7), 'yyyy-MM-dd'),
-                        format(new Date(), 'yyyy-MM-dd'),
-                        true
-                    ).catch(() => ({ trend: [] }))
+                    leavesApi.getLeaves({ status_filter: 'approved' }).catch(() => [])
                 ]);
+
+                // Count "Permessi Oggi" (leaves that cover today and are type 'permit' or similar)
+                const today = new Date();
+                const permessiOggi = approvedLeaves.filter(l => {
+                    const start = parseISO(l.start_date);
+                    const end = parseISO(l.end_date);
+                    const isTodayCovered = today >= start && today <= end;
+                    // Consider 'permit' or 'permesso' as daily permits. Adjust regex if needed.
+                    const isPermit = /permesso|permit/i.test(l.leave_type);
+                    return isTodayCovered && isPermit;
+                }).length;
 
                 // Update Stats
                 setStats({
                     totalEmployees: employees.length,
-                    pendingLeaves: pendingLeaves.length,
-                    pendingEvents: pendingEvents.length
+                    permessiOggi: permessiOggi
                 });
 
                 setPendingCounts({
-                    leaves: pendingLeaves.length,
-                    events: pendingEvents.length,
-                    expiries: expiriesData.total_urgent || 0
+                    leaves: 0, // Not used for header anymore
+                    events: 0
                 });
-
-                setExpiries(expiriesData);
-                setTrendData(trendResult?.trend || []);
-
-                // Build Activities Timeline
-                const acts = [];
-                // Leaves
-                pendingLeaves.slice(0, 3).forEach(l => acts.push({
-                    type: 'leave',
-                    title: `Richiesta ${l.leave_type}`,
-                    employee: { id: l.employee_id, name: l.employee_name || 'Dipendente' },
-                    time: format(new Date(l.created_at), 'HH:mm')
-                }));
-                // Events
-                pendingEvents.slice(0, 3).forEach(e => acts.push({
-                    type: 'event',
-                    title: e.event_label || 'Evento HR',
-                    employee: { id: e.employee_id, name: e.employee_name || 'Dipendente' },
-                    time: format(new Date(e.created_at), 'HH:mm')
-                }));
-                // Expiries
-                if (expiriesData.total_urgent > 0) {
-                    acts.push({ type: 'expiry', title: `${expiriesData.total_urgent} Scadenze Urgenti`, time: 'Oggi' });
-                }
-                setActivities(acts);
 
             } catch (error) {
                 console.error("Dashboard Sync Error:", error);
@@ -114,7 +76,7 @@ export default function DashboardPage() {
         visible: {
             opacity: 1,
             transition: {
-                staggerChildren: 0.1
+                staggerChildren: 0.08
             }
         }
     };
@@ -147,42 +109,33 @@ export default function DashboardPage() {
                 <CommandCenter stats={stats} user={user} />
             </motion.div>
 
-            {/* 2. Top Row: Weather & Critical Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 h-auto md:h-48">
-                <motion.div variants={itemVariants} className="md:col-span-1 h-full">
+            {/* 2. Row 1: Weather + I Miei Task */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <motion.div variants={itemVariants} className="md:col-span-1 h-56">
                     <WeatherWidget />
                 </motion.div>
-                <motion.div variants={itemVariants} className="md:col-span-1 h-full">
-                    <PerformanceGauge />
-                </motion.div>
-                <motion.div variants={itemVariants} className="md:col-span-2 h-full">
-                    <MachineStatusWidget />
-                </motion.div>
-            </div>
-
-            {/* 3. Operational Row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-auto md:h-80">
-                <motion.div variants={itemVariants} className="h-full">
-                    <StaffingWidget />
-                </motion.div>
-                <motion.div variants={itemVariants} className="h-full">
-                    <ProductionTrendWidget data={trendData} />
-                </motion.div>
-                <motion.div variants={itemVariants} className="h-full">
-                    <ActivityTimeline activities={activities} />
-                </motion.div>
-            </div>
-
-            {/* 4. Tasks & Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <motion.div variants={itemVariants} className="md:col-span-1 h-80">
+                <motion.div variants={itemVariants} className="md:col-span-2 h-56">
                     <MyTasksWidget />
                 </motion.div>
-                <motion.div variants={itemVariants} className="md:col-span-2 h-full flex flex-col justify-end">
-                    {/* Quick Actions now compact at bottom */}
-                    <QuickActions pendingCounts={pendingCounts} />
+            </div>
+
+            {/* 3. Row 2: Presenze Turno + Ultime Assenze + Ultimi Eventi */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <motion.div variants={itemVariants} className="h-80">
+                    <StaffingWidget />
+                </motion.div>
+                <motion.div variants={itemVariants} className="h-80">
+                    <RecentLeavesWidget />
+                </motion.div>
+                <motion.div variants={itemVariants} className="h-80">
+                    <RecentEventsWidget />
                 </motion.div>
             </div>
+
+            {/* 4. Bottom: Quick Actions (Full Width) */}
+            <motion.div variants={itemVariants}>
+                <QuickActions pendingCounts={pendingCounts} />
+            </motion.div>
 
         </motion.div>
     );

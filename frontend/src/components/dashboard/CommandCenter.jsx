@@ -78,18 +78,11 @@ export default function CommandCenter({ stats, user }) {
                         color="blue"
                     />
                     <StatPill
-                        value={stats.pendingLeaves || 0}
-                        label="Ferie"
-                        icon="🏖️"
-                        color={stats.pendingLeaves > 0 ? "orange" : "slate"}
-                        alert={stats.pendingLeaves > 0}
-                    />
-                    <StatPill
-                        value={stats.pendingEvents || 0}
-                        label="Eventi"
-                        icon="🔔"
-                        color={stats.pendingEvents > 0 ? "purple" : "slate"}
-                        alert={stats.pendingEvents > 0}
+                        value={stats.permessiOggi || 0}
+                        label="Permessi Oggi"
+                        icon="📋"
+                        color={stats.permessiOggi > 0 ? "emerald" : "slate"}
+                        alert={stats.permessiOggi > 0}
                     />
                 </div>
             </div>
