@@ -40,9 +40,9 @@ export default function RecentLeavesWidget() {
     }, []);
 
     const handleDelete = async (id) => {
-        if (!window.confirm("Eliminare questa richiesta di assenza?")) return;
+        if (!window.confirm("Sei sicuro di voler ELIMINARE DEFINITIVAMENTE questa assenza?")) return;
         try {
-            await leavesApi.cancelLeave(id);
+            await leavesApi.deleteLeave(id);
             setLeaves(prev => prev.filter(l => l.id !== id));
         } catch (err) {
             alert("Errore: " + err.message);
@@ -83,8 +83,8 @@ export default function RecentLeavesWidget() {
                                     </p>
                                 </div>
                                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition">
-                                    <Link to={`/hr/leaves?edit=${l.id}`} className="w-7 h-7 rounded bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs hover:bg-blue-500/40" title="Modifica">✏️</Link>
-                                    <button onClick={() => handleDelete(l.id)} className="w-7 h-7 rounded bg-red-500/20 text-red-400 flex items-center justify-center text-xs hover:bg-red-500/40" title="Elimina">🗑️</button>
+                                    <Link to={`/hr/employees/${l.employee_id}`} className="w-7 h-7 rounded bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs hover:bg-blue-500/40" title="Vai al Dossier per Modificare">✏️</Link>
+                                    <button onClick={() => handleDelete(l.id)} className="w-7 h-7 rounded bg-red-500/20 text-red-400 flex items-center justify-center text-xs hover:bg-red-500/40" title="Elimina Definitivamente">🗑️</button>
                                 </div>
                             </div>
                         </div>
