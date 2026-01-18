@@ -173,6 +173,7 @@ export const leavesApi = {
   getPending: () => client.get("/leaves/pending"),
   createLeave: (empId, data) =>
     client.post(`/leaves/?employee_id=${empId}`, data),
+  updateLeave: (id, data) => client.patch(`/leaves/${id}`, data),
   reviewLeave: (id, data) => client.patch(`/leaves/${id}/review`, data),
   cancelLeave: (id) => client.delete(`/leaves/${id}`),
   // Monte Ore Permessi

@@ -759,6 +759,16 @@ const AbsenceTab = ({ employeeId, employeeName }) => {
         other: '📋 Altro'
     };
 
+    const [showEditForm, setShowEditForm] = useState(false);
+    const [editingLeave, setEditingLeave] = useState(null);
+    const [formData, setFormData] = useState({
+        leave_type: 'permit',
+        start_date: '',
+        end_date: '',
+        hours: '',
+        reason: ''
+    });
+
     const loadAbsences = useCallback(async () => {
         try {
             // Fetch leaves and filter by employee client-side or assume endpoint supports filtering
@@ -774,6 +784,40 @@ const AbsenceTab = ({ employeeId, employeeName }) => {
             setLoading(false);
         }
     }, [employeeId]);
+
+    const handleEditClick = (leave) => {
+        setEditingLeave(leave);
+        setFormData({
+            leave_type: leave.leave_type,
+            start_date: leave.start_date ? leave.start_date.split('T')[0] : '',
+            end_date: leave.end_date ? leave.end_date.split('T')[0] : '',
+            hours: leave.hours || '',
+            reason: leave.reason || ''
+        });
+        setShowEditForm(true);
+    };
+
+    const handleUpdate = async (e) => {
+        e.preventDefault();
+        try {
+            // Prepare payload
+            const payload = {
+                ...formData,
+                start_date: new Date(formData.start_date).toISOString(),
+                end_date: new Date(formData.end_date).toISOString(),
+                hours: formData.hours ? parseFloat(formData.hours) : null
+            };
+
+            await leavesApi.updateLeave(editingLeave.id, payload);
+            toast.success("Assenza aggiornata con successo");
+            setShowEditForm(false);
+            setEditingLeave(null);
+            loadAbsences();
+        } catch (error) {
+            console.error("Update error", error);
+            toast.error("Errore aggiornamento: " + (error.response?.data?.detail || error.message));
+        }
+    };
 
     const handleDelete = async (leave) => {
         const typeLabel = LEAVE_LABELS[leave.leave_type] || leave.leave_type;
@@ -799,43 +843,127 @@ const AbsenceTab = ({ employeeId, employeeName }) => {
     if (loading) return <div className="text-center py-8 text-gray-400">Caricamento assenze...</div>;
 
     return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-center">
+        <div className="space-y-4">
+            {/* Edit Modal */}
+            {showEditForm && (
+                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={() => setShowEditForm(false)}>
+                    <div className="bg-slate-800 rounded-xl p-6 w-full max-w-md space-y-4 border border-white/10 shadow-2xl" onClick={e => e.stopPropagation()}>
+                        <h3 className="text-lg font-bold text-white">Modifica Assenza</h3>
+
+                        <form onSubmit={handleUpdate} className="space-y-4">
+                            <div>
+                                <label className="text-xs text-gray-400 block mb-1">Tipo Assenza</label>
+                                <select
+                                    className="w-full bg-slate-700 border border-white/10 rounded p-2 text-white"
+                                    value={formData.leave_type}
+                                    onChange={e => setFormData({ ...formData, leave_type: e.target.value })}
+                                >
+                                    {Object.entries(LEAVE_LABELS).map(([key, label]) => (
+                                        <option key={key} value={key}>{label}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="text-xs text-gray-400 block mb-1">Inizio</label>
+                                    <input
+                                        type="date"
+                                        className="w-full bg-slate-700 border border-white/10 rounded p-2 text-white"
+                                        value={formData.start_date}
+                                        onChange={e => setFormData({ ...formData, start_date: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs text-gray-400 block mb-1">Fine</label>
+                                    <input
+                                        type="date"
+                                        className="w-full bg-slate-700 border border-white/10 rounded p-2 text-white"
+                                        value={formData.end_date}
+                                        onChange={e => setFormData({ ...formData, end_date: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="text-xs text-gray-400 block mb-1">Ore (Opzionale)</label>
+                                <input
+                                    type="number"
+                                    step="0.5"
+                                    className="w-full bg-slate-700 border border-white/10 rounded p-2 text-white"
+                                    value={formData.hours}
+                                    onChange={e => setFormData({ ...formData, hours: e.target.value })}
+                                    placeholder="Es: 4"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="text-xs text-gray-400 block mb-1">Motivazione</label>
+                                <textarea
+                                    className="w-full bg-slate-700 border border-white/10 rounded p-2 text-white"
+                                    value={formData.reason}
+                                    onChange={e => setFormData({ ...formData, reason: e.target.value })}
+                                    rows={3}
+                                />
+                            </div>
+
+                            <div className="flex justify-end gap-2 pt-2">
+                                <button type="button" onClick={() => setShowEditForm(false)} className="px-4 py-2 rounded bg-slate-600 text-white hover:bg-slate-500">Annulla</button>
+                                <button type="submit" className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-500">Salva Modifiche</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            <div className="flex justify-between items-center bg-slate-800/50 p-4 rounded-xl border border-white/5">
                 <h4 className="text-white font-medium">Storico Assenze e Permessi</h4>
-                {/* Potremmo aggiungere pulsante crea richiesta qui in futuro */}
+                <Link to="/hr/leaves" className="text-sm text-blue-400 hover:text-blue-300">+ Gestisci Tutto</Link>
             </div>
 
-            {absences.length === 0 ? (
-                <p className="text-gray-400 text-center py-8">Nessuna assenza registrata</p>
-            ) : (
-                <div className="space-y-3">
-                    {absences.map(leave => (
-                        <div key={leave.id} className="bg-slate-700/50 rounded-lg p-4 flex items-center justify-between">
-                            <div>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-white font-medium">{LEAVE_LABELS[leave.leave_type] || leave.leave_type}</span>
-                                    <span className={`text-xs px-2 py-0.5 rounded border ${ABSENCE_STATUS[leave.status]?.color || 'text-gray-400'}`}>
-                                        {ABSENCE_STATUS[leave.status]?.label || leave.status}
-                                    </span>
+            <div className="space-y-3">
+                {absences.map(leave => {
+                    const statusInfo = ABSENCE_STATUS[leave.status] || { label: leave.status, color: 'text-gray-400' };
+                    // Format dates
+                    const start = new Date(leave.start_date).toLocaleDateString('it-IT');
+                    const end = new Date(leave.end_date).toLocaleDateString('it-IT');
+                    const dateRange = start === end ? start : `${start} al ${end}`;
+
+                    return (
+                        <div key={leave.id} className="bg-slate-700/30 border border-white/5 rounded-lg p-4 flex flex-col md:flex-row justify-between items-center gap-4">
+                            <div className="flex items-center gap-4">
+                                <span className="text-2xl">{leave.leave_type === 'permit' ? '📝' : '📅'}</span>
+                                <div>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <span className="text-white font-medium text-lg capitalize">{LEAVE_LABELS[leave.leave_type] || leave.leave_type}</span>
+                                        <span className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider ${statusInfo.color}`}>
+                                            {statusInfo.label}
+                                        </span>
+                                    </div>
+                                    <p className="text-gray-400 text-sm">Dal {dateRange} {leave.hours ? `(${leave.hours}h)` : ''}</p>
+                                    {leave.reason && <p className="text-gray-500 text-xs italic mt-1">"{leave.reason}"</p>}
                                 </div>
-                                <p className="text-gray-400 text-sm mt-1">
-                                    Dal {new Date(leave.start_date).toLocaleDateString('it-IT')} al {new Date(leave.end_date).toLocaleDateString('it-IT')}
-                                </p>
-                                {leave.reason && <p className="text-gray-500 text-xs mt-1">Note: {leave.reason}</p>}
                             </div>
-                            <div>
-                                {(leave.status === 'pending' || leave.status === 'approved') && (
-                                    <button
-                                        onClick={() => handleDelete(leave)}
-                                        className="px-3 py-1 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30 transition text-sm flex items-center gap-1"
-                                    >
-                                        🗑️ Annulla
-                                    </button>
-                                )}
+
+                            <div className="flex gap-2 w-full md:w-auto">
+                                <button
+                                    onClick={() => handleEditClick(leave)}
+                                    className="flex-1 md:flex-none px-3 py-2 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded hover:bg-blue-500/20 transition flex items-center justify-center gap-2"
+                                >
+                                    ✏️ Modifica
+                                </button>
+                                <button
+                                    onClick={() => handleDelete(leave)}
+                                    className="flex-1 md:flex-none px-3 py-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded hover:bg-red-500/20 transition flex items-center justify-center gap-2"
+                                >
+                                    🗑️ Annulla
+                                </button>
                             </div>
                         </div>
                     ))}
-                </div>
+            </div>
             )}
         </div>
     );
