@@ -186,6 +186,7 @@ export default function LeavesManager() {
                     <thead className="bg-slate-900/80 border-b border-white/5">
                         <tr>
                             <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Dipendente</th>
+                            <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Richiesto da</th>
                             <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Tipo</th>
                             <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Periodo</th>
                             <th className="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Stato</th>
@@ -229,12 +230,17 @@ export default function LeavesManager() {
                                                         >
                                                             {getEmployeeName(leave.employee_id)}
                                                         </Link>
-                                                        {leave.requester && (
-                                                            <div className="text-[10px] text-slate-500 mt-0.5">
-                                                                by {leave.requester.full_name || leave.requester.username}
-                                                            </div>
-                                                        )}
                                                     </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-6 h-6 rounded-full bg-orange-500/20 border border-orange-500/30 flex items-center justify-center text-orange-400 text-[10px] font-bold">
+                                                        {(leave.requester?.full_name || leave.requester?.username || 'N/A').charAt(0).toUpperCase()}
+                                                    </div>
+                                                    <span className="text-slate-300 text-sm">
+                                                        {leave.requester?.full_name || leave.requester?.username || 'Sistema'}
+                                                    </span>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">

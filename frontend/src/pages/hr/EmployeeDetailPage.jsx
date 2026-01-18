@@ -769,8 +769,11 @@ const AbsenceTab = ({ employeeId, employeeName }) => {
         try {
             // Fetch leaves and filter by employee client-side or assume endpoint supports filtering
             const allLeaves = await leavesApi.getLeaves({});
-            // Filter strictly for this employee
-            const empLeaves = allLeaves.filter(l => l.employee_id === parseInt(employeeId));
+            // Filter strictly for this employee AND exclude rejected/cancelled (keep approved & pending only)
+            const empLeaves = allLeaves.filter(l =>
+                l.employee_id === parseInt(employeeId) &&
+                (l.status === 'approved' || l.status === 'pending')
+            );
             // Sort by start date desc
             empLeaves.sort((a, b) => new Date(b.start_date) - new Date(a.start_date));
             setAbsences(empLeaves);
