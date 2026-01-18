@@ -95,20 +95,29 @@ export default function HRManagementPage() {
     const absenceStats = useMemo(() => {
         const today = new Date(); // Use system time
 
+        // Enrichment helper
+        const enrich = (l) => {
+            const emp = employees.find(e => e.id === l.employee_id);
+            return {
+                ...l,
+                employee_name: emp ? `${emp.last_name} ${emp.first_name}` : 'Sconosciuto'
+            };
+        };
+
         const absentsToday = leaves.filter(l => {
             const start = parseISO(l.start_date);
             const end = parseISO(l.end_date);
             return (isSameDay(today, start) || isAfter(today, start)) && (isSameDay(today, end) || isBefore(today, end));
-        });
+        }).map(enrich);
 
-        const returningTomorrow = leaves.filter(l => isSameDay(parseISO(l.end_date), today));
+        const returningTomorrow = leaves.filter(l => isSameDay(parseISO(l.end_date), today)).map(enrich);
 
         const sickLeaves = leaves.filter(l => l.leave_type === 'sick').length;
         const totalLeaves = leaves.length || 1;
         const sickRate = Math.round((sickLeaves / totalLeaves) * 100);
 
         return { absentsToday, returningTomorrow, sickRate };
-    }, [leaves]);
+    }, [leaves, employees]);
 
     // 2. PERFORMANCE STATS (Top/Bottom 5)
     const performanceStats = useMemo(() => {

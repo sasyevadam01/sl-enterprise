@@ -76,7 +76,8 @@ export default function NotificationBell() {
 
                 const notifCount = notifData.unread_count || 0;
                 const chatCount = chatData.total_unread || 0;
-                console.log("🔔 BELL DEBUG:", { notifCount, chatCount, notifData, chatData }); // DEBUG LOG
+                // console.log("🔔 BELL DEBUG:", { notifCount, chatCount, notifData, chatData }); // DEBUG LOG REMOVED
+
 
                 const newTotal = notifCount + chatCount;
 
