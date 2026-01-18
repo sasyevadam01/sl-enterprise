@@ -977,6 +977,7 @@ const AbsenceTab = ({ employeeId, employeeName }) => {
 export default function EmployeeDetailPage() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const isNew = id === 'new';
     const { showConfirm, toast } = useUI();
 
@@ -995,6 +996,16 @@ export default function EmployeeDetailPage() {
     });
 
     const [activeTab, setActiveTab] = useState('overview');
+
+    // Handle tab query param
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const tab = params.get('tab');
+        if (tab) {
+            setActiveTab(tab);
+        }
+    }, [location.search]);
+
     const [allEmployees, setAllEmployees] = useState([]);
     const [banchine, setBanchine] = useState([]); // [NEW]
     const [availableRoles, setAvailableRoles] = useState([]); // [NEW] Ruoli da Macchine_Ruoli_Banchine

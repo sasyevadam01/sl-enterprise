@@ -83,7 +83,7 @@ export default function RecentLeavesWidget() {
                                     </p>
                                 </div>
                                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition">
-                                    <Link to={`/hr/employees/${l.employee_id}`} className="w-7 h-7 rounded bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs hover:bg-blue-500/40" title="Vai al Dossier per Modificare">✏️</Link>
+                                    <Link to={`/hr/employees/${l.employee_id}?tab=absences`} className="w-7 h-7 rounded bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs hover:bg-blue-500/40" title="Vai al Dossier per Modificare">✏️</Link>
                                     <button onClick={() => handleDelete(l.id)} className="w-7 h-7 rounded bg-red-500/20 text-red-400 flex items-center justify-center text-xs hover:bg-red-500/40" title="Elimina Definitivamente">🗑️</button>
                                 </div>
                             </div>
