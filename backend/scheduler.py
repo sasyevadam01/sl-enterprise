@@ -7,6 +7,10 @@ from apscheduler.triggers.interval import IntervalTrigger
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 import logging
+import shutil
+import os
+import glob
+from pathlib import Path
 
 from database import SessionLocal, Notification
 
@@ -101,6 +105,50 @@ def auto_cleanup_chats():
     finally:
         db.close()
 
+def auto_backup_db():
+    """
+    Job pianificato: Backup orario del database.
+    Mantiene ultime 24 versioni.
+    """
+    logger.info("Avvio procedura di backup automatico DB...")
+    try:
+        # Percorsi
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        DB_PATH = os.path.join(BASE_DIR, "sl_enterprise.db")
+        BACKUP_DIR = os.path.join(BASE_DIR, "backups")
+        
+        # Assicurati che cartella backup esista
+        os.makedirs(BACKUP_DIR, exist_ok=True)
+        
+        # Nome file con timestamp
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M")
+        backup_filename = f"sl_enterprise_{timestamp}.db"
+        backup_path = os.path.join(BACKUP_DIR, backup_filename)
+        
+        # 1. Esegui Backup (Copia file)
+        if os.path.exists(DB_PATH):
+            shutil.copy2(DB_PATH, backup_path)
+            logger.info(f"✅ Backup creato con successo: {backup_filename}")
+        else:
+            logger.error("❌ Errore Backup: File database non trovato!")
+            return
+
+        # 2. Pulizia vecchi backup (Mantieni ultimi 24)
+        list_of_files = glob.glob(os.path.join(BACKUP_DIR, "sl_enterprise_*.db"))
+        list_of_files.sort(key=os.path.getmtime, reverse=True) # Ordina per data (più recenti primi)
+        
+        if len(list_of_files) > 24:
+            files_to_delete = list_of_files[24:]
+            for f in files_to_delete:
+                try:
+                    os.remove(f)
+                    logger.info(f"🗑️ Eliminato backup vecchio: {os.path.basename(f)}")
+                except Exception as e:
+                    logger.error(f"Errore eliminazione vecchio backup {f}: {e}")
+                    
+    except Exception as e:
+        logger.error(f"❌ CRITICAL ERROR BACKUP: {e}")
+
 def start_scheduler():
     """Avvia lo scheduler e aggiunge i job."""
     if not scheduler.running:
@@ -121,6 +169,17 @@ def start_scheduler():
             name='Pulizia chat vecchie',
             replace_existing=True
         )
+
+        # 3. Backup Orario Database (NOVITÀ SAFE MODE)
+        scheduler.add_job(
+            auto_backup_db,
+            trigger=IntervalTrigger(hours=1),
+            id='auto_backup_db',
+            name='Backup Orario Database',
+            replace_existing=True
+        )
+        # Avvia subito un backup all'avvio per sicurezza
+        scheduler.add_job(auto_backup_db, trigger='date', run_date=datetime.now() + timedelta(seconds=10))
         
         scheduler.start()
         logger.info("Scheduler avviato correttamente.")
