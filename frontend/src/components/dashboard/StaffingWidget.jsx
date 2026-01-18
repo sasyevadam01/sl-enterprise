@@ -119,7 +119,13 @@ export default function StaffingWidget() {
                                 </div>
                                 <div>
                                     <p className="text-xs font-bold text-gray-200 group-hover:text-blue-300 transition">{leave.employee_name}</p>
-                                    <p className="text-[10px] text-gray-500">{leave.leave_type}</p>
+                                    <p className="text-[10px] text-gray-500">{
+                                        leave.leave_type === 'vacation' ? 'Ferie' :
+                                            leave.leave_type === 'sick' ? 'Malattia' :
+                                                leave.leave_type === 'permit' ? 'Permesso' :
+                                                    leave.leave_type === 'sudden_permit' ? 'Permesso Improv.' :
+                                                        leave.leave_type
+                                    }</p>
                                 </div>
                             </div>
                         </Link>

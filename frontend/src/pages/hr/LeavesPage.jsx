@@ -12,11 +12,7 @@ const LEAVE_TYPES = [
     { value: 'vacation', label: 'Ferie', icon: '🏖️', color: 'blue' },
     { value: 'sick', label: 'Malattia', icon: '🏥', color: 'red' },
     { value: 'permit', label: 'Permesso', icon: '📝', color: 'purple' },
-    { value: 'maternity', label: 'Maternità', icon: '👶', color: 'pink' },
-    { value: 'paternity', label: 'Paternità', icon: '👨‍👧', color: 'cyan' },
-    { value: 'wedding', label: 'Matrimonio', icon: '💒', color: 'yellow' },
-    { value: 'bereavement', label: 'Lutto', icon: '🕯️', color: 'gray' },
-    { value: 'other', label: 'Altro', icon: '📋', color: 'slate' },
+    { value: 'sudden_permit', label: 'Permesso Improvviso', icon: '⚡', color: 'yellow' },
 ];
 
 const STATUS_MAP = {
@@ -124,7 +120,7 @@ const getEmployeeName = (empId) => {
     return emp ? `${emp.first_name} ${emp.last_name}` : `ID: ${empId}`;
 };
 
-const getLeaveType = (type) => LEAVE_TYPES.find(t => t.value === type) || LEAVE_TYPES[7];
+const getLeaveType = (type) => LEAVE_TYPES.find(t => t.value === type) || LEAVE_TYPES[0];
 
 const formatDate = (dateStr) => {
     if (!dateStr) return '-';
@@ -308,22 +304,36 @@ return (
                             </select>
                         </div>
 
-                        {/* Leave Type */}
+                        {/* Leave Type - CLICKABLE BUTTONS */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-400 mb-1">
-                                Tipo
+                            <label className="block text-sm font-medium text-gray-400 mb-2">
+                                Tipo Assenza
                             </label>
-                            <select
-                                value={formData.leave_type}
-                                onChange={(e) => setFormData(prev => ({ ...prev, leave_type: e.target.value }))}
-                                className="w-full px-4 py-3 bg-slate-700 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                            >
-                                {LEAVE_TYPES.map(t => (
-                                    <option key={t.value} value={t.value}>
-                                        {t.icon} {t.label}
-                                    </option>
-                                ))}
-                            </select>
+                            <div className="grid grid-cols-2 gap-2">
+                                {LEAVE_TYPES.map(t => {
+                                    const isSelected = formData.leave_type === t.value;
+                                    const colorMap = {
+                                        blue: 'border-blue-500 bg-blue-500/20 text-blue-400',
+                                        red: 'border-red-500 bg-red-500/20 text-red-400',
+                                        purple: 'border-purple-500 bg-purple-500/20 text-purple-400',
+                                        yellow: 'border-yellow-500 bg-yellow-500/20 text-yellow-400',
+                                    };
+                                    return (
+                                        <button
+                                            key={t.value}
+                                            type="button"
+                                            onClick={() => setFormData(prev => ({ ...prev, leave_type: t.value }))}
+                                            className={`p-3 rounded-xl border-2 text-left transition-all flex items-center gap-2 ${isSelected
+                                                ? colorMap[t.color]
+                                                : 'border-white/10 bg-slate-700/50 hover:border-white/30 text-white'
+                                                }`}
+                                        >
+                                            <span className="text-xl">{t.icon}</span>
+                                            <span className="font-medium text-sm">{t.label}</span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
                         </div>
 
                         {/* Dates */}

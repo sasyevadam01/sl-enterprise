@@ -17,11 +17,7 @@ const LEAVE_CODES = {
     vacation: { code: 'F', label: 'Ferie', color: 'bg-green-500', textColor: 'text-white' },
     sick: { code: 'M', label: 'Malattia', color: 'bg-red-500', textColor: 'text-white' },
     permit: { code: 'P', label: 'Permesso', color: 'bg-yellow-500', textColor: 'text-black' },
-    maternity: { code: 'MA', label: 'Maternità', color: 'bg-pink-500', textColor: 'text-white' },
-    paternity: { code: 'PA', label: 'Paternità', color: 'bg-blue-500', textColor: 'text-white' },
-    wedding: { code: 'MT', label: 'Matrimonio', color: 'bg-purple-500', textColor: 'text-white' },
-    bereavement: { code: 'L', label: 'Lutto', color: 'bg-gray-700', textColor: 'text-white' },
-    other: { code: 'A', label: 'Altro', color: 'bg-gray-500', textColor: 'text-white' },
+    sudden_permit: { code: 'PI', label: 'Permesso Improvviso', color: 'bg-orange-500', textColor: 'text-white' },
 };
 
 // Genera array di giorni in base alla vista

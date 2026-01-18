@@ -453,7 +453,8 @@ export default function PlannerPage() {
                                                                     {leave.leave_type === 'vacation' ? 'Ferie' :
                                                                         leave.leave_type === 'sick' ? 'Malattia' :
                                                                             leave.leave_type === 'permit' ? 'Permesso' :
-                                                                                leave.leave_type?.slice(0, 6) || 'Assenza'}
+                                                                                leave.leave_type === 'sudden_permit' ? 'Improv.' :
+                                                                                    leave.leave_type?.slice(0, 6) || 'Assenza'}
                                                                 </span>
                                                             </>
                                                         ) : shift ? (

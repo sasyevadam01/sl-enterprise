@@ -103,11 +103,7 @@ export default function HRManagementPage() {
         vacation: '🏖️ Ferie',
         sick: '🏥 Malattia',
         permit: '📝 Permesso',
-        maternity: '👶 Maternità',
-        paternity: '👨‍👧 Paternità',
-        wedding: '💒 Matrimonio',
-        bereavement: '🕯️ Lutto',
-        other: '📋 Altro'
+        sudden_permit: '⚡ Permesso Improvviso'
     };
 
     const STATUS_LABELS = {

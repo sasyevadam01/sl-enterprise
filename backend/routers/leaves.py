@@ -227,7 +227,7 @@ async def get_employee_leave_hours(
         LeaveRequest.status == "approved",
         LeaveRequest.start_date >= start_of_year,
         LeaveRequest.start_date <= end_of_year,
-        LeaveRequest.leave_type.in_(["permit", "hourly_permit", "early_exit"])
+        LeaveRequest.leave_type.in_(["permit", "sudden_permit", "hourly_permit", "early_exit"])
     ).all()
     
     # Somma ore (se hours è NULL, conta come 8 ore per giornata intera)
@@ -297,7 +297,7 @@ async def get_all_employees_hours(
             LeaveRequest.status == "approved",
             LeaveRequest.start_date >= start_of_year,
             LeaveRequest.start_date <= end_of_year,
-            LeaveRequest.leave_type.in_(["permit", "hourly_permit", "early_exit"])
+            LeaveRequest.leave_type.in_(["permit", "sudden_permit", "hourly_permit", "early_exit"])
         ).all()
         
         ore_usate = 0

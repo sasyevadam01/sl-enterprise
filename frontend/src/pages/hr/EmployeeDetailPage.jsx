@@ -749,14 +749,10 @@ const AbsenceTab = ({ employeeId, employeeName }) => {
     };
 
     const LEAVE_LABELS = {
-        vacation: '🏖️ Ferie',
-        sick: '🏥 Malattia',
-        permit: '📝 Permesso',
-        maternity: '👶 Maternità',
-        paternity: '👨‍👧 Paternità',
-        wedding: '💒 Matrimonio',
-        bereavement: '🕯️ Lutto',
-        other: '📋 Altro'
+        vacation: { label: '🏖️ Ferie', color: 'blue' },
+        sick: { label: '🏥 Malattia', color: 'red' },
+        permit: { label: '📝 Permesso', color: 'purple' },
+        sudden_permit: { label: '⚡ Permesso Improvviso', color: 'yellow' }
     };
 
     const [showEditForm, setShowEditForm] = useState(false);
@@ -854,16 +850,31 @@ const AbsenceTab = ({ employeeId, employeeName }) => {
 
                         <form onSubmit={handleUpdate} className="space-y-4">
                             <div>
-                                <label className="text-xs text-gray-400 block mb-1">Tipo Assenza</label>
-                                <select
-                                    className="w-full bg-slate-700 border border-white/10 rounded p-2 text-white"
-                                    value={formData.leave_type}
-                                    onChange={e => setFormData({ ...formData, leave_type: e.target.value })}
-                                >
-                                    {Object.entries(LEAVE_LABELS).map(([key, label]) => (
-                                        <option key={key} value={key}>{label}</option>
-                                    ))}
-                                </select>
+                                <label className="text-xs text-gray-400 block mb-2">Tipo Assenza</label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {Object.entries(LEAVE_LABELS).map(([key, info]) => {
+                                        const isSelected = formData.leave_type === key;
+                                        const colorMap = {
+                                            blue: 'border-blue-500 bg-blue-500/20 text-blue-400',
+                                            red: 'border-red-500 bg-red-500/20 text-red-400',
+                                            purple: 'border-purple-500 bg-purple-500/20 text-purple-400',
+                                            yellow: 'border-yellow-500 bg-yellow-500/20 text-yellow-400',
+                                        };
+                                        return (
+                                            <button
+                                                key={key}
+                                                type="button"
+                                                onClick={() => setFormData({ ...formData, leave_type: key })}
+                                                className={`p-2 rounded-lg border-2 text-left transition-all flex items-center gap-2 text-sm ${isSelected
+                                                    ? colorMap[info.color]
+                                                    : 'border-white/10 bg-slate-700/50 hover:border-white/30 text-white'
+                                                    }`}
+                                            >
+                                                {info.label}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-3">
@@ -936,10 +947,10 @@ const AbsenceTab = ({ employeeId, employeeName }) => {
                     return (
                         <div key={leave.id} className="bg-slate-700/30 border border-white/5 rounded-lg p-4 flex flex-col md:flex-row justify-between items-center gap-4">
                             <div className="flex items-center gap-4">
-                                <span className="text-2xl">{leave.leave_type === 'permit' ? '📝' : '📅'}</span>
+                                <span className="text-2xl">{leave.leave_type === 'permit' || leave.leave_type === 'sudden_permit' ? '📝' : '📅'}</span>
                                 <div>
                                     <div className="flex items-center gap-2 mb-1">
-                                        <span className="text-white font-medium text-lg capitalize">{LEAVE_LABELS[leave.leave_type] || leave.leave_type}</span>
+                                        <span className="text-white font-medium text-lg capitalize">{LEAVE_LABELS[leave.leave_type]?.label || leave.leave_type}</span>
                                         <span className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider ${statusInfo.color}`}>
                                             {statusInfo.label}
                                         </span>

@@ -155,11 +155,7 @@ class LeaveType(str, Enum):
     vacation = "vacation"
     sick = "sick"
     permit = "permit"
-    maternity = "maternity"
-    paternity = "paternity"
-    wedding = "wedding"
-    bereavement = "bereavement"
-    other = "other"
+    sudden_permit = "sudden_permit"
 
 class LeaveStatus(str, Enum):
     pending = "pending"

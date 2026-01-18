@@ -76,7 +76,13 @@ export default function RecentLeavesWidget() {
                                 <div>
                                     <p className="text-sm font-bold text-white">{l.employee_name}</p>
                                     <p className="text-[10px] text-gray-400">
-                                        <span className="text-blue-300">{l.leave_type}</span> • {format(parseISO(l.start_date), 'dd/MM')} → {format(parseISO(l.end_date), 'dd/MM')}
+                                        <span className="text-blue-300">{
+                                            l.leave_type === 'vacation' ? 'Ferie' :
+                                                l.leave_type === 'sick' ? 'Malattia' :
+                                                    l.leave_type === 'permit' ? 'Permesso' :
+                                                        l.leave_type === 'sudden_permit' ? 'Perm. Improv.' :
+                                                            l.leave_type
+                                        }</span> • {format(parseISO(l.start_date), 'dd/MM')} → {format(parseISO(l.end_date), 'dd/MM')}
                                     </p>
                                     <p className="text-[10px] text-gray-500 mt-1">
                                         Richiesto da: <span className="text-gray-300">{l.requester_name}</span> | Coord: <span className="text-emerald-400">{l.coordinator_name}</span>

@@ -13,11 +13,7 @@ const LEAVE_TYPES = [
     { value: 'vacation', label: 'Ferie', icon: '🏖️', color: 'blue' },
     { value: 'sick', label: 'Malattia', icon: '🏥', color: 'red' },
     { value: 'permit', label: 'Permesso', icon: '📝', color: 'purple' },
-    { value: 'maternity', label: 'Maternità', icon: '👶', color: 'pink' },
-    { value: 'paternity', label: 'Paternità', icon: '👨‍👧', color: 'cyan' },
-    { value: 'wedding', label: 'Matrimonio', icon: '💒', color: 'yellow' },
-    { value: 'bereavement', label: 'Lutto', icon: '🕯️', color: 'gray' },
-    { value: 'other', label: 'Altro', icon: '📋', color: 'slate' },
+    { value: 'sudden_permit', label: 'Permesso Improvviso', icon: '⚡', color: 'yellow' },
 ];
 
 const STATUS_MAP = {
@@ -125,7 +121,7 @@ export default function LeavesManager() {
         return emp ? `${emp.first_name} ${emp.last_name}` : `ID: ${empId}`;
     };
 
-    const getLeaveType = (type) => LEAVE_TYPES.find(t => t.value === type) || LEAVE_TYPES[7];
+    const getLeaveType = (type) => LEAVE_TYPES.find(t => t.value === type) || LEAVE_TYPES[0];
 
     const formatDate = (dateStr) => {
         if (!dateStr) return '-';
