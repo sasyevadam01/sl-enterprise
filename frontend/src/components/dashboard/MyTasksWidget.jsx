@@ -16,23 +16,14 @@ export default function MyTasksWidget() {
                 setLoading(false);
             } catch (err) {
                 console.error("My Tasks Error", err);
-                setError(err.message || "Errore caricamento");
+                // setError(err.message || "Errore caricamento"); // Removed error msg on user request implication
                 setLoading(false);
             }
         };
         fetchTasks();
     }, []);
 
-    const toggleTask = async (id, currentStatus) => {
-        // Optimistic update
-        setTasks(prev => prev.filter(t => t.id !== id));
-        try {
-            await tasksApi.updateTask(id, { status: 'completed' }); // Assuming check = complete
-        } catch (err) {
-            console.error("Task update failed", err);
-            // Revert would be complex, just refresh
-        }
-    };
+    // Checkbox REMOVED to prevent accidental completion
 
     if (loading) {
         return (
@@ -56,16 +47,14 @@ export default function MyTasksWidget() {
                     <div className="flex flex-col items-center justify-center h-full text-gray-500">
                         <span className="text-2xl mb-1">🎉</span>
                         <p className="text-xs">Nessun task in sospeso</p>
-                        {error && <p className="text-[10px] text-red-400 mt-2 bg-red-900/20 px-2 py-1 rounded">Err: {error}</p>}
+                        {/* Error hidden for cleanliness unless critical */}
                     </div>
                 ) : (
                     tasks.map(task => (
-                        <div key={task.id} className="flex items-start gap-3 group p-2 hover:bg-white/5 rounded-lg transition">
-                            <input
-                                type="checkbox"
-                                className="mt-1 rounded border-slate-600 bg-slate-700 text-blue-500 focus:ring-offset-0 focus:ring-blue-500 cursor-pointer"
-                                onChange={() => toggleTask(task.id, task.status)}
-                            />
+                        <Link to={`/hr/tasks?open=${task.id}`} key={task.id} className="flex items-start gap-3 group p-2 hover:bg-white/5 rounded-lg transition border border-transparent hover:border-white/5">
+                            {/* Read-only Icon instead of Checkbox */}
+                            <div className="mt-1 text-slate-500">📌</div>
+
                             <div className="flex-1 min-w-0">
                                 <p className="text-sm text-gray-200 group-hover:text-white transition truncate font-medium">{task.title}</p>
                                 <div className="flex items-center gap-2 mt-0.5">
@@ -74,12 +63,12 @@ export default function MyTasksWidget() {
                                             Scade: {format(new Date(task.due_date), 'dd/MM')}
                                         </span>
                                     )}
-                                    <span className={`text-[10px] px-1.5 py-0.5 rounded border ${task.priority === 'high' ? 'border-red-500/30 text-red-400' : 'border-slate-600 text-gray-500'}`}>
-                                        {task.priority === 'high' ? 'Alta' : 'Normal'}
+                                    <span className={`text-[10px] px-1.5 py-0.5 rounded border ${task.priority >= 8 ? 'border-red-500/30 text-red-400' : 'border-slate-600 text-gray-500'}`}>
+                                        {task.priority >= 8 ? 'Alta' : 'Normal'}
                                     </span>
                                 </div>
                             </div>
-                        </div>
+                        </Link>
                     ))
                 )}
             </div>
