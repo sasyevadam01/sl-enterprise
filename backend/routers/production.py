@@ -73,18 +73,24 @@ async def create_block_request(
         raise HTTPException(403, "Non hai il permesso di creare richieste")
 
     try:
-        print(f"DEBUG: Creating BlockRequest - User: {current_user.id} ({current_user.full_name})")
-        print(f"DEBUG: Payload: {data.dict()}")
+        print(f"DEBUG: Creating BlockRequest - User: {current_user.id} ({current_user.full_name})", flush=True)
+        print(f"DEBUG: Payload: {data.dict()}", flush=True)
 
         new_req = BlockRequest(
             **data.dict(),
             created_by_id=current_user.id,
             status="pending"
         )
+        print("DEBUG: Object created, adding to DB...", flush=True)
         db.add(new_req)
+        
+        print("DEBUG: Committing...", flush=True)
         db.commit()
+        
+        print("DEBUG: Refreshing...", flush=True)
         db.refresh(new_req)
         
+        print(f"DEBUG: Success. ID: {new_req.id}", flush=True)
         return {
             "id": new_req.id,
             "status": "success",
@@ -93,7 +99,7 @@ async def create_block_request(
     except Exception as e:
         import traceback
         traceback.print_exc()
-        print(f"ERROR creating block request: {str(e)}")
+        print(f"ERROR creating block request: {str(e)}", flush=True)
         db.rollback()
         # Return 400 instead of 500 to show message in UI
         raise HTTPException(status_code=400, detail=f"Errore creazione ordine: {str(e)}")
