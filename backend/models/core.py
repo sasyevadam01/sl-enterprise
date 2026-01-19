@@ -82,7 +82,9 @@ class User(Base):
             'hr_manager': ['view_dashboard', 'manage_employees', 'manage_attendance', 'view_hr_calendar', 'request_events', 'manage_tasks', 'manage_shifts', 'view_announcements'],
             'coordinator': ['manage_shifts', 'manage_tasks', 'view_announcements', 'request_events'],
             'factory_controller': ['access_factory', 'manage_kpi', 'view_dashboard'],
-            'record_user': []
+            'record_user': [],
+            'order_user': ['create_production_orders'],
+            'block_supply': ['manage_production_supply']
         }
         return PERMISSIONS_MAP.get(self.role, [])
 
