@@ -12,7 +12,7 @@ from database import create_tables
 from routers import (
     auth, users, employees, leaves, disciplinary, notifications, expiries, fleet, returns,
     tasks, events, audit, hr_stats, shifts, announcements, facility, factory, kpi, roles,
-    admin_settings, mobile, maintenance, reports, bonuses, chat
+    admin_settings, mobile, maintenance, reports, bonuses, chat, production
 )
 
 
