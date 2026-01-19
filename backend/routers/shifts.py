@@ -45,7 +45,9 @@ class TeamMember(BaseModel):
     department_id: Optional[int]
     department_name: Optional[str]
     manager_id: Optional[int]
+    manager_name: Optional[str] = None
     co_manager_id: Optional[int]
+    co_manager_name: Optional[str] = None
     default_banchina_id: Optional[int]
     secondary_role: Optional[str]
 
@@ -65,7 +67,11 @@ async def get_my_team(
     
     # 1. Admin / HR Manager -> Tutti
     if current_user.role in ['super_admin', 'hr_manager']:
-        employees = db.query(Employee).filter(Employee.is_active == True).all()
+        employees = db.query(Employee).options(
+            joinedload(Employee.department),
+            joinedload(Employee.manager),
+            joinedload(Employee.co_manager)
+        ).filter(Employee.is_active == True).all()
         return [
             TeamMember(
                 id=e.id,
@@ -75,7 +81,9 @@ async def get_my_team(
                 department_id=e.department_id,
                 department_name=e.department.name if e.department else "N/D",
                 manager_id=e.manager_id,
+                manager_name=f"{e.manager.last_name} {e.manager.first_name}" if e.manager else None,
                 co_manager_id=e.co_manager_id,
+                co_manager_name=f"{e.co_manager.last_name} {e.co_manager.first_name}" if e.co_manager else None,
                 default_banchina_id=e.default_banchina_id,
                 secondary_role=e.secondary_role
             ) for e in employees
@@ -115,7 +123,11 @@ async def get_my_team(
         else:
             employees = []
     else:
-        employees = db.query(Employee).filter(Employee.id.in_(team_ids)).all()
+        employees = db.query(Employee).options(
+            joinedload(Employee.department),
+            joinedload(Employee.manager),
+            joinedload(Employee.co_manager)
+        ).filter(Employee.id.in_(team_ids)).all()
 
     return [
         TeamMember(
@@ -126,7 +138,9 @@ async def get_my_team(
             department_id=e.department_id,
             department_name=e.department.name if e.department else "N/D",
             manager_id=e.manager_id,
+            manager_name=f"{e.manager.last_name} {e.manager.first_name}" if e.manager else None,
             co_manager_id=e.co_manager_id,
+            co_manager_name=f"{e.co_manager.last_name} {e.co_manager.first_name}" if e.co_manager else None,
             default_banchina_id=e.default_banchina_id,
             secondary_role=e.secondary_role
         ) for e in employees

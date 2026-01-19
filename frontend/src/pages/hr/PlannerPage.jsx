@@ -120,8 +120,20 @@ export default function PlannerPage() {
     // const departments = useMemo -> Moved to state set in loadData
 
     const coordinators = useMemo(() => {
-        const managerIds = new Set(team.flatMap(e => [e.manager_id, e.co_manager_id]).filter(Boolean));
-        return team.filter(e => managerIds.has(e.id)).sort((a, b) => a.last_name.localeCompare(b.last_name));
+        const coordMap = new Map();
+
+        team.forEach(e => {
+            if (e.manager_id && e.manager_name) {
+                // Ensure we prefer 'Last Name First Name' format if that's what backend sends
+                coordMap.set(e.manager_id, { id: e.manager_id, name: e.manager_name });
+            }
+            if (e.co_manager_id && e.co_manager_name) {
+                coordMap.set(e.co_manager_id, { id: e.co_manager_id, name: e.co_manager_name });
+            }
+        });
+
+        return Array.from(coordMap.values())
+            .sort((a, b) => a.name.localeCompare(b.name));
     }, [team]);
 
     const filteredTeam = useMemo(() => {
@@ -158,9 +170,9 @@ export default function PlannerPage() {
             case 'morning': return 'bg-blue-500/20 border-blue-500 text-blue-300';
             case 'afternoon': return 'bg-orange-500/20 border-orange-500 text-orange-300';
             case 'night': return 'bg-purple-500/20 border-purple-500 text-purple-300';
-            case 'manual': return 'bg-teal-500/20 border-teal-500 text-teal-300';
-            case 'off': return 'bg-gray-700/50 text-gray-500';
-            default: return 'bg-slate-800/30';
+            case 'manual': return 'bg-emerald-500/20 border-emerald-500 text-emerald-300';
+            case 'off': return 'bg-slate-600/30 border-slate-500 text-slate-400';
+            default: return 'bg-slate-800/30 hover:bg-slate-700/50 border-transparent';
         }
     };
 
@@ -339,7 +351,7 @@ export default function PlannerPage() {
                             className="bg-slate-700 text-white border border-white/10 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none flex-1 md:flex-none"
                         >
                             <option value="all">Coordinatori</option>
-                            {coordinators.map(c => <option key={c.id} value={c.id}>{c.last_name} {c.first_name}</option>)}
+                            {coordinators.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
 
                         {/* Mobile Actions */}
