@@ -10,8 +10,9 @@ import { hrStatsApi, chatApi } from '../../api/client';
 const getMenuItems = (hasPermission) => {
     const items = [];
 
-    // Determine view mode based on permission flag
-    const isCoordinatorView = hasPermission('view_coordinator_suite');
+    // Determine view mode: Admin/HR users see "HR Suite", coordinators see "Coordinator Suite"
+    // We use admin_users as the marker for "advanced" users who see the full HR Suite
+    const isHRView = hasPermission('admin_users') || hasPermission('manage_employees');
     const showDashboard = hasPermission('view_dashboard');
     const showAdmin = hasPermission('admin_users');
 
@@ -25,11 +26,11 @@ const getMenuItems = (hasPermission) => {
         });
     }
 
-    // HR Suite / Coordinator Suite - Based on permission flag
+    // HR Suite / Coordinator Suite - HR users get full view, others get coordinator view
     items.push({
-        title: isCoordinatorView ? 'Coordinator Suite' : 'HR Suite',
-        icon: isCoordinatorView ? '🎯' : '👥',
-        isAnimated: isCoordinatorView, // Animated glow for coordinators
+        title: isHRView ? 'HR Suite' : 'Coordinator Suite',
+        icon: isHRView ? '👥' : '🎯',
+        isAnimated: !isHRView, // Animated glow for coordinators
         // No parent permission - visibility determined by children's permissions
         children: [
             { title: '👥 Dipendenti', path: '/hr/employees', permission: 'manage_employees' },
