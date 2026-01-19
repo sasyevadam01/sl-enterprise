@@ -29,21 +29,40 @@ const StepCategory = ({ onSelect }) => (
     </div>
 );
 
+// Helper for Text Contrast
+const getContrastColor = (hexColor) => {
+    if (!hexColor) return 'white';
+    // Remove hash
+    const hex = hexColor.replace('#', '');
+    // Parse RGB
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    // YIQ equation
+    const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+    return yiq >= 128 ? 'black' : 'white';
+};
+
 // Step 2A: Memory Material Grid
 const StepMemoryMaterial = ({ materials, onSelect }) => (
     <div>
         <h2 className="text-xl font-bold text-white text-center mb-4">Scegli Memory</h2>
-        <div className="grid grid-cols-2 gap-3">
-            {materials.map(m => (
-                <button
-                    key={m.id}
-                    onClick={() => onSelect(m)}
-                    className="p-4 rounded-xl text-white font-bold text-sm shadow-lg hover:scale-105 transition-transform border-2 border-white/20"
-                    style={{ backgroundColor: m.value || '#6B7280' }}
-                >
-                    {m.label}
-                </button>
-            ))}
+        <div className="grid grid-cols-1 gap-3">
+            {materials.map(m => {
+                const textColor = getContrastColor(m.value);
+                return (
+                    <button
+                        key={m.id}
+                        onClick={() => onSelect(m)}
+                        className="p-6 rounded-xl font-bold text-lg shadow-lg hover:scale-[1.02] transition-transform border-2 border-white/20 relative overflow-hidden"
+                        style={{ backgroundColor: m.value || '#6B7280', color: textColor }}
+                    >
+                        <span style={{ textShadow: textColor === 'white' ? '0 1px 2px rgba(0,0,0,0.5)' : 'none' }}>
+                            {m.label}
+                        </span>
+                    </button>
+                );
+            })}
         </div>
     </div>
 );
@@ -52,12 +71,12 @@ const StepMemoryMaterial = ({ materials, onSelect }) => (
 const StepSpongeDensity = ({ densities, onSelect }) => (
     <div>
         <h2 className="text-xl font-bold text-white text-center mb-4">Densità Spugna</h2>
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 gap-3">
             {densities.map(d => (
                 <button
                     key={d.id}
                     onClick={() => onSelect(d)}
-                    className="p-4 rounded-xl bg-slate-700 text-white font-bold text-lg shadow-lg hover:bg-cyan-600 transition-colors border-2 border-white/10"
+                    className="p-6 rounded-xl bg-slate-700 text-white font-bold text-2xl shadow-lg hover:bg-cyan-600 transition-colors border-2 border-white/10"
                 >
                     {d.label}
                 </button>
@@ -70,17 +89,22 @@ const StepSpongeDensity = ({ densities, onSelect }) => (
 const StepSpongeColor = ({ colors, onSelect }) => (
     <div>
         <h2 className="text-xl font-bold text-white text-center mb-4">Colore Spugna</h2>
-        <div className="grid grid-cols-3 gap-3">
-            {colors.map(c => (
-                <button
-                    key={c.id}
-                    onClick={() => onSelect(c)}
-                    className="p-4 rounded-xl text-white font-bold text-xs shadow-lg hover:scale-105 transition-transform border-2 border-white/30"
-                    style={{ backgroundColor: c.value || '#6B7280' }}
-                >
-                    {c.label}
-                </button>
-            ))}
+        <div className="grid grid-cols-1 gap-3">
+            {colors.map(c => {
+                const textColor = getContrastColor(c.value);
+                return (
+                    <button
+                        key={c.id}
+                        onClick={() => onSelect(c)}
+                        className="p-6 rounded-xl font-bold text-lg shadow-lg hover:scale-[1.02] transition-transform border-2 border-white/30"
+                        style={{ backgroundColor: c.value || '#6B7280', color: textColor }}
+                    >
+                        <span style={{ textShadow: textColor === 'white' ? '0 1px 2px rgba(0,0,0,0.5)' : 'none' }}>
+                            {c.label}
+                        </span>
+                    </button>
+                );
+            })}
         </div>
     </div>
 );
@@ -102,8 +126,8 @@ const StepDimensions = ({ formData, setFormData, onNext }) => {
                             key={dim}
                             onClick={() => setFormData(prev => ({ ...prev, dimensions: dim }))}
                             className={`p-3 rounded-xl font-bold text-sm transition-all border-2 ${formData.dimensions === dim
-                                    ? 'bg-cyan-600 text-white border-cyan-400 shadow-lg shadow-cyan-500/30'
-                                    : 'bg-slate-700 text-gray-300 border-white/10 hover:bg-slate-600'
+                                ? 'bg-cyan-600 text-white border-cyan-400 shadow-lg shadow-cyan-500/30'
+                                : 'bg-slate-700 text-gray-300 border-white/10 hover:bg-slate-600'
                                 }`}
                         >
                             {dim}
@@ -150,30 +174,34 @@ const StepDimensions = ({ formData, setFormData, onNext }) => {
                 )}
             </div>
 
-            {/* Trim Row */}
+            {/* Trim Row - HIDDEN AS REQUESTED */}
+            {/* 
             <div>
                 <p className="text-gray-400 text-sm mb-2">3. Rifilatura</p>
                 <div className="flex gap-3">
                     <button
                         onClick={() => setFormData(prev => ({ ...prev, isTrimmed: false }))}
-                        className={`flex-1 py-4 rounded-xl font-bold transition-all border-2 ${!formData.isTrimmed
-                                ? 'bg-slate-600 text-white border-slate-400'
+                        className={`flex-1 py-4 rounded-xl font-bold transition-all border-2 ${
+                            !formData.isTrimmed 
+                                ? 'bg-slate-600 text-white border-slate-400' 
                                 : 'bg-slate-800 text-gray-500 border-white/10'
-                            }`}
+                        }`}
                     >
                         ✅ STANDARD
                     </button>
                     <button
                         onClick={() => setFormData(prev => ({ ...prev, isTrimmed: true }))}
-                        className={`flex-1 py-4 rounded-xl font-bold transition-all border-2 ${formData.isTrimmed
-                                ? 'bg-orange-600 text-white border-orange-400'
+                        className={`flex-1 py-4 rounded-xl font-bold transition-all border-2 ${
+                            formData.isTrimmed 
+                                ? 'bg-orange-600 text-white border-orange-400' 
                                 : 'bg-slate-800 text-gray-500 border-white/10'
-                            }`}
+                        }`}
                     >
                         ✂️ RIFILARE
                     </button>
                 </div>
             </div>
+            */}
 
             {/* Next Button */}
             <button

@@ -84,6 +84,19 @@ async def create_block_request(
         db.add(new_req)
         db.commit()
         db.refresh(new_req)
+        
+        # Populate transient fields for Pydantic Response
+        # We need to access relationships to get labels. 
+        # SQLAlchemy lazy loading should work here as session is still open.
+        if new_req.material:
+            new_req.material_label = new_req.material.label
+        if new_req.density:
+            new_req.density_label = new_req.density.label
+        if new_req.color:
+            new_req.color_label = new_req.color.label
+        if new_req.created_by:
+            new_req.creator_name = new_req.created_by.full_name
+            
         return new_req
     except Exception as e:
         import traceback
