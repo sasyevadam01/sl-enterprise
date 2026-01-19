@@ -103,6 +103,13 @@ class User(Base):
         }
         return HOME_MAP.get(self.role, '/hr/tasks')
 
+    def has_permission(self, perm: str) -> bool:
+        """Verifica se l'utente ha un permesso specifico."""
+        perms = self.permissions # usa la property che gestisce anche i legacy roles
+        if '*' in perms:
+            return True
+        return perm in perms
+
 
 class Department(Base):
     """Reparti aziendali (es. Saldatura, Logistica)."""
