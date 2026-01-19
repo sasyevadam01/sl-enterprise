@@ -160,69 +160,129 @@ const UsersTable = ({ users, roles, onToggleStatus, onEdit, onDelete }) => (
     </>
 );
 
-const PermissionsMatrix = ({ roles, definitions, onTogglePermission }) => (
-    <div className="bg-slate-800 rounded-2xl border border-white/10 overflow-hidden shadow-xl animate-fade-in">
-        <div className="p-4 bg-slate-900/50 border-b border-white/10">
-            <h3 className="text-lg font-bold text-gray-200">🔒 Matrice Permessi per Ruolo</h3>
-            <p className="text-sm text-gray-400">Modifica i permessi per ogni ruolo. Le modifiche sono immediate.</p>
-        </div>
-        <div className="overflow-x-auto">
-            <table className="w-full text-left">
-                <thead>
-                    <tr className="bg-slate-900 text-gray-400 uppercase text-xs font-semibold">
-                        <th className="p-4 sticky left-0 bg-slate-900 border-r border-white/10 z-10 w-64 shadow-[2px_0_5px_rgba(0,0,0,0.3)]">
-                            Permesso
-                        </th>
+const PermissionsMatrix = ({ roles, definitions, onTogglePermission }) => {
+    // Group permissions by category
+    const groupedDefs = definitions.reduce((acc, perm) => {
+        const cat = perm.category || 'Altro';
+        if (!acc[cat]) acc[cat] = [];
+        acc[cat].push(perm);
+        return acc;
+    }, {});
+
+    const categoryIcons = {
+        'General': '🏠',
+        'HR': '👥',
+        'Factory': '🏭',
+        'Logistics': '📦',
+        'Admin': '⚙️',
+        'Altro': '📋'
+    };
+
+    const categoryColors = {
+        'General': 'from-blue-500/20 to-cyan-500/20 border-blue-500/30',
+        'HR': 'from-green-500/20 to-emerald-500/20 border-green-500/30',
+        'Factory': 'from-orange-500/20 to-amber-500/20 border-orange-500/30',
+        'Logistics': 'from-purple-500/20 to-violet-500/20 border-purple-500/30',
+        'Admin': 'from-red-500/20 to-rose-500/20 border-red-500/30',
+        'Altro': 'from-gray-500/20 to-slate-500/20 border-gray-500/30'
+    };
+
+    return (
+        <div className="space-y-4 animate-fade-in">
+            {/* Header */}
+            <div className="bg-slate-800 rounded-xl border border-white/10 p-4">
+                <h3 className="text-lg font-bold text-gray-200 flex items-center gap-2">
+                    🔒 Matrice Permessi per Ruolo
+                </h3>
+                <p className="text-sm text-gray-400 mt-1">Clicca sulle caselle per abilitare/disabilitare i permessi. Passa il mouse sulle icone ℹ️ per i dettagli.</p>
+            </div>
+
+            {/* Role Headers - Sticky */}
+            <div className="bg-slate-800 rounded-xl border border-white/10 overflow-hidden sticky top-0 z-30">
+                <div className="flex">
+                    <div className="w-64 shrink-0 p-3 bg-slate-900 border-r border-white/10 font-bold text-gray-400 text-xs uppercase">
+                        Permesso
+                    </div>
+                    <div className="flex-1 flex overflow-x-auto">
                         {roles.map(role => (
-                            <th key={role.id} className="p-4 text-center min-w-[150px]">
-                                {role.label}
-                            </th>
+                            <div key={role.id} className="min-w-[100px] flex-1 p-3 text-center bg-slate-900 border-r border-white/5 last:border-r-0">
+                                <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">{role.label}</span>
+                            </div>
                         ))}
-                    </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                    {definitions.map(perm => (
-                        <tr key={perm.code} className="hover:bg-white/5 transition-colors">
-                            <td className="p-4 sticky left-0 bg-slate-800 border-r border-white/10 z-10 font-medium text-gray-300 shadow-[2px_0_5px_rgba(0,0,0,0.3)]">
-                                <div className="flex flex-col">
-                                    <span>{perm.label}</span>
-                                    <span className="text-[10px] text-gray-500 font-mono tracking-tight">{perm.code}</span>
-                                </div>
-                            </td>
-                            {roles.map(role => {
-                                const isGranted = role.permissions.includes(perm.code);
-                                const isSuperAdmin = role.name === 'super_admin';
-                                return (
-                                    <td key={`${role.id}-${perm.code}`} className="p-4 text-center">
-                                        <div className="flex justify-center">
-                                            <button
-                                                onClick={() => !isSuperAdmin && onTogglePermission(role, perm.code)}
-                                                disabled={isSuperAdmin}
-                                                className={`w-6 h-6 rounded border flex items-center justify-center transition-all duration-200
-                                                    ${isGranted
-                                                        ? 'bg-green-500 border-green-500 text-white shadow-[0_0_10px_rgba(34,197,94,0.4)]'
-                                                        : 'bg-slate-700 border-slate-600 text-transparent hover:border-gray-500'}
-                                                    ${isSuperAdmin ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-                                                `}
-                                            >
-                                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                                </svg>
-                                            </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Categories */}
+            {Object.entries(groupedDefs).map(([category, perms]) => (
+                <div key={category} className={`bg-gradient-to-r ${categoryColors[category] || categoryColors['Altro']} rounded-xl border overflow-hidden`}>
+                    {/* Category Header */}
+                    <div className="p-3 bg-slate-900/50 border-b border-white/10 flex items-center gap-2">
+                        <span className="text-xl">{categoryIcons[category] || '📋'}</span>
+                        <span className="font-bold text-white">{category}</span>
+                        <span className="text-xs text-gray-400 ml-2">({perms.length} permessi)</span>
+                    </div>
+
+                    {/* Permissions in this category */}
+                    <div className="divide-y divide-white/5">
+                        {perms.map(perm => (
+                            <div key={perm.code} className="flex hover:bg-white/5 transition-colors">
+                                {/* Permission Name + Tooltip */}
+                                <div className="w-64 shrink-0 p-3 border-r border-white/10 flex items-center gap-2">
+                                    <div className="flex-1 min-w-0">
+                                        <span className="text-sm font-medium text-gray-200 block truncate">{perm.label}</span>
+                                        <span className="text-[10px] text-gray-500 font-mono">{perm.code}</span>
+                                    </div>
+                                    {/* Tooltip Icon */}
+                                    <div className="relative group shrink-0">
+                                        <span className="cursor-help text-blue-400 hover:text-blue-300 text-sm">ℹ️</span>
+                                        <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 w-64 p-3 bg-slate-900 border border-white/20 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 text-xs text-gray-300">
+                                            {perm.description || 'Nessuna descrizione disponibile.'}
                                         </div>
-                                    </td>
-                                );
-                            })}
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+                                    </div>
+                                </div>
+
+                                {/* Checkboxes */}
+                                <div className="flex-1 flex overflow-x-auto">
+                                    {roles.map(role => {
+                                        const isGranted = role.permissions?.includes(perm.code);
+                                        const isSuperAdmin = role.name === 'super_admin';
+                                        return (
+                                            <div key={`${role.id}-${perm.code}`} className="min-w-[100px] flex-1 p-3 flex justify-center items-center border-r border-white/5 last:border-r-0">
+                                                <button
+                                                    onClick={() => !isSuperAdmin && onTogglePermission(role, perm.code)}
+                                                    disabled={isSuperAdmin}
+                                                    className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-all duration-200 transform hover:scale-110
+                                                        ${isGranted
+                                                            ? 'bg-green-500 border-green-400 text-white shadow-[0_0_12px_rgba(34,197,94,0.5)]'
+                                                            : 'bg-slate-700/50 border-slate-600 text-transparent hover:border-gray-400'}
+                                                        ${isSuperAdmin ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer active:scale-95'}
+                                                    `}
+                                                    title={isSuperAdmin ? 'Super Admin ha sempre tutti i permessi' : (isGranted ? 'Clicca per rimuovere' : 'Clicca per abilitare')}
+                                                >
+                                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            ))}
+
+            {/* Footer Note */}
+            <div className="p-3 bg-amber-900/20 text-amber-200 text-xs text-center rounded-xl border border-amber-500/20 flex items-center justify-center gap-2">
+                <span>⚠️</span>
+                <span>Il ruolo <strong>Super Admin</strong> ha sempre tutti i permessi attivi e non può essere modificato.</span>
+            </div>
         </div>
-        <div className="p-3 bg-red-900/20 text-red-200 text-xs text-center border-t border-red-500/20">
-            ⚠️ L'Amministratore ha sempre tutti i permessi attivi e non può essere modificato.
-        </div>
-    </div>
-);
+    );
+};
+
 
 // --- MAIN PAGE ---
 
