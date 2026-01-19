@@ -69,7 +69,7 @@ const getMenuItems = (hasPermission) => {
         children: [
             { title: '📦 Richiesta Blocchi', path: '/production/orders', permission: 'create_production_orders' },
             { title: '🚚 Lista Prelievi', path: '/production/blocks', permission: 'manage_production_supply' },
-            { title: '⚙️ Configurazione', path: '/admin/production/config', permission: 'admin_users' },
+            { title: '⚙️ Config. Produzione', path: '/admin/production/config', permission: 'admin_users' },
             { title: '📊 Report & Stats', path: '/admin/production/reports', permission: 'admin_users' },
         ],
     });
