@@ -921,6 +921,13 @@ class ProductionMaterialResponse(ProductionMaterialCreate):
     class Config:
         from_attributes = True
 
+class ProductionMaterialUpdate(BaseModel):
+    category: Optional[str] = None
+    label: Optional[str] = None
+    value: Optional[str] = None
+    display_order: Optional[int] = None
+    is_active: Optional[bool] = None
+
 class BlockRequestCreate(BaseModel):
     request_type: str  # memory, sponge
     material_id: Optional[int] = None

@@ -27,6 +27,8 @@ import FactoryDashboardPage from './pages/factory/FactoryDashboardPage';
 import UserManagementPage from './pages/admin/UserManagementPage';
 import SystemConfigPage from './pages/admin/SystemConfigPage';
 import MaintenancePage from './pages/factory/MaintenancePage';
+import ProductionConfigPage from './pages/admin/ProductionConfigPage';
+import ProductionReportsPage from './pages/admin/ProductionReportsPage';
 import OperatorDashboard from './pages/mobile/OperatorDashboard';
 import OrderDashboardPage from './pages/production/OrderDashboardPage';
 import NewOrderPage from './pages/production/NewOrderPage';
@@ -202,6 +204,16 @@ function App() {
               <Route path="admin/config" element={
                 <PermissionRoute permission="admin_users">
                   <SystemConfigPage />
+                </PermissionRoute>
+              } />
+              <Route path="admin/production/config" element={
+                <PermissionRoute permission="admin_users">
+                  <ProductionConfigPage />
+                </PermissionRoute>
+              } />
+              <Route path="admin/production/reports" element={
+                <PermissionRoute permission="admin_users">
+                  <ProductionReportsPage />
                 </PermissionRoute>
               } />
             </Route>

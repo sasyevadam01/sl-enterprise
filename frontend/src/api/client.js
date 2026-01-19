@@ -405,13 +405,21 @@ export const mobileApi = {
 // Live Production (Picking List)
 export const pickingApi = {
   // Config (Materials/Colors)
-  getConfig: (category) => client.get("/production/config", { params: { category } }),
+  getConfig: (category, includeInactive = false) => client.get("/production/config", { params: { category, include_inactive: includeInactive } }),
   createMaterial: (data) => client.post("/production/config", data),
+  updateMaterial: (id, data) => client.patch(`/production/config/${id}`, data),
 
   // Requests (Orders)
   createRequest: (data) => client.post("/production/requests", data),
   getRequests: (status, limit = 50) => client.get("/production/requests", { params: { status, limit } }),
   updateStatus: (id, status, notes) => client.patch(`/production/requests/${id}/status`, { status, notes }),
+
+  // Reporting
+  getReports: (startDate, endDate, shiftType = 'all') =>
+    client.get("/production/reports", { params: { start_date: startDate, end_date: endDate, shift_type: shiftType } }),
+
+  getExportUrl: (startDate, endDate, shiftType = 'all') =>
+    `${API_BASE_URL}/production/reports?start_date=${startDate}&end_date=${endDate}&shift_type=${shiftType}&format=excel`,
 };
 
 export const adminApi = {
