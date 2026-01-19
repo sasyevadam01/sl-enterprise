@@ -900,3 +900,57 @@ class FacilityMaintenanceResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# ============================================================
+# LIVE PRODUCTION SCHEMAS (Picking List)
+# ============================================================
+
+class ProductionMaterialCreate(BaseModel):
+    category: str
+    label: str
+    value: Optional[str] = None
+    display_order: int = 0
+    is_active: bool = True
+
+class ProductionMaterialResponse(ProductionMaterialCreate):
+    id: int
+
+    class Config:
+        from_attributes = True
+
+class BlockRequestCreate(BaseModel):
+    request_type: str  # memory, sponge
+    material_id: Optional[int] = None
+    density_id: Optional[int] = None
+    color_id: Optional[int] = None
+    dimensions: str
+    custom_height: Optional[int] = None
+    is_trimmed: bool = False
+    quantity: int = 1
+    client_ref: Optional[str] = None
+    notes: Optional[str] = None
+
+class BlockRequestUpdate(BaseModel):
+    """Per cambi stato"""
+    status: Optional[str] = None  # processing, delivered, cancelled
+    notes: Optional[str] = None
+
+class BlockRequestResponse(BlockRequestCreate):
+    id: int
+    status: str
+    created_by_id: int
+    created_at: datetime
+    processed_by_id: Optional[int] = None
+    processed_at: Optional[datetime] = None
+    delivered_at: Optional[datetime] = None
+    
+    # Extra for UI
+    material_label: Optional[str] = None
+    density_label: Optional[str] = None
+    color_label: Optional[str] = None
+    creator_name: Optional[str] = None
+    processor_name: Optional[str] = None
+
+    class Config:
+        from_attributes = True
