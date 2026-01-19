@@ -91,70 +91,95 @@ const StepDimensions = ({ formData, setFormData, onNext }) => {
 
     return (
         <div className="space-y-6">
-            <h2 className="text-xl font-bold text-white text-center mb-4">Dimensioni</h2>
+            <h2 className="text-xl font-bold text-white text-center mb-4">Dimensioni & Opzioni</h2>
 
             {/* Dimension Buttons */}
-            <div className="grid grid-cols-3 gap-3">
-                {DIMENSIONS.map(dim => (
-                    <button
-                        key={dim}
-                        onClick={() => {
-                            setFormData(prev => ({ ...prev, dimensions: dim }));
-                            // Auto-advance if not customized
-                            if (!formData.isPartial && !formData.isTrimmed) {
-                                // Small delay for visual feedback
-                                setTimeout(onNext, 200);
-                            }
-                        }}
-                        className={`p-3 rounded-xl font-bold text-sm transition-all border-2 ${formData.dimensions === dim
-                                ? 'bg-cyan-600 text-white border-cyan-400'
-                                : 'bg-slate-700 text-gray-300 border-white/10 hover:bg-slate-600'
-                            }`}
-                    >
-                        {dim}
-                    </button>
-                ))}
+            <div>
+                <p className="text-gray-400 text-sm mb-2">1. Seleziona Misura</p>
+                <div className="grid grid-cols-3 gap-3">
+                    {DIMENSIONS.map(dim => (
+                        <button
+                            key={dim}
+                            onClick={() => setFormData(prev => ({ ...prev, dimensions: dim }))}
+                            className={`p-3 rounded-xl font-bold text-sm transition-all border-2 ${formData.dimensions === dim
+                                    ? 'bg-cyan-600 text-white border-cyan-400 shadow-lg shadow-cyan-500/30'
+                                    : 'bg-slate-700 text-gray-300 border-white/10 hover:bg-slate-600'
+                                }`}
+                        >
+                            {dim}
+                        </button>
+                    ))}
+                </div>
             </div>
 
-            {/* Block Type Toggle */}
+            {/* Block Type Row */}
             <div>
-                <p className="text-gray-400 text-sm mb-2">Opzioni Avanzate (Facoltativo)</p>
-                <div className="flex gap-3 mb-3">
+                <p className="text-gray-400 text-sm mb-2">2. Tipo di Blocco</p>
+                <div className="flex gap-3">
                     <button
-                        onClick={() => setFormData(prev => ({ ...prev, isPartial: !prev.isPartial, customHeight: null }))}
-                        className={`flex-1 py-3 rounded-xl font-bold transition-all ${formData.isPartial ? 'bg-yellow-600 text-white' : 'bg-slate-700 text-gray-400'
+                        onClick={() => setFormData(prev => ({ ...prev, isPartial: false, customHeight: null }))}
+                        className={`flex-1 py-4 rounded-xl font-bold transition-all border-2 ${!formData.isPartial
+                                ? 'bg-green-600 text-white border-green-400'
+                                : 'bg-slate-800 text-gray-500 border-white/10'
                             }`}
                     >
-                        {formData.isPartial ? '✂️ PARZIALE' : '📦 INTERO'}
+                        📦 INTERO
                     </button>
                     <button
-                        onClick={() => setFormData(prev => ({ ...prev, isTrimmed: !prev.isTrimmed }))}
-                        className={`flex-1 py-3 rounded-xl font-bold transition-all ${formData.isTrimmed ? 'bg-orange-600 text-white' : 'bg-slate-700 text-gray-400'
+                        onClick={() => setFormData(prev => ({ ...prev, isPartial: true }))}
+                        className={`flex-1 py-4 rounded-xl font-bold transition-all border-2 ${formData.isPartial
+                                ? 'bg-yellow-600 text-white border-yellow-400'
+                                : 'bg-slate-800 text-gray-500 border-white/10'
                             }`}
                     >
-                        {formData.isTrimmed ? '✂️ RIFILARE' : '✅ STANDARD'}
+                        ✂️ PARZIALE
                     </button>
                 </div>
-
                 {formData.isPartial && (
-                    <div className="animate-fadeIn">
-                        <label className="text-xs text-gray-400 mb-1 block">Altezza desiderata (cm)</label>
+                    <div className="mt-3 animate-fadeIn">
+                        <label className="text-xs text-yellow-400 mb-1 block">Inserisci Altezza (cm)</label>
                         <input
                             type="number"
                             placeholder="Es: 15"
                             value={formData.customHeight || ''}
                             onChange={(e) => setFormData(prev => ({ ...prev, customHeight: parseInt(e.target.value) || null }))}
-                            className="w-full p-3 bg-slate-800 border border-white/20 rounded-xl text-white text-center text-lg focus:border-cyan-500 outline-none"
+                            className="w-full p-3 bg-slate-800 border-2 border-yellow-500/50 rounded-xl text-white text-center text-xl font-bold focus:border-yellow-400 outline-none"
+                            autoFocus
                         />
                     </div>
                 )}
+            </div>
+
+            {/* Trim Row */}
+            <div>
+                <p className="text-gray-400 text-sm mb-2">3. Rifilatura</p>
+                <div className="flex gap-3">
+                    <button
+                        onClick={() => setFormData(prev => ({ ...prev, isTrimmed: false }))}
+                        className={`flex-1 py-4 rounded-xl font-bold transition-all border-2 ${!formData.isTrimmed
+                                ? 'bg-slate-600 text-white border-slate-400'
+                                : 'bg-slate-800 text-gray-500 border-white/10'
+                            }`}
+                    >
+                        ✅ STANDARD
+                    </button>
+                    <button
+                        onClick={() => setFormData(prev => ({ ...prev, isTrimmed: true }))}
+                        className={`flex-1 py-4 rounded-xl font-bold transition-all border-2 ${formData.isTrimmed
+                                ? 'bg-orange-600 text-white border-orange-400'
+                                : 'bg-slate-800 text-gray-500 border-white/10'
+                            }`}
+                    >
+                        ✂️ RIFILARE
+                    </button>
+                </div>
             </div>
 
             {/* Next Button */}
             <button
                 onClick={onNext}
                 disabled={!formData.dimensions}
-                className="w-full py-4 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl text-white font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed mt-4"
+                className="w-full py-4 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl text-white font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed mt-4 shadow-lg shadow-cyan-500/20"
             >
                 Avanti →
             </button>
@@ -163,83 +188,107 @@ const StepDimensions = ({ formData, setFormData, onNext }) => {
 };
 
 // Step 4: Review & Submit
-const StepReview = ({ formData, onSubmit, loading }) => (
-    <div className="space-y-6">
-        <h2 className="text-xl font-bold text-white text-center mb-4">Conferma Ordine</h2>
+const StepReview = ({ formData, onSubmit, loading }) => {
+    const isValid = formData.quantity > 0 && formData.clientRef && formData.clientRef.trim().length > 0;
 
-        <div className="bg-slate-800/80 rounded-xl p-4 border border-white/10 space-y-3">
-            <div className="flex justify-between">
-                <span className="text-gray-400">Tipo:</span>
-                <span className="text-white font-bold">{formData.type === 'memory' ? '🧠 Memory' : '🧽 Spugna'}</span>
-            </div>
-            {formData.type === 'memory' ? (
-                <div className="flex justify-between">
-                    <span className="text-gray-400">Materiale:</span>
-                    <span className="text-white font-bold">{formData.materialLabel}</span>
+    return (
+        <div className="space-y-6">
+            <h2 className="text-xl font-bold text-white text-center mb-4">Conferma Ordine</h2>
+
+            <div className="bg-slate-800/80 rounded-xl p-4 border border-white/10 space-y-3 shadow-xl">
+                <div className="flex justify-between border-b border-white/5 pb-2">
+                    <span className="text-gray-400">Tipo:</span>
+                    <span className="text-white font-bold text-lg">{formData.type === 'memory' ? '🧠 Memory' : '🧽 Spugna'}</span>
                 </div>
-            ) : (
-                <>
-                    <div className="flex justify-between">
-                        <span className="text-gray-400">Densità:</span>
-                        <span className="text-white font-bold">{formData.densityLabel}</span>
+                {formData.type === 'memory' ? (
+                    <div className="flex justify-between border-b border-white/5 pb-2">
+                        <span className="text-gray-400">Materiale:</span>
+                        <span className="text-cyan-400 font-bold text-lg">{formData.materialLabel}</span>
                     </div>
-                    <div className="flex justify-between">
-                        <span className="text-gray-400">Colore:</span>
-                        <span className="text-white font-bold">{formData.colorLabel}</span>
+                ) : (
+                    <>
+                        <div className="flex justify-between border-b border-white/5 pb-2">
+                            <span className="text-gray-400">Densità:</span>
+                            <span className="text-cyan-400 font-bold text-lg">{formData.densityLabel}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-white/5 pb-2">
+                            <span className="text-gray-400">Colore:</span>
+                            <span className="text-white font-bold text-lg">{formData.colorLabel}</span>
+                        </div>
+                    </>
+                )}
+                <div className="flex justify-between border-b border-white/5 pb-2">
+                    <span className="text-gray-400">Dimensioni:</span>
+                    <span className="text-white font-bold text-lg">{formData.dimensions}</span>
+                </div>
+                {formData.isPartial ? (
+                    <div className="flex justify-between border-b border-white/5 pb-2">
+                        <span className="text-gray-400">Taglio Parziale:</span>
+                        <span className="text-yellow-400 font-bold text-lg">{formData.customHeight} cm</span>
                     </div>
-                </>
-            )}
-            <div className="flex justify-between">
-                <span className="text-gray-400">Dimensioni:</span>
-                <span className="text-white font-bold">{formData.dimensions}</span>
-            </div>
-            {formData.customHeight && (
-                <div className="flex justify-between">
-                    <span className="text-gray-400">Altezza Taglio:</span>
-                    <span className="text-white font-bold">{formData.customHeight} cm</span>
+                ) : (
+                    <div className="flex justify-between border-b border-white/5 pb-2">
+                        <span className="text-gray-400">Taglio:</span>
+                        <span className="text-green-400 font-bold">Intero</span>
+                    </div>
+                )}
+                <div className="flex justify-between border-b border-white/5 pb-2">
+                    <span className="text-gray-400">Rifilatura:</span>
+                    <span className={formData.isTrimmed ? 'text-orange-400 font-bold' : 'text-gray-300'}>
+                        {formData.isTrimmed ? '✂️ SI' : '❌ NO'}
+                    </span>
                 </div>
-            )}
-            <div className="flex justify-between">
-                <span className="text-gray-400">Rifilatura:</span>
-                <span className={formData.isTrimmed ? 'text-orange-400 font-bold' : 'text-gray-300'}>
-                    {formData.isTrimmed ? '✂️ Sì' : '❌ No'}
-                </span>
-            </div>
-            <div className="flex justify-between items-center">
-                <span className="text-gray-400">Quantità:</span>
-                <div className="flex items-center gap-3">
-                    <button
-                        onClick={() => formData.setQuantity(Math.max(1, formData.quantity - 1))}
-                        className="w-10 h-10 bg-slate-700 rounded-full text-white font-bold text-xl"
-                    >-</button>
-                    <span className="text-white font-bold text-xl w-8 text-center">{formData.quantity}</span>
-                    <button
-                        onClick={() => formData.setQuantity(formData.quantity + 1)}
-                        className="w-10 h-10 bg-slate-700 rounded-full text-white font-bold text-xl"
-                    >+</button>
+                <div className="flex justify-between items-center pt-2">
+                    <span className="text-gray-400">Quantità:</span>
+                    <div className="flex items-center gap-4 bg-slate-900 rounded-lg p-1">
+                        <button
+                            onClick={() => formData.setQuantity(Math.max(0, formData.quantity - 1))}
+                            className="w-10 h-10 bg-slate-700 rounded-lg text-white font-bold text-2xl hover:bg-red-500 transition-colors"
+                        >-</button>
+                        <span className={`font-bold text-2xl w-8 text-center ${formData.quantity > 0 ? 'text-white' : 'text-red-500'}`}>
+                            {formData.quantity}
+                        </span>
+                        <button
+                            onClick={() => formData.setQuantity(formData.quantity + 1)}
+                            className="w-10 h-10 bg-slate-700 rounded-lg text-white font-bold text-2xl hover:bg-green-500 transition-colors"
+                        >+</button>
+                    </div>
                 </div>
             </div>
+
+            {/* Client Reference - MANDATORY */}
+            <div>
+                <label className="text-sm font-bold text-white mb-2 block">
+                    Riferimento Cliente <span className="text-red-500">*</span>
+                </label>
+                <input
+                    type="text"
+                    placeholder="Nome Cliente o Riferimento Obbligatorio"
+                    value={formData.clientRef || ''}
+                    onChange={(e) => formData.setClientRef(e.target.value)}
+                    className={`w-full p-4 bg-slate-800 border-2 rounded-xl text-white text-lg placeholder-gray-500 focus:outline-none ${!formData.clientRef ? 'border-red-500/50 focus:border-red-500' : 'border-green-500/50 focus:border-green-500'
+                        }`}
+                />
+            </div>
+
+            {/* Error Message if Invalid */}
+            {!isValid && (
+                <div className="text-center text-red-400 text-sm animate-pulse">
+                    {formData.quantity === 0 ? '⚠️ Seleziona almeno 1 quantità' : '⚠️ Inserisci il riferimento cliente'}
+                </div>
+            )}
+
+            {/* Submit */}
+            <button
+                onClick={onSubmit}
+                disabled={loading || !isValid}
+                className="w-full py-5 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl text-white font-bold text-xl shadow-lg shadow-green-500/30 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] transition-transform"
+            >
+                {loading ? 'Invio...' : '📤 INVIA RICHIESTA'}
+            </button>
         </div>
-
-        {/* Client Reference */}
-        <input
-            type="text"
-            placeholder="Riferimento Cliente (opzionale)"
-            value={formData.clientRef || ''}
-            onChange={(e) => formData.setClientRef(e.target.value)}
-            className="w-full p-3 bg-slate-800 border border-white/20 rounded-xl text-white"
-        />
-
-        {/* Submit */}
-        <button
-            onClick={onSubmit}
-            disabled={loading}
-            className="w-full py-5 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl text-white font-bold text-xl shadow-lg shadow-green-500/30 disabled:opacity-50"
-        >
-            {loading ? 'Invio...' : '📤 INVIA RICHIESTA'}
-        </button>
-    </div>
-);
+    );
+};
 
 // Main Component
 export default function NewOrderPage() {
@@ -265,7 +314,7 @@ export default function NewOrderPage() {
         isPartial: false,
         customHeight: null,
         isTrimmed: false,
-        quantity: 1,
+        quantity: 0, // Start at 0
         clientRef: '',
     });
 
