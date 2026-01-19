@@ -197,6 +197,7 @@ const PermissionsMatrix = ({ roles, definitions, onTogglePermission, onChangeDef
         { value: '/factory/dashboard', label: '🏭 Factory Dashboard' },
         { value: '/factory/kpi', label: '⚙️ Inserimento KPI' },
         { value: '/production/orders', label: '📦 Ordini (Live Production)' },
+        { value: '/production/blocks', label: '🚚 Lista Prelievi (Logistica)' },
         { value: '/mobile/dashboard', label: '📱 Solo Mobile' },
         { value: '/coming-soon', label: '🚧 Coming Soon' },
     ];
