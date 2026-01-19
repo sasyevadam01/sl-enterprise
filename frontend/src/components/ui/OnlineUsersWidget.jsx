@@ -24,9 +24,9 @@ const OnlineUsersWidget = ({ variant = 'floating' }) => {
     if (variant === 'sidebar') {
         return (
             <div className="relative">
-                {/* List Panel (Sidebar Mode) - Opens UP */}
+                {/* List Panel (Sidebar Mode) - Opens UP and RIGHT */}
                 {isOpen && (
-                    <div className="absolute bottom-full right-0 mb-2 w-64 bg-slate-800 border border-gray-700 rounded-lg shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
+                    <div className="absolute bottom-full left-0 mb-2 w-64 bg-slate-800 border border-gray-700 rounded-lg shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200 origin-bottom-left">
                         <div className="p-3 bg-slate-900 border-b border-gray-700 flex justify-between items-center">
                             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Online ({onlineUsers.length})</h3>
                             <button onClick={() => setIsOpen(false)} className="text-gray-500 hover:text-white">✕</button>
@@ -56,16 +56,22 @@ const OnlineUsersWidget = ({ variant = 'floating' }) => {
                     </div>
                 )}
 
-                {/* Sidebar Button */}
+                {/* Sidebar Button - Restyled */}
                 <button
                     onClick={() => setIsOpen(!isOpen)}
-                    className="h-[48px] w-[48px] flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-white rounded-lg border border-white/10 transition-all relative group"
+                    className={`h-[48px] w-[48px] flex items-center justify-center rounded-lg transition-all relative group
+                        ${isOpen ? 'bg-white/10 text-white' : 'text-gray-400 hover:bg-white/5 hover:text-white'}
+                    `}
                     title="Utenti Online"
                 >
-                    <span className="text-lg">🟢</span>
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-[10px] font-bold px-1.5 rounded-full min-w-[16px] text-center border border-slate-800">
-                        {onlineUsers.length}
-                    </span>
+                    <div className="relative">
+                        <span className="text-xl">👥</span>
+                        {onlineUsers.length > 0 && (
+                            <span className="absolute -top-2 -right-2 bg-green-500 text-slate-900 text-[10px] font-bold px-1.5 rounded-full min-w-[16px] text-center border border-slate-800 shadow-sm">
+                                {onlineUsers.length}
+                            </span>
+                        )}
+                    </div>
                 </button>
             </div>
         );
