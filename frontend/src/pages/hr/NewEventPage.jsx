@@ -340,6 +340,19 @@ export default function NewEventPage() {
                         </div>
 
                         {/* Dates */}
+                        <div className="flex justify-between items-center mb-2">
+                            <label className="block text-sm font-medium text-gray-400">Date Assenza *</label>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const today = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
+                                    setLeaveForm(prev => ({ ...prev, start_date: today, end_date: today }));
+                                }}
+                                className="text-xs bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30 px-3 py-1.5 rounded-lg transition flex items-center gap-1 font-medium"
+                            >
+                                📅 Solo Oggi
+                            </button>
+                        </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-400 mb-2">
