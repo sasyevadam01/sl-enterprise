@@ -143,8 +143,8 @@ const StepDimensions = ({ formData, setFormData, onNext }) => {
                     <button
                         onClick={() => setFormData(prev => ({ ...prev, isPartial: false, customHeight: null }))}
                         className={`flex-1 py-4 rounded-xl font-bold transition-all border-2 ${!formData.isPartial
-                                ? 'bg-green-600 text-white border-green-400'
-                                : 'bg-slate-800 text-gray-500 border-white/10'
+                            ? 'bg-green-600 text-white border-green-400'
+                            : 'bg-slate-800 text-gray-500 border-white/10'
                             }`}
                     >
                         📦 INTERO
@@ -152,8 +152,8 @@ const StepDimensions = ({ formData, setFormData, onNext }) => {
                     <button
                         onClick={() => setFormData(prev => ({ ...prev, isPartial: true }))}
                         className={`flex-1 py-4 rounded-xl font-bold transition-all border-2 ${formData.isPartial
-                                ? 'bg-yellow-600 text-white border-yellow-400'
-                                : 'bg-slate-800 text-gray-500 border-white/10'
+                            ? 'bg-yellow-600 text-white border-yellow-400'
+                            : 'bg-slate-800 text-gray-500 border-white/10'
                             }`}
                     >
                         ✂️ PARZIALE
@@ -293,10 +293,14 @@ const StepReview = ({ formData, onSubmit, loading }) => {
                     type="text"
                     placeholder="Nome Cliente o Riferimento Obbligatorio"
                     value={formData.clientRef || ''}
+                    maxLength={100}
                     onChange={(e) => formData.setClientRef(e.target.value)}
                     className={`w-full p-4 bg-slate-800 border-2 rounded-xl text-white text-lg placeholder-gray-500 focus:outline-none ${!formData.clientRef ? 'border-red-500/50 focus:border-red-500' : 'border-green-500/50 focus:border-green-500'
                         }`}
                 />
+                <div className="text-right text-xs text-gray-500 mt-1">
+                    {(formData.clientRef || '').length}/100
+                </div>
             </div>
 
             {/* Error Message if Invalid */}
