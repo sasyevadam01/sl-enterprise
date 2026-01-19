@@ -58,7 +58,7 @@ async def create_production_material(
 # REQUESTS (Ordini Blocchi)
 # ============================================================
 
-@router.post("/requests", response_model=BlockRequestResponse, summary="Crea Richiesta Blocco")
+@router.post("/requests", response_model=dict, summary="Crea Richiesta Blocco")
 async def create_block_request(
     data: BlockRequestCreate,
     db: Session = Depends(get_db),
@@ -85,31 +85,11 @@ async def create_block_request(
         db.commit()
         db.refresh(new_req)
         
-        return BlockRequestResponse(
-            id=new_req.id,
-            request_type=new_req.request_type,
-            material_id=new_req.material_id,
-            density_id=new_req.density_id,
-            color_id=new_req.color_id,
-            dimensions=new_req.dimensions,
-            custom_height=new_req.custom_height,
-            is_trimmed=new_req.is_trimmed,
-            quantity=new_req.quantity,
-            client_ref=new_req.client_ref,
-            notes=new_req.notes,
-            status=new_req.status,
-            created_by_id=new_req.created_by_id,
-            created_at=new_req.created_at,
-            processed_by_id=new_req.processed_by_id,
-            processed_at=new_req.processed_at,
-            delivered_at=new_req.delivered_at,
-            # Computed fields
-            material_label=new_req.material.label if new_req.material else None,
-            density_label=new_req.density.label if new_req.density else None,
-            color_label=new_req.color.label if new_req.color else None,
-            creator_name=new_req.created_by.full_name if new_req.created_by else None,
-            processor_name=new_req.processed_by.full_name if new_req.processed_by else None
-        )
+        return {
+            "id": new_req.id,
+            "status": "success",
+            "message": "Ordine creato correttamante"
+        }
     except Exception as e:
         import traceback
         traceback.print_exc()
