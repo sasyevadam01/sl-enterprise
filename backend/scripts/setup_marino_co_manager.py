@@ -1,12 +1,4 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from models import Employee
-import os
-import sys
-
-# Add parent directory to path to import database/models
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from database import SessionLocal
+from database import SessionLocal, Employee
 
 def fix_marino():
     db = SessionLocal()
