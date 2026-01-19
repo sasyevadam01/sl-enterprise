@@ -22,7 +22,14 @@ export default function PermissionRoute({ children, permission }) {
     }
 
     // Verifica il permesso
-    if (!hasPermission(permission)) {
+    const checkAccess = (perm) => {
+        if (Array.isArray(perm)) {
+            return perm.some(p => hasPermission(p));
+        }
+        return hasPermission(perm);
+    };
+
+    if (!checkAccess(permission)) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-slate-950 p-4">
                 <div className="bg-slate-800 rounded-2xl border border-red-500/30 p-8 max-w-md text-center shadow-2xl">

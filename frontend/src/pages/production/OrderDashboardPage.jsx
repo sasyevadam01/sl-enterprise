@@ -10,16 +10,22 @@ import toast from 'react-hot-toast';
 
 export default function OrderDashboardPage() {
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const { user, hasPermission } = useAuth(); // Add hasPermission
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        // Redirect Supply Users to their dashboard
+        if (hasPermission('manage_production_supply') && !hasPermission('create_production_orders')) {
+            navigate('/production/blocks');
+            return;
+        }
+
         loadOrders();
         // Polling every 10s for updates
         const interval = setInterval(loadOrders, 10000);
         return () => clearInterval(interval);
-    }, []);
+    }, [user]); // Add user dependency
 
     const loadOrders = async () => {
         try {

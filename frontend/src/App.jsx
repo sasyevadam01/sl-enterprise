@@ -172,7 +172,7 @@ function App() {
 
               {/* Live Production Routes */}
               <Route path="production/orders" element={
-                <PermissionRoute permission="create_production_orders">
+                <PermissionRoute permission={['create_production_orders', 'manage_production_supply']}>
                   <OrderDashboardPage />
                 </PermissionRoute>
               } />
