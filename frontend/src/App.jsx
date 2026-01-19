@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import PermissionRoute from './components/PermissionRoute';
 import HomeRedirect from './components/HomeRedirect';
 import MainLayout from './components/layout/MainLayout';
 import { UIProvider } from './components/ui/CustomUI';
@@ -55,48 +56,136 @@ function App() {
               }
             >
               <Route index element={<HomeRedirect />} />
-              <Route path="dashboard" element={<DashboardPage />} />
+
+              {/* Dashboard - Solo per chi ha view_dashboard */}
+              <Route path="dashboard" element={
+                <PermissionRoute permission="view_dashboard">
+                  <DashboardPage />
+                </PermissionRoute>
+              } />
 
               {/* HR Routes */}
-              <Route path="hr/employees" element={<EmployeesPage />} />
-              <Route path="hr/employees/new" element={<NewEmployeePage />} />
-              <Route path="hr/employees/:id" element={<EmployeeDetailPage />} />
+              <Route path="hr/employees" element={
+                <PermissionRoute permission="manage_employees">
+                  <EmployeesPage />
+                </PermissionRoute>
+              } />
+              <Route path="hr/employees/new" element={
+                <PermissionRoute permission="manage_employees">
+                  <NewEmployeePage />
+                </PermissionRoute>
+              } />
+              <Route path="hr/employees/:id" element={
+                <PermissionRoute permission="manage_employees">
+                  <EmployeeDetailPage />
+                </PermissionRoute>
+              } />
               <Route path="hr/leaves" element={<Navigate to="/hr/approvals" replace />} />
-              <Route path="hr/approvals" element={<ApprovalCenterPage />} />
-              <Route path="hr/management" element={<HRManagementPage />} />
-              <Route path="hr/calendar" element={<LeaveCalendarPage />} />
-              <Route path="hr/security" element={<SecurityPage />} />
+              <Route path="hr/approvals" element={
+                <PermissionRoute permission="manage_attendance">
+                  <ApprovalCenterPage />
+                </PermissionRoute>
+              } />
+              <Route path="hr/management" element={
+                <PermissionRoute permission="manage_employees">
+                  <HRManagementPage />
+                </PermissionRoute>
+              } />
+              <Route path="hr/calendar" element={
+                <PermissionRoute permission="view_hr_calendar">
+                  <LeaveCalendarPage />
+                </PermissionRoute>
+              } />
+              <Route path="hr/security" element={
+                <PermissionRoute permission="manage_employees">
+                  <SecurityPage />
+                </PermissionRoute>
+              } />
               <Route path="hr/expiries" element={<Navigate to="/hr/security" replace />} />
-              <Route path="hr/events/new" element={<NewEventPage />} />
+              <Route path="hr/events/new" element={
+                <PermissionRoute permission="request_events">
+                  <NewEventPage />
+                </PermissionRoute>
+              } />
               <Route path="hr/events/pending" element={<Navigate to="/hr/approvals" replace />} />
-              <Route path="hr/tasks" element={<TasksPage />} />
-              <Route path="hr/planner" element={<PlannerPage />} />
-              <Route path="hr/announcements" element={<AnnouncementsPage />} />
+              <Route path="hr/tasks" element={
+                <PermissionRoute permission="manage_tasks">
+                  <TasksPage />
+                </PermissionRoute>
+              } />
+              <Route path="hr/planner" element={
+                <PermissionRoute permission="manage_shifts">
+                  <PlannerPage />
+                </PermissionRoute>
+              } />
+              <Route path="hr/announcements" element={
+                <PermissionRoute permission="view_announcements">
+                  <AnnouncementsPage />
+                </PermissionRoute>
+              } />
 
-              {/* Chat */}
+              {/* Chat - Accessibile a tutti gli utenti loggati */}
               <Route path="chat" element={<ChatPage />} />
 
               {/* Logistics Routes */}
-              <Route path="ops/returns" element={<ReturnsPage />} />
-
-
+              <Route path="ops/returns" element={
+                <PermissionRoute permission="access_logistics">
+                  <ReturnsPage />
+                </PermissionRoute>
+              } />
 
               {/* Factory Routes */}
-              <Route path="factory" element={<FactoryDashboardPage />} />
-              <Route path="factory/dashboard" element={<FactoryDashboardPage />} />
-              <Route path="factory/costs" element={<FactoryCostPage />} />
-              <Route path="factory/kpi" element={<KPIConfigPage />} />
-              <Route path="factory/kpi/setup" element={<KPISetupPage />} />
-              <Route path="factory/maintenance" element={<MaintenancePage />} />
+              <Route path="factory" element={
+                <PermissionRoute permission="access_factory">
+                  <FactoryDashboardPage />
+                </PermissionRoute>
+              } />
+              <Route path="factory/dashboard" element={
+                <PermissionRoute permission="access_factory">
+                  <FactoryDashboardPage />
+                </PermissionRoute>
+              } />
+              <Route path="factory/costs" element={
+                <PermissionRoute permission="manage_kpi">
+                  <FactoryCostPage />
+                </PermissionRoute>
+              } />
+              <Route path="factory/kpi" element={
+                <PermissionRoute permission="access_factory">
+                  <KPIConfigPage />
+                </PermissionRoute>
+              } />
+              <Route path="factory/kpi/setup" element={
+                <PermissionRoute permission="manage_kpi">
+                  <KPISetupPage />
+                </PermissionRoute>
+              } />
+              <Route path="factory/maintenance" element={
+                <PermissionRoute permission="access_factory">
+                  <MaintenancePage />
+                </PermissionRoute>
+              } />
 
               {/* Admin Routes */}
-              <Route path="admin/audit" element={<AuditLogPage />} />
-              <Route path="admin/users" element={<UserManagementPage />} />
-              <Route path="admin/config" element={<SystemConfigPage />} />
+              <Route path="admin/audit" element={
+                <PermissionRoute permission="admin_audit">
+                  <AuditLogPage />
+                </PermissionRoute>
+              } />
+              <Route path="admin/users" element={
+                <PermissionRoute permission="admin_users">
+                  <UserManagementPage />
+                </PermissionRoute>
+              } />
+              <Route path="admin/config" element={
+                <PermissionRoute permission="admin_users">
+                  <SystemConfigPage />
+                </PermissionRoute>
+              } />
             </Route>
 
-            {/* Catch all */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            {/* Catch all - Redirect to home which will then redirect based on permissions */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>
       </UIProvider>

@@ -6,12 +6,17 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { hrStatsApi, chatApi } from '../../api/client';
 
-// Menu items builder function - takes user role to customize
-const getMenuItems = (userRole, isAdmin) => {
+// Menu items builder function - now uses hasPermission function
+const getMenuItems = (hasPermission) => {
     const items = [];
 
-    // Dashboard - ONLY FOR ADMINS
-    if (isAdmin) {
+    // Determine view mode based on permission flag
+    const isCoordinatorView = hasPermission('view_coordinator_suite');
+    const showDashboard = hasPermission('view_dashboard');
+    const showAdmin = hasPermission('admin_users');
+
+    // Dashboard - Based on permission
+    if (showDashboard) {
         items.push({
             title: 'Dashboard',
             path: '/dashboard',
@@ -20,11 +25,11 @@ const getMenuItems = (userRole, isAdmin) => {
         });
     }
 
-    // HR Suite / Coordinator Suite
+    // HR Suite / Coordinator Suite - Based on permission flag
     items.push({
-        title: isAdmin ? 'HR Suite' : 'Coordinator Suite',
-        icon: isAdmin ? '👥' : '🎯', // Different icon for coordinators
-        isAnimated: !isAdmin, // Flag for animated glow effect
+        title: isCoordinatorView ? 'Coordinator Suite' : 'HR Suite',
+        icon: isCoordinatorView ? '🎯' : '👥',
+        isAnimated: isCoordinatorView, // Animated glow for coordinators
         // No parent permission - visibility determined by children's permissions
         children: [
             { title: '👥 Dipendenti', path: '/hr/employees', permission: 'manage_employees' },
@@ -64,8 +69,8 @@ const getMenuItems = (userRole, isAdmin) => {
         ],
     });
 
-    // Admin - Only for admins
-    if (isAdmin) {
+    // Admin - Based on permission
+    if (showAdmin) {
         items.push({
             title: 'Admin',
             icon: '⚙️',
@@ -192,11 +197,8 @@ export default function Sidebar({ isOpen, onToggle, mobileOpen, setMobileOpen })
         console.log("🚀 SL ENTERPRISE SIDEBAR v2.0 LOADED - Notifiche attive");
     }, []);
 
-    // Determine if user is admin
-    const isAdmin = ['super_admin', 'admin', 'hr_manager', 'factory_controller'].includes(user?.role);
-
-    // Get menu items based on role
-    const menuItems = getMenuItems(user?.role, isAdmin);
+    // Get menu items based on permissions (not hardcoded roles)
+    const menuItems = getMenuItems(hasPermission);
 
     useEffect(() => {
         const fetchPending = async () => {

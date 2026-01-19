@@ -130,13 +130,12 @@ async def get_permission_definitions(current_user: User = Depends(get_current_us
     """Restituisce la lista di tutti i permessi disponibili nel sistema per la UI."""
     return [
         {"code": "view_dashboard", "label": "Dashboard HR", "category": "General", "description": "Mostra la Dashboard principale con statistiche e KPI aziendali."},
-        {"code": "access_hr", "label": "Accesso HR Suite", "category": "HR", "description": "Abilita l'accesso generale alla sezione HR (non attivo, uso futuro)."},
+        {"code": "view_coordinator_suite", "label": "Vista Coordinator", "category": "General", "description": "Mostra la sidebar in modalità Coordinator (semplificata) invece che HR Suite."},
+        {"code": "app_only_access", "label": "Solo App Mobile", "category": "General", "description": "Utente con accesso limitato solo da app mobile per inserimento dati."},
         {"code": "manage_employees", "label": "Gestione Dipendenti (Full)", "category": "HR", "description": "Permette visualizzare, creare, modificare ed eliminare i profili dei dipendenti."},
-        {"code": "view_hr_employees", "label": "Visualizza Dipendenti", "category": "HR", "description": "Solo visualizzazione anagrafica dipendenti, senza modifica (non attivo)."},
         {"code": "view_hr_calendar", "label": "Visualizza Calendario", "category": "HR", "description": "Mostra il Calendario HR con ferie, permessi e scadenze."},
         {"code": "manage_attendance", "label": "Gestire Assenze", "category": "HR", "description": "Permette approvare o rifiutare richieste di ferie e permessi nel Centro Approvazioni."},
         {"code": "manage_shifts", "label": "Gestire Turni", "category": "HR", "description": "Accesso al Planner per assegnare e modificare i turni di lavoro."},
-        {"code": "view_shifts_extended", "label": "Navigazione Estesa Planner", "category": "HR", "description": "Permette navigare oltre le 2 settimane nel Planner (non attivo, uso futuro)."},
         {"code": "manage_tasks", "label": "Gestire Task", "category": "HR", "description": "Accesso alla Task Board per creare, assegnare e gestire attività."},
         {"code": "request_events", "label": "Richiedere Eventi", "category": "HR", "description": "Permette creare nuove richieste HR (ferie, permessi, malattie)."},
         {"code": "view_announcements", "label": "Visualizza Bacheca", "category": "HR", "description": "Mostra la Bacheca Annunci con le comunicazioni aziendali."},
@@ -146,4 +145,5 @@ async def get_permission_definitions(current_user: User = Depends(get_current_us
         {"code": "admin_users", "label": "Gestione Utenti", "category": "Admin", "description": "Accesso all'area Admin per gestire utenti e configurazioni di sistema."},
         {"code": "admin_audit", "label": "Audit Logs", "category": "Admin", "description": "Visualizza il registro di tutte le azioni critiche eseguite nel sistema."},
     ]
+
 
