@@ -64,8 +64,13 @@ Fai questo collegandoti al server con Putty:
     ```
 2.  Scarica il codice nuovo:
     ```bash
+    ```bash
     git pull origin main
     ```
+    
+    > **⚠️ ATTENZIONE CRITICA:**
+    > Non usare MAI `git reset --hard` sul server, perché rischieresti di sovrascrivere il database se qualcosa va storto.
+    > Il file database `sl_enterprise.db` è ora protetto e "ignorato" da git, ma la prudenza non è mai troppa. Usa sempre `git pull`.
 
 ### Passo C: Applica le modifiche (Riavvio Docker)
 Sempre su Putty, aggiorna i "container" che fanno girare il programma.
