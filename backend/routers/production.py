@@ -85,37 +85,14 @@ async def create_block_request(
         db.commit()
         db.refresh(new_req)
         
-        # Explicitly construct Response to avoid Pydantic/SQLAlchemy validation issues
-        # Force load relationships
-        mat_label = new_req.material.label if new_req.material else None
-        den_label = new_req.density.label if new_req.density else None
-        col_label = new_req.color.label if new_req.color else None
-        creator = current_user.full_name
+        # Access relationships to force loading while session is open
+        _ = new_req.material
+        _ = new_req.density
+        _ = new_req.color
+        _ = new_req.created_by
+        _ = new_req.processed_by
         
-        return BlockRequestResponse(
-            id=new_req.id,
-            status=new_req.status,
-            request_type=new_req.request_type,
-            material_id=new_req.material_id,
-            density_id=new_req.density_id,
-            color_id=new_req.color_id,
-            dimensions=new_req.dimensions,
-            custom_height=new_req.custom_height,
-            is_trimmed=new_req.is_trimmed,
-            quantity=new_req.quantity,
-            client_ref=new_req.client_ref,
-            notes=new_req.notes,
-            created_by_id=new_req.created_by_id,
-            created_at=new_req.created_at,
-            processed_by_id=new_req.processed_by_id,
-            processed_at=new_req.processed_at,
-            delivered_at=new_req.delivered_at,
-            # Extra UI fields
-            material_label=mat_label,
-            density_label=den_label,
-            color_label=col_label,
-            creator_name=creator
-        )
+        return new_req
     except Exception as e:
         import traceback
         traceback.print_exc()
