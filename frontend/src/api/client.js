@@ -415,8 +415,15 @@ export const pickingApi = {
   updateStatus: (id, status, notes) => client.patch(`/production/requests/${id}/status`, { status, notes }),
 
   // Reporting
+  // Reporting
   getReports: (startDate, endDate, shiftType = 'all') =>
     client.get("/production/reports", { params: { start_date: startDate, end_date: endDate, shift_type: shiftType } }),
+
+  downloadReport: (startDate, endDate, shiftType = 'all') =>
+    client.get("/production/reports", {
+      params: { start_date: startDate, end_date: endDate, shift_type: shiftType, format: 'excel' },
+      responseType: 'blob'
+    }),
 
   getExportUrl: (startDate, endDate, shiftType = 'all') =>
     `${API_BASE_URL}/production/reports?start_date=${startDate}&end_date=${endDate}&shift_type=${shiftType}&format=excel`,
