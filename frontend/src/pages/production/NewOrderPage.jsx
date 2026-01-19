@@ -98,7 +98,14 @@ const StepDimensions = ({ formData, setFormData, onNext }) => {
                 {DIMENSIONS.map(dim => (
                     <button
                         key={dim}
-                        onClick={() => setFormData(prev => ({ ...prev, dimensions: dim }))}
+                        onClick={() => {
+                            setFormData(prev => ({ ...prev, dimensions: dim }));
+                            // Auto-advance if not customized
+                            if (!formData.isPartial && !formData.isTrimmed) {
+                                // Small delay for visual feedback
+                                setTimeout(onNext, 200);
+                            }
+                        }}
                         className={`p-3 rounded-xl font-bold text-sm transition-all border-2 ${formData.dimensions === dim
                                 ? 'bg-cyan-600 text-white border-cyan-400'
                                 : 'bg-slate-700 text-gray-300 border-white/10 hover:bg-slate-600'
@@ -111,60 +118,43 @@ const StepDimensions = ({ formData, setFormData, onNext }) => {
 
             {/* Block Type Toggle */}
             <div>
-                <p className="text-gray-400 text-sm mb-2">Tipo di Blocco</p>
-                <div className="flex gap-3">
+                <p className="text-gray-400 text-sm mb-2">Opzioni Avanzate (Facoltativo)</p>
+                <div className="flex gap-3 mb-3">
                     <button
-                        onClick={() => setFormData(prev => ({ ...prev, isPartial: false, customHeight: null }))}
-                        className={`flex-1 py-3 rounded-xl font-bold transition-all ${!formData.isPartial ? 'bg-green-600 text-white' : 'bg-slate-700 text-gray-400'
-                            }`}
-                    >
-                        📦 INTERO
-                    </button>
-                    <button
-                        onClick={() => setFormData(prev => ({ ...prev, isPartial: true }))}
+                        onClick={() => setFormData(prev => ({ ...prev, isPartial: !prev.isPartial, customHeight: null }))}
                         className={`flex-1 py-3 rounded-xl font-bold transition-all ${formData.isPartial ? 'bg-yellow-600 text-white' : 'bg-slate-700 text-gray-400'
                             }`}
                     >
-                        ✂️ PARZIALE
+                        {formData.isPartial ? '✂️ PARZIALE' : '📦 INTERO'}
                     </button>
-                </div>
-                {formData.isPartial && (
-                    <input
-                        type="number"
-                        placeholder="Altezza (cm)"
-                        value={formData.customHeight || ''}
-                        onChange={(e) => setFormData(prev => ({ ...prev, customHeight: parseInt(e.target.value) || null }))}
-                        className="w-full mt-3 p-3 bg-slate-800 border border-white/20 rounded-xl text-white text-center text-lg"
-                    />
-                )}
-            </div>
-
-            {/* Trim Toggle */}
-            <div>
-                <p className="text-gray-400 text-sm mb-2">Rifilatura</p>
-                <div className="flex gap-3">
                     <button
-                        onClick={() => setFormData(prev => ({ ...prev, isTrimmed: true }))}
+                        onClick={() => setFormData(prev => ({ ...prev, isTrimmed: !prev.isTrimmed }))}
                         className={`flex-1 py-3 rounded-xl font-bold transition-all ${formData.isTrimmed ? 'bg-orange-600 text-white' : 'bg-slate-700 text-gray-400'
                             }`}
                     >
-                        ✂️ RIFILARE
-                    </button>
-                    <button
-                        onClick={() => setFormData(prev => ({ ...prev, isTrimmed: false }))}
-                        className={`flex-1 py-3 rounded-xl font-bold transition-all ${!formData.isTrimmed ? 'bg-slate-600 text-white' : 'bg-slate-700 text-gray-400'
-                            }`}
-                    >
-                        📦 NON RIFILATO
+                        {formData.isTrimmed ? '✂️ RIFILARE' : '✅ STANDARD'}
                     </button>
                 </div>
+
+                {formData.isPartial && (
+                    <div className="animate-fadeIn">
+                        <label className="text-xs text-gray-400 mb-1 block">Altezza desiderata (cm)</label>
+                        <input
+                            type="number"
+                            placeholder="Es: 15"
+                            value={formData.customHeight || ''}
+                            onChange={(e) => setFormData(prev => ({ ...prev, customHeight: parseInt(e.target.value) || null }))}
+                            className="w-full p-3 bg-slate-800 border border-white/20 rounded-xl text-white text-center text-lg focus:border-cyan-500 outline-none"
+                        />
+                    </div>
+                )}
             </div>
 
             {/* Next Button */}
             <button
                 onClick={onNext}
                 disabled={!formData.dimensions}
-                className="w-full py-4 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl text-white font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-4 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl text-white font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed mt-4"
             >
                 Avanti →
             </button>
