@@ -160,7 +160,7 @@ const UsersTable = ({ users, roles, onToggleStatus, onEdit, onDelete }) => (
     </>
 );
 
-const PermissionsMatrix = ({ roles, definitions, onTogglePermission }) => {
+const PermissionsMatrix = ({ roles, definitions, onTogglePermission, onChangeDefaultHome }) => {
     // Group permissions by category
     const groupedDefs = definitions.reduce((acc, perm) => {
         const cat = perm.category || 'Altro';
@@ -173,6 +173,7 @@ const PermissionsMatrix = ({ roles, definitions, onTogglePermission }) => {
         'General': '🏠',
         'HR': '👥',
         'Factory': '🏭',
+        'Production': '🔴',
         'Logistics': '📦',
         'Admin': '⚙️',
         'Altro': '📋'
@@ -182,10 +183,23 @@ const PermissionsMatrix = ({ roles, definitions, onTogglePermission }) => {
         'General': 'from-blue-500/20 to-cyan-500/20 border-blue-500/30',
         'HR': 'from-green-500/20 to-emerald-500/20 border-green-500/30',
         'Factory': 'from-orange-500/20 to-amber-500/20 border-orange-500/30',
+        'Production': 'from-red-500/20 to-pink-500/20 border-red-500/30',
         'Logistics': 'from-purple-500/20 to-violet-500/20 border-purple-500/30',
         'Admin': 'from-red-500/20 to-rose-500/20 border-red-500/30',
         'Altro': 'from-gray-500/20 to-slate-500/20 border-gray-500/30'
     };
+
+    // Available home pages for dropdown
+    const homeOptions = [
+        { value: '/dashboard', label: '📊 Dashboard HR' },
+        { value: '/hr/tasks', label: '📋 Task Board' },
+        { value: '/hr/planner', label: '🗓️ Gestione Turni' },
+        { value: '/factory/dashboard', label: '🏭 Factory Dashboard' },
+        { value: '/factory/kpi', label: '⚙️ Inserimento KPI' },
+        { value: '/production/orders', label: '📦 Ordini (Live Production)' },
+        { value: '/mobile/dashboard', label: '📱 Solo Mobile' },
+        { value: '/coming-soon', label: '🚧 Coming Soon' },
+    ];
 
     return (
         <div className="space-y-4 animate-fade-in">
@@ -195,6 +209,35 @@ const PermissionsMatrix = ({ roles, definitions, onTogglePermission }) => {
                     🔒 Matrice Permessi per Ruolo
                 </h3>
                 <p className="text-sm text-gray-400 mt-1">Clicca sulle caselle per abilitare/disabilitare i permessi. Passa il mouse sulle icone ℹ️ per i dettagli.</p>
+            </div>
+
+            {/* Default Home Page Section */}
+            <div className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-xl border border-cyan-500/30 overflow-hidden">
+                <div className="p-3 bg-slate-900/50 border-b border-white/10 flex items-center gap-2">
+                    <span className="text-xl">🏠</span>
+                    <span className="font-bold text-white">Pagina Iniziale</span>
+                    <span className="text-xs text-gray-400 ml-2">Dove viene reindirizzato l'utente dopo il login</span>
+                </div>
+                <div className="flex">
+                    <div className="w-64 shrink-0 p-3 border-r border-white/10 flex items-center">
+                        <span className="text-sm font-medium text-gray-200">Dopo il Login →</span>
+                    </div>
+                    <div className="flex-1 flex overflow-x-auto">
+                        {roles.map(role => (
+                            <div key={`home-${role.id}`} className="min-w-[100px] flex-1 p-2 border-r border-white/5 last:border-r-0">
+                                <select
+                                    value={role.default_home || '/hr/tasks'}
+                                    onChange={(e) => onChangeDefaultHome(role, e.target.value)}
+                                    className="w-full bg-slate-800 border border-white/20 rounded-lg p-2 text-xs text-white focus:ring-2 focus:ring-cyan-500 outline-none"
+                                >
+                                    {homeOptions.map(opt => (
+                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
 
             {/* Role Headers - Sticky */}
@@ -469,6 +512,20 @@ export default function UserManagementPage() {
         }
     };
 
+    const handleChangeDefaultHome = async (role, newHome) => {
+        // Optimistic UI update
+        const updatedRoles = roles.map(r => r.id === role.id ? { ...r, default_home: newHome } : r);
+        setRoles(updatedRoles);
+
+        try {
+            await rolesApi.updateRole(role.id, { default_home: newHome });
+            toast.success(`Pagina iniziale aggiornata per ${role.label}`);
+        } catch (err) {
+            toast.error("Errore salvataggio pagina iniziale");
+            loadData();
+        }
+    };
+
     const handleDeleteUser = async (user) => {
         const confirmed = await showConfirm({
             title: 'Conferma Eliminazione',
@@ -566,7 +623,7 @@ export default function UserManagementPage() {
                             <UsersTable users={filteredUsers} roles={roles} onToggleStatus={handleToggleStatus} onEdit={openEditModal} onDelete={handleDeleteUser} />
                         </div>
                     ) : (
-                        <PermissionsMatrix roles={roles} definitions={permDefinitions} onTogglePermission={handleTogglePermission} />
+                        <PermissionsMatrix roles={roles} definitions={permDefinitions} onTogglePermission={handleTogglePermission} onChangeDefaultHome={handleChangeDefaultHome} />
                     )}
                 </>
             )}

@@ -58,6 +58,7 @@ class UserResponse(UserBase):
     role_label: Optional[str] = None
     permissions: Optional[list] = None
     employee_id: Optional[int] = None  # Include linked employee ID
+    default_home: Optional[str] = None  # Home page for role
 
     class Config:
         from_attributes = True

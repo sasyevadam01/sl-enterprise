@@ -86,6 +86,23 @@ class User(Base):
         }
         return PERMISSIONS_MAP.get(self.role, [])
 
+    @property
+    def default_home(self):
+        """Ritorna la pagina iniziale dal ruolo (o fallback)."""
+        if self.role_obj and self.role_obj.default_home:
+            return self.role_obj.default_home
+        
+        # Fallback per ruoli legacy
+        HOME_MAP = {
+            'super_admin': '/dashboard',
+            'admin': '/dashboard',
+            'hr_manager': '/dashboard',
+            'factory_controller': '/hr/tasks',
+            'coordinator': '/hr/tasks',
+            'record_user': '/mobile/dashboard'
+        }
+        return HOME_MAP.get(self.role, '/hr/tasks')
+
 
 class Department(Base):
     """Reparti aziendali (es. Saldatura, Logistica)."""
