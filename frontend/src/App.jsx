@@ -28,6 +28,9 @@ import UserManagementPage from './pages/admin/UserManagementPage';
 import SystemConfigPage from './pages/admin/SystemConfigPage';
 import MaintenancePage from './pages/factory/MaintenancePage';
 import OperatorDashboard from './pages/mobile/OperatorDashboard';
+import OrderDashboardPage from './pages/production/OrderDashboardPage';
+import NewOrderPage from './pages/production/NewOrderPage';
+import SupplyDashboardPage from './pages/production/SupplyDashboardPage';
 import ChatPage from './pages/ChatPage';
 import ComingSoonPage from './pages/ComingSoonPage';
 
@@ -167,15 +170,20 @@ function App() {
                 </PermissionRoute>
               } />
 
-              {/* Live Production Routes (Coming Soon) */}
+              {/* Live Production Routes */}
               <Route path="production/orders" element={
-                <PermissionRoute permission="access_live_production">
-                  <ComingSoonPage />
+                <PermissionRoute permission="create_production_orders">
+                  <OrderDashboardPage />
+                </PermissionRoute>
+              } />
+              <Route path="production/orders/new" element={
+                <PermissionRoute permission="create_production_orders">
+                  <NewOrderPage />
                 </PermissionRoute>
               } />
               <Route path="production/blocks" element={
-                <PermissionRoute permission="access_live_production">
-                  <ComingSoonPage />
+                <PermissionRoute permission="manage_production_supply">
+                  <SupplyDashboardPage />
                 </PermissionRoute>
               } />
               <Route path="coming-soon" element={<ComingSoonPage />} />

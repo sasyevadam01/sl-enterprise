@@ -60,14 +60,14 @@ const getMenuItems = (hasPermission) => {
         ],
     });
 
-    // LIVE PRODUCTION - New section for order_user and block_supply roles
+    // LIVE PRODUCTION - Sezione per Gestione Blocchi
     items.push({
         title: 'Live Production',
         icon: '🔴',
-        permission: 'access_live_production',
+        permission: null, // Will be checked per-child
         children: [
-            { title: '📦 Ordini', path: '/production/orders', permission: 'access_live_production' },
-            { title: '🚫 Blocchi Fornitura', path: '/production/blocks', permission: 'access_live_production' },
+            { title: '📦 Richiesta Blocchi', path: '/production/orders', permission: 'create_production_orders' },
+            { title: '🚚 Lista Prelievi', path: '/production/blocks', permission: 'manage_production_supply' },
         ],
     });
 

@@ -402,6 +402,18 @@ export const mobileApi = {
     client.get(`/mobile/downtimes/${kpiConfigId}`, { params: { date, shift_type: shiftType } }),
 };
 
+// Live Production (Picking List)
+export const pickingApi = {
+  // Config (Materials/Colors)
+  getConfig: (category) => client.get("/production/config", { params: { category } }),
+  createMaterial: (data) => client.post("/production/config", data),
+
+  // Requests (Orders)
+  createRequest: (data) => client.post("/production/requests", data),
+  getRequests: (status, limit = 50) => client.get("/production/requests", { params: { status, limit } }),
+  updateStatus: (id, status, notes) => client.patch(`/production/requests/${id}/status`, { status, notes }),
+};
+
 export const adminApi = {
   getWorkstations: () => client.get("/admin/workstations"),
 };
