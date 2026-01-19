@@ -952,5 +952,5 @@ class BlockRequestResponse(BlockRequestCreate):
     creator_name: Optional[str] = None
     processor_name: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    # class Config:
+    #     from_attributes = True

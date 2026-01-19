@@ -85,14 +85,31 @@ async def create_block_request(
         db.commit()
         db.refresh(new_req)
         
-        # Access relationships to force loading while session is open
-        _ = new_req.material
-        _ = new_req.density
-        _ = new_req.color
-        _ = new_req.created_by
-        _ = new_req.processed_by
-        
-        return new_req
+        return BlockRequestResponse(
+            id=new_req.id,
+            request_type=new_req.request_type,
+            material_id=new_req.material_id,
+            density_id=new_req.density_id,
+            color_id=new_req.color_id,
+            dimensions=new_req.dimensions,
+            custom_height=new_req.custom_height,
+            is_trimmed=new_req.is_trimmed,
+            quantity=new_req.quantity,
+            client_ref=new_req.client_ref,
+            notes=new_req.notes,
+            status=new_req.status,
+            created_by_id=new_req.created_by_id,
+            created_at=new_req.created_at,
+            processed_by_id=new_req.processed_by_id,
+            processed_at=new_req.processed_at,
+            delivered_at=new_req.delivered_at,
+            # Computed fields
+            material_label=new_req.material.label if new_req.material else None,
+            density_label=new_req.density.label if new_req.density else None,
+            color_label=new_req.color.label if new_req.color else None,
+            creator_name=new_req.created_by.full_name if new_req.created_by else None,
+            processor_name=new_req.processed_by.full_name if new_req.processed_by else None
+        )
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -110,8 +127,6 @@ async def list_block_requests(
 ):
     """
     Lista richieste.
-    - Se Order User: vede solo le sue (o tutte se vuole vedere coda?). Specs: "Dashboard personale".
-    - Se Block Supply: vede to-do list (pending/processing).
     """
     query = db.query(BlockRequest).options(
         joinedload(BlockRequest.material),
@@ -127,32 +142,51 @@ async def list_block_requests(
     
     # Filter by status alias
     if status == 'active':
-        # To-Do list for Supply
         query = query.filter(BlockRequest.status.in_(['pending', 'processing']))
     elif status == 'history':
-        # Archivio / Consegnati
         query = query.filter(BlockRequest.status.in_(['delivered', 'completed', 'cancelled']))
         query = query.order_by(BlockRequest.created_at.desc())
     elif status:
         query = query.filter(BlockRequest.status == status)
 
-    # Restrict Order User to own requests UNLESS they are also Supply/Admin
+    # Restrict Order User
     if is_order and not is_supply:
         query = query.filter(BlockRequest.created_by_id == current_user.id)
-        # Order user needs to see active orders (pending/processing) AND recent delivered (for feedback)
-        # If no status param, return active + recent delivered?
-        # Let's rely on frontend calling with explicit status.
         
-    query = query.order_by(BlockRequest.created_at.asc()) # FIFO for supply
+    query = query.order_by(BlockRequest.created_at.asc())
     
     results = query.limit(limit).all()
     
-    # DO NOT manually enrich labels here. 
-    # The BlockRequest model now has @property methods (material_label, etc.)
-    # that Pydantic will read automatically via from_attributes=True.
-    # Trying to set them manually would raise AttributeError.
+    # Manually map to Pydantic Response to avoid 500 Error
+    response_list = []
+    for req in results:
+        response_list.append(BlockRequestResponse(
+            id=req.id,
+            request_type=req.request_type,
+            material_id=req.material_id,
+            density_id=req.density_id,
+            color_id=req.color_id,
+            dimensions=req.dimensions,
+            custom_height=req.custom_height,
+            is_trimmed=req.is_trimmed,
+            quantity=req.quantity,
+            client_ref=req.client_ref,
+            notes=req.notes,
+            status=req.status,
+            created_by_id=req.created_by_id,
+            created_at=req.created_at,
+            processed_by_id=req.processed_by_id,
+            processed_at=req.processed_at,
+            delivered_at=req.delivered_at,
+            # Computed fields
+            material_label=req.material.label if req.material else None,
+            density_label=req.density.label if req.density else None,
+            color_label=req.color.label if req.color else None,
+            creator_name=req.created_by.full_name if req.created_by else None,
+            processor_name=req.processed_by.full_name if req.processed_by else None
+        ))
         
-    return results
+    return response_list
 
 @router.patch("/requests/{req_id}/status", response_model=BlockRequestResponse, summary="Aggiorna Stato Richiesta")
 async def update_request_status(
