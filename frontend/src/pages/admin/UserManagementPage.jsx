@@ -199,7 +199,7 @@ const PermissionsMatrix = ({ roles, definitions, onTogglePermission, onChangeDef
         { value: '/production/orders', label: '📦 Ordini (Live Production)' },
         { value: '/production/blocks', label: '🚚 Lista Prelievi (Logistica)' },
         { value: '/mobile/dashboard', label: '📱 Solo Mobile' },
-        { value: '/coming-soon', label: '🚧 Coming Soon' },
+
     ];
 
     return (

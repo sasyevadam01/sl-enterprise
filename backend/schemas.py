@@ -58,9 +58,9 @@ class UserResponse(UserBase):
     is_active: bool
     created_at: datetime
     role_label: Optional[str] = None
-    permissions: Optional[list] = None
-    employee_id: Optional[int] = None  # Include linked employee ID
-    default_home: Optional[str] = None  # Home page for role
+    permissions: List[str] = []
+    employee_id: Optional[int] = None
+    default_home: Optional[str] = None
 
     class Config:
         from_attributes = True
