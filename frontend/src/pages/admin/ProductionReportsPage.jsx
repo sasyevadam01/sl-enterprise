@@ -11,7 +11,7 @@ import {
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A28', '#F0F'];
 
-import { toast } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 
 export default function ProductionReportsPage() {
     // const { toast } = useUI(); // Removed to use direct import
