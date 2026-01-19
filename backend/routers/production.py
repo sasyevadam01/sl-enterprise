@@ -147,13 +147,10 @@ async def list_block_requests(
     
     results = query.limit(limit).all()
     
-    # Enrich response with labels
-    for req in results:
-        req.material_label = req.material.label if req.material else None
-        req.density_label = req.density.label if req.density else None
-        req.color_label = req.color.label if req.color else None
-        req.creator_name = req.created_by.full_name if req.created_by else "Unknown"
-        req.processor_name = req.processed_by.full_name if req.processed_by else None
+    # DO NOT manually enrich labels here. 
+    # The BlockRequest model now has @property methods (material_label, etc.)
+    # that Pydantic will read automatically via from_attributes=True.
+    # Trying to set them manually would raise AttributeError.
         
     return results
 
