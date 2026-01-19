@@ -138,7 +138,11 @@ async def get_my_team(
             department_id=e.department_id,
             department_name=e.department.name if e.department else "N/D",
             manager_id=e.manager_id,
+            manager_name=f"{e.manager.last_name} {e.manager.first_name}" if e.manager else None,
             co_manager_id=e.co_manager_id,
+            co_manager_name=f"{e.co_manager.last_name} {e.co_manager.first_name}" if e.co_manager else None,
+            default_banchina_id=e.default_banchina_id,
+            secondary_role=e.secondary_role
         ) for e in employees
     ]
 
