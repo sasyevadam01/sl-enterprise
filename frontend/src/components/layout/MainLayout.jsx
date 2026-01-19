@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import NotificationBell from './NotificationBell';
-import OnlineUsersWidget from '../ui/OnlineUsersWidget';
+// UsageGuide removed per user request
 import { useAuth } from '../../context/AuthContext';
 // UsageGuide removed per user request
 
@@ -106,8 +106,8 @@ export default function MainLayout() {
             </main>
 
 
-            {/* Live Widget */}
-            <OnlineUsersWidget />
+            {/* Live Widget - Moved to Sidebar */}
+
 
         </div>
     );

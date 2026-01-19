@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { hrStatsApi, chatApi } from '../../api/client';
+import OnlineUsersWidget from '../ui/OnlineUsersWidget';
 
 // Menu items builder function - now uses hasPermission function
 const getMenuItems = (hasPermission) => {
@@ -314,13 +315,19 @@ export default function Sidebar({ isOpen, onToggle, mobileOpen, setMobileOpen })
                         <p className="text-xs text-blue-400">{user.role_label || user.role}</p>
                     </div>
                 )}
-                <button
-                    onClick={handleLogout}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-500/10 rounded-lg transition"
-                >
-                    <span>🚪</span>
-                    {(isOpen || mobileOpen) && <span>Esci</span>}
-                </button>
+                <div className={`flex items-center gap-2 ${!isOpen && !mobileOpen ? 'flex-col' : 'flex-row'}`}>
+                    <button
+                        onClick={handleLogout}
+                        className="flex-1 w-full flex items-center justify-center gap-3 px-4 py-3 text-red-400 hover:bg-red-500/10 rounded-lg transition"
+                        title="Esci"
+                    >
+                        <span>🚪</span>
+                        {(isOpen || mobileOpen) && <span>Esci</span>}
+                    </button>
+
+                    {/* Online Users Widget - Sidebar Variant */}
+                    <OnlineUsersWidget variant="sidebar" />
+                </div>
             </div>
         </aside>
     );
