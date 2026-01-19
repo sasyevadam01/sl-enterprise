@@ -337,6 +337,19 @@ return (
                         </div>
 
                         {/* Dates */}
+                        <div className="flex justify-between items-center">
+                            <label className="block text-sm font-medium text-gray-400">Date</label>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const today = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
+                                    setFormData(prev => ({ ...prev, start_date: today, end_date: today }));
+                                }}
+                                className="text-xs bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30 px-2 py-1 rounded transition flex items-center gap-1"
+                            >
+                                📅 Solo Oggi
+                            </button>
+                        </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-400 mb-1">
