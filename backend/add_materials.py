@@ -4,31 +4,26 @@ from models.production import ProductionMaterial
 def add_materials():
     db = SessionLocal()
     try:
-        # 1. Add "AIRSENSE CELESTINO CHIARO" (Memory)
-        # Check if exists
-        exists = db.query(ProductionMaterial).filter_by(label="AIRSENSE CELESTINO CHIARO").first()
-        if not exists:
-            print("Adding AIRSENSE CELESTINO CHIARO...")
+        # 1. Add/Update "AIRSENSE" (Memory)
+        # Check if exists (old or new name)
+        existing = db.query(ProductionMaterial).filter(ProductionMaterial.label.like("AIRSENSE%")).first()
+        
+        if not existing:
+            print("Adding AIRSENSE...")
             m1 = ProductionMaterial(
                 category="memory",
-                label="AIRSENSE CELESTINO CHIARO",
-                value="#000000", # Black text requested -> So background should be light? User sent an image. 
-                # User said: "AIRSENSE CELESTINO CHIARO SCRITTA DENTRO NERA". 
-                # This implies a light background. "Celestino Chiaro" is light blue.
-                # Let's pick a light blue hex code.
+                label="AIRSENSE",
+                value="#81D4FA", # Darker Light Blue (requested "un pochino più scuro")
                 display_order=100
             )
-            # The 'value' field in DB is used for BACKGROUND color in frontend.
-            # If I want black text, background must be light.
-            # Light Blue: #E0F7FA (Cyan-50) or #B3E5FC (Light Blue-100)
-            m1.value = "#E0FFFF" # LightCyan
             db.add(m1)
         else:
-            print("AIRSENSE CELESTINO CHIARO already exists.")
+            print(f"Updating existing material: {existing.label} -> AIRSENSE")
+            existing.label = "AIRSENSE"
+            existing.value = "#81D4FA" 
 
         # 2. Add "GRIGIO" (Sponge Color)
         # "METTILO TRA ROSA E NERO"
-        # Need to find display_order of Rosa and Nero.
         rosa = db.query(ProductionMaterial).filter(ProductionMaterial.label.ilike("%ROSA%")).first()
         nero = db.query(ProductionMaterial).filter(ProductionMaterial.label.ilike("%NERO%")).first()
         
@@ -50,6 +45,8 @@ def add_materials():
             db.add(m2)
         else:
             print("GRIGIO already exists.")
+            # Ensure order is correct if re-running
+            exists_grey.display_order = target_order
 
         db.commit()
         print("✅ Materials added successfully.")

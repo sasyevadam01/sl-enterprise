@@ -945,7 +945,7 @@ class BlockRequestResponse(BlockRequestCreate):
     processed_at: Optional[datetime] = None
     delivered_at: Optional[datetime] = None
     
-    # Extra for UI
+    # Extra for UI - Populated via Model Properties
     material_label: Optional[str] = None
     density_label: Optional[str] = None
     color_label: Optional[str] = None

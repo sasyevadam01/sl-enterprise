@@ -283,3 +283,24 @@ class BlockRequest(Base):
     
     created_by = relationship("User", foreign_keys=[created_by_id])
     processed_by = relationship("User", foreign_keys=[processed_by_id])
+
+    # Properties for Pydantic (to avoid manual population)
+    @property
+    def material_label(self):
+        return self.material.label if self.material else None
+
+    @property
+    def density_label(self):
+        return self.density.label if self.density else None
+
+    @property
+    def color_label(self):
+        return self.color.label if self.color else None
+
+    @property
+    def creator_name(self):
+        return self.created_by.full_name if self.created_by else None
+
+    @property
+    def processor_name(self):
+        return self.processed_by.full_name if self.processed_by else None
