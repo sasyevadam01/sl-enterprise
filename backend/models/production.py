@@ -219,3 +219,67 @@ class DowntimeReason(Base):
     description = Column(String(200), nullable=True)
     
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+# ============================================================
+# LIVE PRODUCTION (PICKING LIST) MODELS
+# ============================================================
+
+class ProductionMaterial(Base):
+    """
+    Configurazione Materiali (Memory, Spugna) e Colori.
+    Gestibile da Admin per non avere valori hardcoded.
+    """
+    __tablename__ = "production_materials"
+
+    id = Column(Integer, primary_key=True, index=True)
+    category = Column(String(50), nullable=False) # memory, sponge_density, sponge_color
+    label = Column(String(100), nullable=False)   # Es: "EM40 BIANCO", "D25"
+    value = Column(String(50), nullable=True)     # Es: "#FFFFFF" per colori, o codice interno
+    display_order = Column(Integer, default=0)
+    is_active = Column(Boolean, default=True)
+
+class BlockRequest(Base):
+    """
+    Richiesta di prelievo blocco (Picking List).
+    """
+    __tablename__ = "block_requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+    
+    # Dati Richiesta
+    request_type = Column(String(50), nullable=False) # memory, sponge
+    
+    # References to configuration (Nullable based on type)
+    material_id = Column(Integer, ForeignKey("production_materials.id"), nullable=True)
+    density_id = Column(Integer, ForeignKey("production_materials.id"), nullable=True)
+    color_id = Column(Integer, ForeignKey("production_materials.id"), nullable=True)
+    
+    # Specifics
+    dimensions = Column(String(50), nullable=False) # 160x190 etc
+    custom_height = Column(Integer, nullable=True)  # Se taglio parziale
+    is_trimmed = Column(Boolean, default=False)     # Rifilato
+    quantity = Column(Integer, default=1)
+    client_ref = Column(String(100), nullable=True)
+    
+    # Status Flow
+    status = Column(String(50), default="pending") # pending, processing, delivered, completed, cancelled
+    
+    # Tracking
+    created_by_id = Column(Integer, ForeignKey("users.id"))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    processed_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    processed_at = Column(DateTime, nullable=True)
+    
+    delivered_at = Column(DateTime, nullable=True) # Data fine/consegna
+    
+    notes = Column(Text, nullable=True)
+
+    # Relazioni
+    material = relationship("ProductionMaterial", foreign_keys=[material_id])
+    density = relationship("ProductionMaterial", foreign_keys=[density_id])
+    color = relationship("ProductionMaterial", foreign_keys=[color_id])
+    
+    created_by = relationship("User", foreign_keys=[created_by_id])
+    processed_by = relationship("User", foreign_keys=[processed_by_id])

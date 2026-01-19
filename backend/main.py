@@ -215,6 +215,7 @@ app.include_router(kpi.router)
 app.include_router(roles.router)  # KPI Configurator
 app.include_router(mobile.router)
 app.include_router(maintenance.router)
+app.include_router(production.router)
 
 # Admin Settings
 app.include_router(admin_settings.router)  # Departments, Job Roles, Banchine, Workstations

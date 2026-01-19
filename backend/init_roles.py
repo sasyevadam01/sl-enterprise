@@ -59,7 +59,7 @@ DEFAULT_ROLES = [
         "label": "Order User",
         "description": "Gestione ordini Live Production",
         "is_static": False,
-        "permissions": ["access_live_production"],
+        "permissions": ["create_production_orders"],
         "default_home": "/production/orders"
     },
     {
@@ -67,7 +67,7 @@ DEFAULT_ROLES = [
         "label": "Block Supply",
         "description": "Gestione blocchi fornitura",
         "is_static": False,
-        "permissions": ["access_live_production"],
+        "permissions": ["manage_production_supply"],
         "default_home": "/production/blocks"
     },
 ]
@@ -82,10 +82,18 @@ def seed_roles():
                 db.add(new_role)
                 print(f"✅ Creato ruolo: {role_data['label']}")
             else:
-                # Update existing role with new fields if missing
-                if existing.default_home is None and role_data.get("default_home"):
+                # Update permissions and default_home for existing roles to match new specs
+                updated = False
+                if role_data.get("permissions") and existing.permissions != role_data["permissions"]:
+                    existing.permissions = role_data["permissions"]
+                    updated = True
+                
+                if role_data.get("default_home") and existing.default_home != role_data["default_home"]:
                     existing.default_home = role_data["default_home"]
-                    print(f"🔄 Aggiornato default_home per: {role_data['label']}")
+                    updated = True
+                
+                if updated:
+                    print(f"🔄 Aggiornato ruolo: {role_data['label']}")
         
         db.commit()
         print("🎉 Seed ruoli completato!")

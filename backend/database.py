@@ -18,7 +18,7 @@ from models.shifts import ShiftRequirement, ShiftAssignment
 from models.production import (
     ProductionSession, DowntimeLog, ProductionEntry, 
     MachineDowntime, KpiConfig, KpiEntry, SessionOperator,
-    DowntimeReason
+    DowntimeReason, ProductionMaterial, BlockRequest
 )
 from models.logistics import ReturnTicket
 from models.maintenance import MaintenanceRequest
