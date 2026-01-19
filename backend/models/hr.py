@@ -57,6 +57,7 @@ class Employee(Base):
     user = relationship("User", back_populates="employee")
     department = relationship("Department", back_populates="employees")
     manager = relationship("Employee", remote_side=[id], backref="subordinates", foreign_keys=[manager_id])
+    co_manager = relationship("Employee", remote_side=[id], backref="co_subordinates", foreign_keys=[co_manager_id])
     documents = relationship("EmployeeDocument", back_populates="employee", cascade="all, delete-orphan")
     certifications = relationship("EmployeeCertification", back_populates="employee", cascade="all, delete-orphan")
     trainings = relationship("EmployeeTraining", back_populates="employee", cascade="all, delete-orphan")
