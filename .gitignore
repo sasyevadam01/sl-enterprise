@@ -11,3 +11,8 @@ dist/
 
 # Backups & Private Data (Keep on Server/Local only)
 backend/backups/
+
+# DATABASE - NEVER COMMIT THIS (prevents data loss during git operations)
+*.db
+backend/*.db
+backend/sl_enterprise.db
