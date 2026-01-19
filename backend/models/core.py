@@ -99,7 +99,9 @@ class User(Base):
             'hr_manager': '/dashboard',
             'factory_controller': '/hr/tasks',
             'coordinator': '/hr/tasks',
-            'record_user': '/mobile/dashboard'
+            'record_user': '/mobile/dashboard',
+            'order_user': '/production/orders',      # <-- Added
+            'block_supply': '/production/blocks'     # <-- Added
         }
         return HOME_MAP.get(self.role, '/hr/tasks')
 
