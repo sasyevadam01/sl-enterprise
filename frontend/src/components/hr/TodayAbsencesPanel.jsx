@@ -5,7 +5,6 @@
 import React, { useState, useEffect } from 'react';
 import { leavesApi, employeesApi } from '../../api/client';
 import { format } from 'date-fns';
-import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function TodayAbsencesPanel() {
@@ -87,8 +86,8 @@ export default function TodayAbsencesPanel() {
                     <span className="text-xl">🚫</span>
                     <span className="text-white font-semibold">Assenti Oggi</span>
                     <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${absentees.length === 0
-                            ? 'bg-green-500/20 text-green-400'
-                            : 'bg-red-500/20 text-red-400'
+                        ? 'bg-green-500/20 text-green-400'
+                        : 'bg-red-500/20 text-red-400'
                         }`}>
                         {loading ? '...' : absentees.length}
                     </span>
@@ -120,21 +119,20 @@ export default function TodayAbsencesPanel() {
                             ) : (
                                 <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
                                     {absentees.map((leave, i) => (
-                                        <Link
+                                        <div
                                             key={i}
-                                            to={`/hr/employees/${leave.employee_id}?tab=absences`}
-                                            className="flex items-center justify-between p-2 rounded-lg bg-white/5 hover:bg-white/10 transition group"
+                                            className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5"
                                         >
                                             <div className="flex items-center gap-2">
                                                 <span className="text-lg">{getLeaveIcon(leave.leave_type)}</span>
-                                                <span className="text-white font-medium group-hover:text-blue-300 transition">
+                                                <span className="text-white font-medium">
                                                     {leave.employee_name}
                                                 </span>
                                             </div>
                                             <span className="text-xs text-gray-400 bg-slate-700/50 px-2 py-1 rounded">
                                                 {getLeaveLabel(leave.leave_type)}
                                             </span>
-                                        </Link>
+                                        </div>
                                     ))}
                                 </div>
                             )}
