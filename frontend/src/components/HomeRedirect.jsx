@@ -1,16 +1,12 @@
 /**
  * SL Enterprise - Smart Home Redirect
- * Redirects users to their appropriate home page based on role.
+ * Redirects users to their appropriate home page based on role's default_home setting.
  */
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function HomeRedirect() {
     const { user, loading } = useAuth();
-
-    // Debug: Log what role we're seeing
-    console.log("[HomeRedirect] User:", user);
-    console.log("[HomeRedirect] Role:", user?.role);
 
     if (loading) {
         return (
@@ -22,33 +18,41 @@ export default function HomeRedirect() {
 
     // No user = go to login
     if (!user) {
-        console.log("[HomeRedirect] No user, redirecting to login");
         return <Navigate to="/login" replace />;
     }
 
-    // Role-based home page routing
-    const role = user?.role || '';
-    console.log("[HomeRedirect] Detected role:", role);
+    // Use default_home from role if available, otherwise fallback to role-based logic
+    const defaultHome = user?.default_home || user?.role_home;
 
-    // Mobile Operators (record_user)
+    if (defaultHome) {
+        console.log("[HomeRedirect] Using role default_home:", defaultHome);
+        return <Navigate to={defaultHome} replace />;
+    }
+
+    // Fallback: Role-based home page routing (legacy)
+    const role = user?.role || '';
+    console.log("[HomeRedirect] Fallback - using role:", role);
+
+    // Mobile Operators (record_user) - ALWAYS go to mobile, no sidebar
     if (['record_user', 'operator'].includes(role)) {
-        console.log("[HomeRedirect] Operator detected, going to /mobile/dashboard");
         return <Navigate to="/mobile/dashboard" replace />;
     }
 
     // Coordinators go to Tasks
     if (['coordinator'].includes(role)) {
-        console.log("[HomeRedirect] Coordinator detected, going to /hr/tasks");
+        return <Navigate to="/hr/tasks" replace />;
+    }
+
+    // Factory controllers go to Tasks (per user request)
+    if (['factory_controller'].includes(role)) {
         return <Navigate to="/hr/tasks" replace />;
     }
 
     // Admins and managers go to Dashboard
-    if (['super_admin', 'admin', 'factory_controller', 'hr_manager'].includes(role)) {
-        console.log("[HomeRedirect] Admin/Manager detected, going to /dashboard");
+    if (['super_admin', 'admin', 'hr_manager'].includes(role)) {
         return <Navigate to="/dashboard" replace />;
     }
 
     // Default fallback - go to tasks for safety
-    console.log("[HomeRedirect] Unknown role, defaulting to /hr/tasks");
     return <Navigate to="/hr/tasks" replace />;
 }

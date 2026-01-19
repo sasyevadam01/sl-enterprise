@@ -13,6 +13,7 @@ class Role(Base):
     description = Column(String(255), nullable=True)
     is_static = Column(Boolean, default=False)               # Se True, non modificabile
     permissions = Column(JSON, default=[])                   # Lista permessi ["view_dash", "manage_shifts"]
+    default_home = Column(String(100), default="/hr/tasks")  # Pagina iniziale dopo login
     
     users = relationship("User", back_populates="role_obj")
 

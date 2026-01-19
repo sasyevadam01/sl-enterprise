@@ -29,6 +29,7 @@ import SystemConfigPage from './pages/admin/SystemConfigPage';
 import MaintenancePage from './pages/factory/MaintenancePage';
 import OperatorDashboard from './pages/mobile/OperatorDashboard';
 import ChatPage from './pages/ChatPage';
+import ComingSoonPage from './pages/ComingSoonPage';
 
 function App() {
   return (
@@ -165,6 +166,19 @@ function App() {
                   <MaintenancePage />
                 </PermissionRoute>
               } />
+
+              {/* Live Production Routes (Coming Soon) */}
+              <Route path="production/orders" element={
+                <PermissionRoute permission="access_live_production">
+                  <ComingSoonPage />
+                </PermissionRoute>
+              } />
+              <Route path="production/blocks" element={
+                <PermissionRoute permission="access_live_production">
+                  <ComingSoonPage />
+                </PermissionRoute>
+              } />
+              <Route path="coming-soon" element={<ComingSoonPage />} />
 
               {/* Admin Routes */}
               <Route path="admin/audit" element={

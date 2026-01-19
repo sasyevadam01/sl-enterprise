@@ -60,6 +60,17 @@ const getMenuItems = (hasPermission) => {
         ],
     });
 
+    // LIVE PRODUCTION - New section for order_user and block_supply roles
+    items.push({
+        title: 'Live Production',
+        icon: '🔴',
+        permission: 'access_live_production',
+        children: [
+            { title: '📦 Ordini', path: '/production/orders', permission: 'access_live_production' },
+            { title: '🚫 Blocchi Fornitura', path: '/production/blocks', permission: 'access_live_production' },
+        ],
+    });
+
     // Logistics
     items.push({
         title: 'Logistica',

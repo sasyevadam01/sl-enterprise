@@ -15,6 +15,7 @@ class RoleBase(BaseModel):
     label: str
     description: Optional[str] = None
     permissions: List[str] = []
+    default_home: Optional[str] = "/hr/tasks"
 
 class RoleCreate(RoleBase):
     pass
@@ -23,10 +24,12 @@ class RoleUpdate(BaseModel):
     label: Optional[str] = None
     description: Optional[str] = None
     permissions: Optional[List[str]] = None
+    default_home: Optional[str] = None
 
 class RoleResponse(RoleBase):
     id: int
     is_static: bool
+    default_home: Optional[str] = None
     
     class Config:
         from_attributes = True
@@ -92,6 +95,7 @@ async def update_role(
     if data.label: role.label = data.label
     if data.description: role.description = data.description
     if data.permissions is not None: role.permissions = data.permissions
+    if data.default_home is not None: role.default_home = data.default_home
     
     db.commit()
     db.refresh(role)
@@ -141,6 +145,7 @@ async def get_permission_definitions(current_user: User = Depends(get_current_us
         {"code": "view_announcements", "label": "Visualizza Bacheca", "category": "HR", "description": "Mostra la Bacheca Annunci con le comunicazioni aziendali."},
         {"code": "access_factory", "label": "Factory Monitor", "category": "Factory", "description": "Accesso alla sezione Fabbrica: Dashboard Produzione, Manutenzioni, Inserimento KPI."},
         {"code": "manage_kpi", "label": "Gestione KPI Avanzata", "category": "Factory", "description": "Permette configurare i parametri KPI e accedere al Calcolo Costi."},
+        {"code": "access_live_production", "label": "Live Production", "category": "Production", "description": "Accesso alla sezione Live Production per ordini e blocchi fornitura."},
         {"code": "access_logistics", "label": "Gestione Resi", "category": "Logistics", "description": "Accesso alla sezione Logistica per gestire i resi."},
         {"code": "admin_users", "label": "Gestione Utenti", "category": "Admin", "description": "Accesso all'area Admin per gestire utenti e configurazioni di sistema."},
         {"code": "admin_audit", "label": "Audit Logs", "category": "Admin", "description": "Visualizza il registro di tutte le azioni critiche eseguite nel sistema."},
