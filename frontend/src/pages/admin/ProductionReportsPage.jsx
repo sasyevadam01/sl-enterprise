@@ -38,10 +38,26 @@ export default function ProductionReportsPage() {
         }
     };
 
-    const handleDownload = () => {
-        const url = pickingApi.getExportUrl(startDate, endDate, shiftType);
-        window.open(url, '_blank');
-        toast.success("Download avviato");
+    const handleDownload = async () => {
+        try {
+            toast.loading("Generazione Excel...");
+            const response = await pickingApi.downloadReport(startDate, endDate, shiftType);
+
+            // Create download link
+            const url = window.URL.createObjectURL(new Blob([response]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `Report_Produzione_${startDate}.xlsx`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            toast.dismiss();
+            toast.success("Download completato");
+        } catch (error) {
+            console.error(error);
+            toast.dismiss();
+            toast.error("Errore download excel");
+        }
     };
 
     // Prepare Chart Data
