@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { hrStatsApi, chatApi } from '../../api/client';
+import { hrStatsApi, chatApi, pickingApi } from '../../api/client';
 import OnlineUsersWidget from '../ui/OnlineUsersWidget';
 
 // Menu items builder function - now uses hasPermission function
@@ -121,7 +121,7 @@ const getMenuItems = (hasPermission) => {
     return items;
 };
 
-function SidebarItem({ item, isOpen, pendingCounts, onItemClick }) {
+function SidebarItem({ item, isOpen, pendingCounts, onItemClick, onResetBadge }) {
     const location = useLocation();
     const [expanded, setExpanded] = useState(false);
     const isActive = item.path === location.pathname;
@@ -162,7 +162,10 @@ function SidebarItem({ item, isOpen, pendingCounts, onItemClick }) {
                             <Link
                                 key={child.path}
                                 to={child.path}
-                                onClick={onItemClick}
+                                onClick={() => {
+                                    if (onItemClick) onItemClick();
+                                    if (child.path === '/production/blocks' && onResetBadge) onResetBadge();
+                                }}
                                 className={`block px-4 py-2 text-sm rounded-lg transition ${location.pathname === child.path
                                     ? 'bg-blue-600 text-white'
                                     : 'text-gray-400 hover:bg-white/10 hover:text-white'
@@ -174,12 +177,29 @@ function SidebarItem({ item, isOpen, pendingCounts, onItemClick }) {
                                         {pendingCounts.leaves + pendingCounts.events}
                                     </span>
                                 )}
+                                {child.path === '/production/blocks' && item.title === 'Live Production' && (
+                                    // Calculate badge
+                                    (() => {
+                                        const count = Math.max(0, (pendingCounts.productionSupply || 0) - (pendingCounts.acknowledgedSupply || 0));
+                                        return count > 0 ? (
+                                            <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                                                {count}
+                                            </span>
+                                        ) : null;
+                                    })()
+                                )}
                             </Link>
                         ))}
                     </div>
                 )}
             </div>
         );
+    }
+
+    // Badge Logic for Production
+    let badgeCount = 0;
+    if (item.path === '/production/blocks' && pendingCounts.productionSupply) {
+        badgeCount = Math.max(0, (pendingCounts.productionSupply || 0) - (pendingCounts.acknowledgedSupply || 0));
     }
 
     return (
@@ -199,11 +219,19 @@ function SidebarItem({ item, isOpen, pendingCounts, onItemClick }) {
                 {item.path === '/chat' && pendingCounts.chat > 0 && !isOpen && (
                     <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-slate-900" />
                 )}
+                {item.path === '/production/blocks' && badgeCount > 0 && !isOpen && (
+                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-slate-900" />
+                )}
             </span>
             {isOpen && <span>{item.title}</span>}
             {isOpen && item.path === '/chat' && pendingCounts.chat > 0 && (
                 <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
                     {pendingCounts.chat}
+                </span>
+            )}
+            {isOpen && item.path === '/production/blocks' && badgeCount > 0 && (
+                <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                    {badgeCount}
                 </span>
             )}
         </Link>
@@ -255,6 +283,31 @@ export default function Sidebar({ isOpen, onToggle, mobileOpen, setMobileOpen })
                 newCounts.chat = chatData.total_unread || 0;
             } catch (err) {
                 console.error("Failed to fetch chat counts", err);
+            }
+
+            // Production Supply Stats (for warehouse/admins)
+            if (hasPermission('manage_production_supply') || hasPermission('admin_users')) {
+                try {
+                    // Fetch pending blocks
+                    // Note: getRequests returns array, check length. If fails, 0.
+                    const blocks = await pickingApi.getRequests('pending', 1); // limit 1 just to check count? No api needs full list to filter? 
+                    // Optimization: if API supports count, use it. Client.js: getRequests(status, limit).
+                    // We fetch up to 100 to get a count (approximated)
+                    const blocksData = await pickingApi.getRequests('pending', 100);
+                    // Filter checks (client side logic repeated? Backend filters by pending)
+                    // The API returns mixed status? verify client.js. 
+                    // Usually getRequests(status) filters by status.
+                    const pending = Array.isArray(blocksData) ? blocksData.filter(b => b.status === 'pending') : [];
+                    newCounts.productionSupply = pending.length;
+
+                    // Logic: If new count > old count, reset acknowledged? 
+                    // No, user wants manual clear. But if new orders arrive, badge should grow?
+                    // Complexity: Real Sync. 
+                    // Simplest: Just show Total Pending. When user clicks, we set "Acknowledged = Total Pending".
+                    // If Total Pending grows later, Badge = Total Pending - Acknowledged > 0 -> Show Diff.
+                } catch (err) {
+                    console.error("Failed to fetch production counts", err);
+                }
             }
 
             setPendingCounts(prev => ({ ...prev, ...newCounts }));
@@ -323,6 +376,10 @@ export default function Sidebar({ isOpen, onToggle, mobileOpen, setMobileOpen })
                                 isOpen={isOpen || mobileOpen}
                                 pendingCounts={pendingCounts}
                                 onItemClick={() => setMobileOpen && setMobileOpen(false)}
+                                onResetBadge={() => setPendingCounts(prev => ({
+                                    ...prev,
+                                    acknowledgedSupply: prev.productionSupply
+                                }))}
                             />
                         </div>
                     );

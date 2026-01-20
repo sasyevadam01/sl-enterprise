@@ -92,6 +92,22 @@ def send_chat_notification(
         tag=f"chat-{conversation_id}"  # Raggruppa per conversazione
     )
 
+def send_production_notification(
+    subscription_info: dict,
+    title: str,
+    body: str,
+    request_id: int
+):
+    """Invia notifica per nuova richiesta produzione."""
+    return send_push_notification(
+        subscription_info=subscription_info,
+        title=f"📦 {title}",
+        body=body,
+        url="/production/blocks",
+        tag=f"prod-{request_id}",
+        icon="/logo192.png"
+    )
+
 
 # Script per generare chiavi VAPID (esegui una volta)
 if __name__ == "__main__":

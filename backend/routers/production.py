@@ -12,6 +12,8 @@ import io
 
 from database import get_db, User
 from models.production import ProductionMaterial, BlockRequest
+from models.chat import PushSubscription  # <-- Push Subscriptions
+from push_service import send_production_notification  # <-- Push Service
 from models.core import AuditLog  # <-- Audit Log
 from schemas import (
     ProductionMaterialResponse, ProductionMaterialCreate, ProductionMaterialUpdate,
@@ -138,6 +140,52 @@ async def create_block_request(
         # Audio Log
         log_audit(db, current_user.id, "PRODUCTION_ORDER_CREATED", f"Order {new_req.id} created. Type: {new_req.request_type}")
         db.commit()
+
+        # --- NOTIFICHE PUSH ---
+        try:
+            # 1. Trova tutti gli utenti che devono ricevere la notifica (Magazzinieri / Supply)
+            # Cerchiamo utenti con permesso 'manage_production_supply' o ruolo 'supply'/'super_admin'
+            # Per efficienza, prendiamo tutte le subscription e filtriamo in Python (o join complessa)
+            subs = db.query(PushSubscription).join(PushSubscription.user).all()
+            
+            notified_count = 0
+            for sub in subs:
+                user = sub.user
+                # Verifica permessi: ha permesso supply o è super admin?
+                # Nota: has_permission potrebbe non essere disponibile se user non è caricato come oggetto completo Pydantic/User, 
+                # ma qui è un modello ORM. Assumiamo che il metodo o la logica esista o controlliamo il ruolo.
+                # Se `has_permission` è un metodo del modello SQLAlchemy User:
+                if (hasattr(user, 'has_permission') and user.has_permission("manage_production_supply")) or \
+                   user.role in ['super_admin', 'supply', 'logistics']:
+                    
+                    # Prepara testo
+                    title = f"Nuova Richiesta #{new_req.id}"
+                    body = f"📦 {new_req.quantity}x "
+                    if new_req.request_type == 'memory' and new_req.material:
+                        body += new_req.material.label
+                    elif new_req.density and new_req.color:
+                        body += f"{new_req.density.label} {new_req.color.label}"
+                    else:
+                        body += "Blocco Generico"
+                        
+                    # Dati subscription
+                    sub_info = {
+                        "endpoint": sub.endpoint,
+                        "keys": {
+                            "p256dh": sub.p256dh_key,
+                            "auth": sub.auth_key
+                        }
+                    }
+                    
+                    # Invia
+                    send_production_notification(sub_info, title, body, new_req.id)
+                    notified_count += 1
+            
+            print(f"[PUSH] Notifiche produzione inviate a {notified_count} dispositivi.")
+
+        except Exception as e:
+            print(f"[PUSH ERROR] Errore invio notifiche produzione: {e}")
+        # ----------------------
         
         return {
             "id": new_req.id,

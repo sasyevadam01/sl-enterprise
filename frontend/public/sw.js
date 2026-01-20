@@ -86,7 +86,11 @@ self.addEventListener('notificationclick', (event) => {
             .then((clientList) => {
                 // Cerca tab già aperta
                 for (const client of clientList) {
-                    if (client.url.includes('/chat') && 'focus' in client) {
+                    const clientPath = new URL(client.url, location.origin).pathname;
+                    if (clientPath === url && 'focus' in client) {
+                        return client.focus();
+                    }
+                    if (url.includes('/chat') && client.url.includes('/chat')) {
                         return client.focus();
                     }
                 }
