@@ -42,6 +42,20 @@ DATA = [
     {"category": "sponge_color", "label": "BLU ELETTRICO", "value": "#0000CD", "display_order": 10},
     {"category": "sponge_color", "label": "IGNIFUGO MARRONCINO", "value": "#8B4513", "display_order": 11},
     {"category": "sponge_color", "label": "IGNIFUGO NERO", "value": "#1C1C1C", "display_order": 12},
+    
+    # --- DIMENSIONI BLOCCHI ---
+    {"category": "block_dimension", "label": "120x200", "value": "120x200", "display_order": 1},
+    {"category": "block_dimension", "label": "160x190", "value": "160x190", "display_order": 2},
+    {"category": "block_dimension", "label": "160x200", "value": "160x200", "display_order": 3},
+    {"category": "block_dimension", "label": "180x200", "value": "180x200", "display_order": 4},
+    {"category": "block_dimension", "label": "200x200", "value": "200x200", "display_order": 5},
+    
+    # --- FORNITORI ---
+    {"category": "supplier", "label": "SITAB", "value": "SITAB", "display_order": 1},
+    {"category": "supplier", "label": "IMPE", "value": "IMPE", "display_order": 2},
+    {"category": "supplier", "label": "OLMO", "value": "OLMO", "display_order": 3},
+    {"category": "supplier", "label": "NEW WIND", "value": "NEW WIND", "display_order": 4},
+    {"category": "supplier", "label": "LAREG2", "value": "LAREG2", "display_order": 5},
 ]
 
 def seed_production_data():
@@ -61,12 +75,12 @@ def seed_production_data():
                 
         db.commit()
         if count > 0:
-            print(f"✅ Creati {count} materiali/colori produzione.")
+            print(f"[OK] Creati {count} materiali/colori produzione.")
         else:
-            print("✨ Dati produzione già presenti.")
+            print("[OK] Dati produzione gia presenti.")
             
     except Exception as e:
-        print(f"❌ Errore: {e}")
+        print(f"[ERROR] Errore: {e}")
         db.rollback()
     finally:
         db.close()

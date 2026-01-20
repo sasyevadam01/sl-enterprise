@@ -9,7 +9,7 @@ import {
     PieChart, Pie, Cell, Legend
 } from 'recharts';
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#A28', '#F0F'];
+const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4'];
 
 import toast from 'react-hot-toast';
 
@@ -62,8 +62,22 @@ export default function ProductionReportsPage() {
         }
     };
 
-    // Prepare Chart Data
-    const materialData = stats ? Object.entries(stats.by_type).map(([name, value]) => ({ name, value })) : [];
+    // Prepare Chart Data - Limit to top materials to avoid overcrowded chart
+    const prepareMaterialData = () => {
+        if (!stats || !stats.by_type) return [];
+        const entries = Object.entries(stats.by_type);
+        // Sort by value descending
+        entries.sort((a, b) => b[1] - a[1]);
+        // Take top 6, group rest as "Altri"
+        const top6 = entries.slice(0, 6).map(([name, value]) => ({ name, value }));
+        const othersTotal = entries.slice(6).reduce((sum, [, value]) => sum + value, 0);
+        if (othersTotal > 0) {
+            top6.push({ name: 'Altri', value: othersTotal });
+        }
+        return top6;
+    };
+
+    const materialData = prepareMaterialData();
     const userPerfData = stats ? Object.entries(stats.user_perf).map(([name, value]) => ({ name, value })) : [];
     const supplyPerfData = stats ? Object.entries(stats.supply_perf).map(([name, value]) => ({ name, value })) : [];
 

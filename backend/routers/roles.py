@@ -135,8 +135,11 @@ async def get_permission_definitions(current_user: User = Depends(get_current_us
     return [
         {"code": "view_dashboard", "label": "Dashboard HR", "category": "General", "description": "Mostra la Dashboard principale con statistiche e KPI aziendali."},
         {"code": "view_coordinator_suite", "label": "Vista Coordinator", "category": "General", "description": "Mostra la sidebar in modalità Coordinator (semplificata) invece che HR Suite."},
+        {"code": "view_operativity_suite", "label": "Vista Operativity", "category": "General", "description": "Mostra la sidebar in modalità Operativity Suite per operatori produzione."},
         {"code": "app_only_access", "label": "Solo App Mobile", "category": "General", "description": "Utente con accesso limitato solo da app mobile per inserimento dati."},
         {"code": "manage_employees", "label": "Gestione Dipendenti (Full)", "category": "HR", "description": "Permette visualizzare, creare, modificare ed eliminare i profili dei dipendenti."},
+        {"code": "view_hr_management", "label": "Visualizza Gestione HR", "category": "HR", "description": "Mostra la sezione Gestione HR nella sidebar (pagina ferie, bonus, malus, ecc)."},
+        {"code": "view_approvals", "label": "Visualizza Centro Approvazioni", "category": "HR", "description": "Mostra il Centro Approvazioni nella sidebar per vedere le richieste in attesa."},
         {"code": "view_hr_calendar", "label": "Visualizza Calendario", "category": "HR", "description": "Mostra il Calendario HR con ferie, permessi e scadenze."},
         {"code": "manage_attendance", "label": "Gestire Assenze", "category": "HR", "description": "Permette approvare o rifiutare richieste di ferie e permessi nel Centro Approvazioni."},
         {"code": "manage_shifts", "label": "Gestire Turni", "category": "HR", "description": "Accesso al Planner per assegnare e modificare i turni di lavoro."},

@@ -80,18 +80,20 @@ export default function ProductionConfigPage() {
             </header>
 
             {/* Tabs */}
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
                 {[
                     { id: 'memory', label: 'Memory' },
                     { id: 'sponge_density', label: 'Densità Spugna' },
-                    { id: 'sponge_color', label: 'Colori Spugna' }
+                    { id: 'sponge_color', label: 'Colori Spugna' },
+                    { id: 'block_dimension', label: '📏 Misure Blocco' },
+                    { id: 'supplier', label: '🏭 Fornitori' }
                 ].map(tab => (
                     <button
                         key={tab.id}
                         onClick={() => setCategoryFilter(tab.id)}
                         className={`px-6 py-3 rounded-lg font-medium transition-colors ${categoryFilter === tab.id
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-slate-800 text-gray-400 hover:bg-slate-700 hover:text-white'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-slate-800 text-gray-400 hover:bg-slate-700 hover:text-white'
                             }`}
                     >
                         {tab.label}

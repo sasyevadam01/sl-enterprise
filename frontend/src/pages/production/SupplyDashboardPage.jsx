@@ -21,8 +21,19 @@ export default function SupplyDashboardPage() {
 
     const loadOrders = async () => {
         try {
-            const data = await pickingApi.getRequests('active', 100);
-            setOrders(data || []);
+            // Include cancelled orders in active list so Supply can see them
+            const data = await pickingApi.getRequests(null, 100);
+            // Filter to active + recently cancelled (within 30 mins)
+            const now = Date.now();
+            const filtered = (data || []).filter(o => {
+                if (['pending', 'processing'].includes(o.status)) return true;
+                if (o.status === 'cancelled') {
+                    const cancelTime = new Date(o.created_at).getTime();
+                    return (now - cancelTime) < 30 * 60 * 1000; // 30 mins
+                }
+                return false;
+            });
+            setOrders(filtered);
         } catch (err) {
             console.error('Error loading orders:', err);
         } finally {
@@ -52,20 +63,45 @@ export default function SupplyDashboardPage() {
 
     const formatTime = (date) => {
         if (!date) return '';
+        // Backend sends UTC timestamps, convert to local for display
         return new Date(date).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
     };
 
+    // Live timer state - updates every second for urgency effect
+    const [, setTick] = useState(0);
+    useEffect(() => {
+        const timer = setInterval(() => setTick(t => t + 1), 1000);
+        return () => clearInterval(timer);
+    }, []);
+
+    // Live timer with seconds - creates urgency!
     const getTimeSince = (date) => {
         if (!date) return '';
-        const mins = Math.floor((Date.now() - new Date(date).getTime()) / 60000);
-        if (mins < 1) return 'Ora';
-        if (mins < 60) return `${mins}m fa`;
-        return `${Math.floor(mins / 60)}h ${mins % 60}m fa`;
+        const utcDate = new Date(date);
+        const totalSecs = Math.floor((Date.now() - utcDate.getTime()) / 1000);
+        const hours = Math.floor(totalSecs / 3600);
+        const mins = Math.floor((totalSecs % 3600) / 60);
+        const secs = totalSecs % 60;
+
+        if (hours > 0) return `${hours}h ${mins}m ${secs}s`;
+        if (mins > 0) return `${mins}m ${secs}s`;
+        return `${secs}s`;
     };
 
-    // Separate pending from processing (mine)
+    // SLA Color coding based on wait time
+    // Green: < 5 min | Yellow: 5-10 min | Red: > 10 min
+    const getSLAColor = (date) => {
+        if (!date) return 'text-gray-400';
+        const mins = Math.floor((Date.now() - new Date(date).getTime()) / 60000);
+        if (mins < 5) return 'text-green-400 bg-green-500/20';
+        if (mins < 10) return 'text-yellow-400 bg-yellow-500/20';
+        return 'text-red-400 bg-red-500/20 animate-pulse';
+    };
+
+    // Separate pending, processing, and cancelled
     const pendingOrders = orders.filter(o => o.status === 'pending');
     const processingOrders = orders.filter(o => o.status === 'processing');
+    const cancelledOrders = orders.filter(o => o.status === 'cancelled');
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
@@ -124,8 +160,9 @@ export default function SupplyDashboardPage() {
                                 <div className="text-sm text-gray-300 mb-3 space-y-1">
                                     <p>📐 <strong>{order.dimensions}</strong> {order.custom_height ? `(H: ${order.custom_height}cm)` : ''}</p>
                                     <p className={order.is_trimmed ? 'text-orange-400' : 'text-gray-400'}>
-                                        {order.is_trimmed ? '✂️ RIFILARE!' : '📦 Non Rifilato'}
+                                        {order.is_trimmed ? '🔷 RIFILARE!' : '🔲 Non Rifilato'}
                                     </p>
+                                    {order.supplier_label && <p className="text-blue-400">🏭 {order.supplier_label}</p>}
                                     {order.client_ref && <p>👤 {order.client_ref}</p>}
                                     <p className="text-xs text-gray-500">Da: {order.creator_name} • Ore {formatTime(order.created_at)}</p>
                                 </div>
@@ -136,6 +173,37 @@ export default function SupplyDashboardPage() {
                                 >
                                     ✅ CONSEGNATO
                                 </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Cancelled Orders (X overlay) */}
+            {cancelledOrders.length > 0 && (
+                <div className="mb-6">
+                    <h2 className="text-sm font-bold text-red-400 uppercase mb-3 flex items-center gap-2">
+                        ❌ Ordini Annullati
+                    </h2>
+                    <div className="space-y-3">
+                        {cancelledOrders.map(order => (
+                            <div
+                                key={order.id}
+                                className="relative bg-red-900/20 rounded-xl p-4 border-2 border-red-500/30 opacity-60 overflow-hidden"
+                            >
+                                {/* Large X Overlay */}
+                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                    <span className="text-red-500/50 text-[120px] font-black select-none">✕</span>
+                                </div>
+                                <div className="relative z-10">
+                                    <span className="text-lg font-bold text-red-300 line-through">
+                                        {order.request_type === 'memory'
+                                            ? order.material_label
+                                            : `${order.density_label} ${order.color_label}`}
+                                    </span>
+                                    <span className="text-gray-500 text-sm ml-2">x{order.quantity}</span>
+                                    <p className="text-xs text-red-400 mt-1">Annullato da: {order.creator_name}</p>
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -163,16 +231,18 @@ export default function SupplyDashboardPage() {
                                         </span>
                                         <span className="text-gray-400 text-sm ml-2">x{order.quantity}</span>
                                     </div>
-                                    <span className="text-xs text-gray-500">
-                                        {getTimeSince(order.created_at)}
+                                    {/* Live SLA Timer with color coding */}
+                                    <span className={`text-sm font-mono font-bold px-2 py-1 rounded-lg ${getSLAColor(order.created_at)}`}>
+                                        ⏱️ {getTimeSince(order.created_at)}
                                     </span>
                                 </div>
 
                                 <div className="text-sm text-gray-400 mb-3 space-y-1">
                                     <p>📐 <strong className="text-white">{order.dimensions}</strong> {order.custom_height ? `(H: ${order.custom_height}cm)` : ''}</p>
                                     <p className={order.is_trimmed ? 'text-orange-400 font-bold' : 'text-gray-500'}>
-                                        {order.is_trimmed ? '✂️ RIFILARE!' : '📦 Non Rifilato'}
+                                        {order.is_trimmed ? '🔷 RIFILARE!' : '🔲 Non Rifilato'}
                                     </p>
+                                    {order.supplier_label && <p className="text-blue-400">🏭 {order.supplier_label}</p>}
                                     {order.client_ref && <p>👤 {order.client_ref}</p>}
                                     <p className="text-xs text-gray-500">Da: {order.creator_name}</p>
                                 </div>

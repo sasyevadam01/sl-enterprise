@@ -133,12 +133,20 @@ async def create_user(
         )
     
     # Crea utente
+    from database import Role
+    
+    # Lookup role_id from role name
+    role_obj = db.query(Role).filter(Role.name == user_data.role).first()
+    if not role_obj:
+        raise HTTPException(400, f"Ruolo '{user_data.role}' non trovato. Esegui init_roles.py")
+    
     new_user = User(
         username=user_data.username,
         password_hash=get_password_hash(user_data.password),
         full_name=user_data.full_name,
         email=user_data.email,
         role=user_data.role,
+        role_id=role_obj.id,  # <-- FIX: Assign role_id for RBAC
         department_id=user_data.department_id,
         is_active=True
     )

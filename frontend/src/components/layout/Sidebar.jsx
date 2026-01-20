@@ -11,11 +11,31 @@ import OnlineUsersWidget from '../ui/OnlineUsersWidget';
 const getMenuItems = (hasPermission) => {
     const items = [];
 
-    // Determine view mode: Admin/HR users see "HR Suite", coordinators see "Coordinator Suite"
-    // We use admin_users as the marker for "advanced" users who see the full HR Suite
+    // Determine view mode with 3 tiers:
+    // 1. HR Suite: Admin/HR users with manage_employees or admin_users
+    // 2. Coordinator Suite: Users with view_coordinator_suite OR manage_shifts/manage_tasks
+    // 3. Operativity Suite: Users with view_operativity_suite OR production permissions
     const isHRView = hasPermission('admin_users') || hasPermission('manage_employees');
+    const isCoordinatorView = !isHRView && (hasPermission('view_coordinator_suite') || hasPermission('manage_shifts') || hasPermission('manage_tasks'));
+    const isOperativityView = !isHRView && !isCoordinatorView && (hasPermission('view_operativity_suite') || hasPermission('create_production_orders') || hasPermission('manage_production_supply'));
+
     const showDashboard = hasPermission('view_dashboard');
     const showAdmin = hasPermission('admin_users');
+
+    // Determine suite name and icon
+    let suiteName = 'HR Suite';
+    let suiteIcon = '👥';
+    let isAnimated = false;
+
+    if (isCoordinatorView) {
+        suiteName = 'Coordinator Suite';
+        suiteIcon = '🎯';
+        isAnimated = true;
+    } else if (isOperativityView) {
+        suiteName = 'Operativity Suite';
+        suiteIcon = '⚡';
+        isAnimated = true;
+    }
 
     // Dashboard - Based on permission
     if (showDashboard) {
@@ -27,16 +47,16 @@ const getMenuItems = (hasPermission) => {
         });
     }
 
-    // HR Suite / Coordinator Suite - HR users get full view, others get coordinator view
+    // Main Suite Section - Content depends on user type
     items.push({
-        title: isHRView ? 'HR Suite' : 'Coordinator Suite',
-        icon: isHRView ? '👥' : '🎯',
-        isAnimated: !isHRView, // Animated glow for coordinators
+        title: suiteName,
+        icon: suiteIcon,
+        isAnimated: isAnimated,
         // No parent permission - visibility determined by children's permissions
         children: [
             { title: '👥 Dipendenti', path: '/hr/employees', permission: 'manage_employees' },
-            { title: '✅ Centro Approvazioni', path: '/hr/approvals', permission: 'manage_attendance' },
-            { title: '🛡️ Gestione HR', path: '/hr/management', permission: 'manage_employees' },
+            { title: '✅ Centro Approvazioni', path: '/hr/approvals', permission: 'view_approvals' },
+            { title: '🛡️ Gestione HR', path: '/hr/management', permission: 'view_hr_management' },
             { title: '📅 Calendario', path: '/hr/calendar', permission: 'view_hr_calendar' },
             { title: '🦺 Sicurezza RSPP', path: '/hr/security', permission: 'manage_employees' },
             { title: '➕ Nuova Richiesta', path: '/hr/events/new', permission: 'request_events' },

@@ -1138,8 +1138,15 @@ export default function EmployeeDetailPage() {
                     <button onClick={() => navigate('/hr/employees')} className="text-gray-400 hover:text-white mb-2 text-sm">
                         &larr; Torna alla lista
                     </button>
-                    <h1 className="text-3xl font-bold text-white">
-                        {isNew ? 'Nuovo Dipendente' : `${employee.first_name} ${employee.last_name}`}
+                    <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+                        {isNew ? 'Nuovo Dipendente' : (
+                            <>
+                                {employee.first_name} {employee.last_name}
+                                <span className="text-sm font-bold text-cyan-400 font-mono bg-cyan-950/30 px-2 py-1 rounded border border-cyan-500/30 shadow-[0_0_10px_rgba(34,211,238,0.2)] tracking-wider">
+                                    ID {id}
+                                </span>
+                            </>
+                        )}
                     </h1>
                     {/* Fiscal Code Removed as per user request */}
                 </div>

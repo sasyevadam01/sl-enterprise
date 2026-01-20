@@ -9,6 +9,7 @@ export default function GeneralSettingsManager() {
 
     // Filtered states for specific known settings
     const [annualHours, setAnnualHours] = useState('256');
+    const [applyToAll, setApplyToAll] = useState(false);
 
     useEffect(() => {
         loadSettings();
@@ -48,7 +49,10 @@ export default function GeneralSettingsManager() {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ value: annualHours })
+                body: JSON.stringify({
+                    value: annualHours,
+                    params: { apply_to_all: applyToAll }
+                })
             });
 
             if (res.ok) {
@@ -89,6 +93,19 @@ export default function GeneralSettingsManager() {
                                 className="bg-slate-700 border border-white/10 rounded px-3 py-2 text-white w-32 focus:ring-2 focus:ring-blue-500 outline-none"
                             />
                             <span className="text-gray-400">ore / anno</span>
+                        </div>
+
+                        <div className="mt-3 flex items-center gap-2">
+                            <input
+                                type="checkbox"
+                                id="applyToAll"
+                                checked={applyToAll}
+                                onChange={e => setApplyToAll(e.target.checked)}
+                                className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500"
+                            />
+                            <label htmlFor="applyToAll" className="text-sm text-gray-300 select-none cursor-pointer">
+                                Applica subito a tutti i dipendenti esistenti
+                            </label>
                         </div>
                     </div>
                 </div>

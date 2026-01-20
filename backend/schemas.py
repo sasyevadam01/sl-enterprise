@@ -938,6 +938,7 @@ class BlockRequestCreate(BaseModel):
     is_trimmed: bool = False
     quantity: int = 1
     client_ref: Optional[str] = None
+    supplier_id: Optional[int] = None
     notes: Optional[str] = None
 
 class BlockRequestUpdate(BaseModel):
@@ -958,6 +959,7 @@ class BlockRequestResponse(BlockRequestCreate):
     material_label: Optional[str] = None
     density_label: Optional[str] = None
     color_label: Optional[str] = None
+    supplier_label: Optional[str] = None
     creator_name: Optional[str] = None
     processor_name: Optional[str] = None
 

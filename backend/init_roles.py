@@ -19,7 +19,7 @@ DEFAULT_ROLES = [
         "label": "Amministratore",
         "description": "Gestione utenti e configurazioni",
         "is_static": True,
-        "permissions": ["view_dashboard", "manage_employees", "manage_attendance", "view_hr_calendar", "request_events", "manage_tasks", "manage_shifts", "view_announcements", "access_factory", "manage_kpi", "access_logistics", "admin_users", "admin_audit"],
+        "permissions": ["view_dashboard", "manage_employees", "view_hr_management", "view_approvals", "manage_attendance", "view_hr_calendar", "request_events", "manage_tasks", "manage_shifts", "view_announcements", "access_factory", "manage_kpi", "access_logistics", "admin_users", "admin_audit"],
         "default_home": "/dashboard"
     },
     {
@@ -27,7 +27,7 @@ DEFAULT_ROLES = [
         "label": "HR Manager",
         "description": "Gestione risorse umane",
         "is_static": True,
-        "permissions": ["view_dashboard", "manage_employees", "manage_attendance", "view_hr_calendar", "request_events", "manage_tasks", "manage_shifts", "view_announcements"],
+        "permissions": ["view_dashboard", "manage_employees", "view_hr_management", "view_approvals", "manage_attendance", "view_hr_calendar", "request_events", "manage_tasks", "manage_shifts", "view_announcements"],
         "default_home": "/dashboard"
     },
     {
@@ -80,7 +80,7 @@ def seed_roles():
             if not existing:
                 new_role = Role(**role_data)
                 db.add(new_role)
-                print(f"✅ Creato ruolo: {role_data['label']}")
+                print(f"[OK] Creato ruolo: {role_data['label']}")
             else:
                 # Update permissions and default_home for existing roles to match new specs
                 updated = False
@@ -93,12 +93,12 @@ def seed_roles():
                     updated = True
                 
                 if updated:
-                    print(f"🔄 Aggiornato ruolo: {role_data['label']}")
+                    print(f"[UPD] Aggiornato ruolo: {role_data['label']}")
         
         db.commit()
-        print("🎉 Seed ruoli completato!")
+        print("[DONE] Seed ruoli completato!")
     except Exception as e:
-        print(f"❌ Errore: {e}")
+        print(f"[ERR] Errore: {e}")
         db.rollback()
     finally:
         db.close()

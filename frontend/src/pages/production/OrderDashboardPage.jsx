@@ -48,6 +48,17 @@ export default function OrderDashboardPage() {
         }
     };
 
+    const handleCancel = async (orderId) => {
+        if (!window.confirm('Sei sicuro di voler annullare questa richiesta?')) return;
+        try {
+            await pickingApi.updateStatus(orderId, 'cancelled');
+            toast.success('Ordine annullato');
+            loadOrders();
+        } catch (err) {
+            toast.error('Errore annullamento');
+        }
+    };
+
     const getStatusBadge = (status) => {
         const styles = {
             pending: 'bg-gray-500/30 text-gray-300',
@@ -128,10 +139,20 @@ export default function OrderDashboardPage() {
                                 </div>
                                 <div className="text-sm text-gray-400 space-y-1">
                                     <p>📐 {order.dimensions} {order.custom_height ? `(H: ${order.custom_height}cm)` : ''}</p>
-                                    <p>{order.is_trimmed ? '✂️ Rifilare' : '📦 Non Rifilato'}</p>
+                                    <p>{order.is_trimmed ? '🔷 Rifilare' : '🔲 Non Rifilato'}</p>
+                                    {order.supplier_label && <p>🏭 {order.supplier_label}</p>}
                                     {order.client_ref && <p>👤 Rif: {order.client_ref}</p>}
                                     <p className="text-xs text-gray-500">Ore {formatTime(order.created_at)}</p>
                                 </div>
+                                {/* Cancel button for pending orders */}
+                                {order.status === 'pending' && (
+                                    <button
+                                        onClick={() => handleCancel(order.id)}
+                                        className="mt-3 w-full py-2 bg-red-500/20 text-red-400 rounded-lg text-sm font-medium hover:bg-red-500/30 transition-colors border border-red-500/30"
+                                    >
+                                        ❌ Annulla Richiesta
+                                    </button>
+                                )}
                             </div>
                         ))}
                     </div>

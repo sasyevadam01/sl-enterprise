@@ -262,6 +262,9 @@ class BlockRequest(Base):
     quantity = Column(Integer, default=1)
     client_ref = Column(String(100), nullable=True)
     
+    # Fornitore (opzionale)
+    supplier_id = Column(Integer, ForeignKey("production_materials.id"), nullable=True)
+    
     # Status Flow
     status = Column(String(50), default="pending") # pending, processing, delivered, completed, cancelled
     
@@ -280,6 +283,7 @@ class BlockRequest(Base):
     material = relationship("ProductionMaterial", foreign_keys=[material_id])
     density = relationship("ProductionMaterial", foreign_keys=[density_id])
     color = relationship("ProductionMaterial", foreign_keys=[color_id])
+    supplier = relationship("ProductionMaterial", foreign_keys=[supplier_id])
     
     created_by = relationship("User", foreign_keys=[created_by_id])
     processed_by = relationship("User", foreign_keys=[processed_by_id])

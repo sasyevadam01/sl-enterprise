@@ -162,6 +162,7 @@ async def list_block_requests(
         joinedload(BlockRequest.material),
         joinedload(BlockRequest.density),
         joinedload(BlockRequest.color),
+        joinedload(BlockRequest.supplier),
         joinedload(BlockRequest.created_by),
         joinedload(BlockRequest.processed_by)
     )
@@ -192,6 +193,7 @@ async def list_block_requests(
             material_id=req.material_id,
             density_id=req.density_id,
             color_id=req.color_id,
+            supplier_id=req.supplier_id,
             dimensions=req.dimensions,
             custom_height=req.custom_height,
             is_trimmed=req.is_trimmed,
@@ -208,6 +210,7 @@ async def list_block_requests(
             material_label=req.material.label if req.material else None,
             density_label=req.density.label if req.density else None,
             color_label=req.color.label if req.color else None,
+            supplier_label=req.supplier.label if req.supplier else None,
             creator_name=req.created_by.full_name if req.created_by else None,
             processor_name=req.processed_by.full_name if req.processed_by else None
         ))
@@ -300,16 +303,21 @@ async def get_production_reports(
     if current_user.role not in ['super_admin', 'admin', 'factory_controller']:
         raise HTTPException(403, "Permesso negato")
 
+    # Adjust end_date to include the full day (23:59:59)
+    # When frontend sends "2026-01-20", we want to include all records until end of that day
+    end_date_adjusted = end_date.replace(hour=23, minute=59, second=59)
+
     # 1. Base Query
     query = db.query(BlockRequest).options(
         joinedload(BlockRequest.material),
         joinedload(BlockRequest.density),
         joinedload(BlockRequest.color),
+        joinedload(BlockRequest.supplier),
         joinedload(BlockRequest.created_by),
         joinedload(BlockRequest.processed_by)
     ).filter(
         BlockRequest.created_at >= start_date,
-        BlockRequest.created_at <= end_date
+        BlockRequest.created_at <= end_date_adjusted
     )
 
     # 2. Shift Logic Application
@@ -393,6 +401,7 @@ async def get_production_reports(
             "Materiale": mat_label,
             "Misure": req.dimensions,
             "Rifilato": "SI" if req.is_trimmed else "NO",
+            "Fornitore": req.supplier.label if req.supplier else "",
             "Quantità": req.quantity,
             "Stato": req.status,
             "Supply User": req.processed_by.full_name if req.processed_by else "",

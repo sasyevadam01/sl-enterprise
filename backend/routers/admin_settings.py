@@ -669,6 +669,7 @@ class SystemSettingResponse(BaseModel):
 
 class SystemSettingUpdate(BaseModel):
     value: str
+    params: dict | None = None
 
 @router.get("/settings", response_model=List[SystemSettingResponse], summary="Lista Impostazioni Sistema")
 async def get_system_settings(db: Session = Depends(get_db)):
@@ -704,6 +705,17 @@ async def update_system_setting(
         setting.value = data.value
         
     log_audit(db, u.id, "UPDATE_SETTING", f"Modificata impostazione {key} a {data.value}")
+    
+    # SPECIAL LOGIC: Annual Leave Hours Bulk Update
+    if key == "annual_leave_hours" and data.params and data.params.get("apply_to_all") == True:
+        try:
+            new_hours = int(data.value)
+            # Update ALL employees
+            updated_count = db.query(Employee).update({Employee.annual_leave_hours: new_hours})
+            log_audit(db, u.id, "BULK_UPDATE_LEAVE_HOURS", f"Aggiornate ore ferie a {new_hours} per {updated_count} dipendenti")
+        except ValueError:
+            pass # Should be handled by frontend validation usually
+
     db.commit()
     db.refresh(setting)
     return setting

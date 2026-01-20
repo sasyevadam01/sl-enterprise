@@ -110,8 +110,9 @@ const StepSpongeColor = ({ colors, onSelect }) => (
 );
 
 // Step 3: Dimensions + Trim
-const StepDimensions = ({ formData, setFormData, onNext }) => {
-    const DIMENSIONS = ['120x200', '160x190', '160x200', '180x200', '200x200'];
+const StepDimensions = ({ formData, setFormData, onNext, dimensions = [] }) => {
+    // Fallback if no dimensions loaded from API
+    const displayDims = dimensions.length > 0 ? dimensions.map(d => d.label) : ['120x200', '160x190', '160x200', '180x200', '200x200'];
 
     return (
         <div className="space-y-6">
@@ -121,7 +122,7 @@ const StepDimensions = ({ formData, setFormData, onNext }) => {
             <div>
                 <p className="text-gray-400 text-sm mb-2">1. Seleziona Misura</p>
                 <div className="grid grid-cols-3 gap-3">
-                    {DIMENSIONS.map(dim => (
+                    {displayDims.map(dim => (
                         <button
                             key={dim}
                             onClick={() => setFormData(prev => ({ ...prev, dimensions: dim }))}
@@ -174,34 +175,30 @@ const StepDimensions = ({ formData, setFormData, onNext }) => {
                 )}
             </div>
 
-            {/* Trim Row - HIDDEN AS REQUESTED */}
-            {/* 
+            {/* Trim Row - Rifilatura */}
             <div>
                 <p className="text-gray-400 text-sm mb-2">3. Rifilatura</p>
                 <div className="flex gap-3">
                     <button
                         onClick={() => setFormData(prev => ({ ...prev, isTrimmed: false }))}
-                        className={`flex-1 py-4 rounded-xl font-bold transition-all border-2 ${
-                            !formData.isTrimmed 
-                                ? 'bg-slate-600 text-white border-slate-400' 
-                                : 'bg-slate-800 text-gray-500 border-white/10'
-                        }`}
+                        className={`flex-1 py-4 rounded-xl font-bold transition-all border-2 ${!formData.isTrimmed
+                            ? 'bg-slate-600 text-white border-slate-400'
+                            : 'bg-slate-800 text-gray-500 border-white/10'
+                            }`}
                     >
-                        ✅ STANDARD
+                        🔲 NON RIFILATO
                     </button>
                     <button
                         onClick={() => setFormData(prev => ({ ...prev, isTrimmed: true }))}
-                        className={`flex-1 py-4 rounded-xl font-bold transition-all border-2 ${
-                            formData.isTrimmed 
-                                ? 'bg-orange-600 text-white border-orange-400' 
-                                : 'bg-slate-800 text-gray-500 border-white/10'
-                        }`}
+                        className={`flex-1 py-4 rounded-xl font-bold transition-all border-2 ${formData.isTrimmed
+                            ? 'bg-orange-600 text-white border-orange-400'
+                            : 'bg-slate-800 text-gray-500 border-white/10'
+                            }`}
                     >
-                        ✂️ RIFILARE
+                        🔷 RIFILARE
                     </button>
                 </div>
             </div>
-            */}
 
             {/* Next Button */}
             <button
@@ -216,8 +213,9 @@ const StepDimensions = ({ formData, setFormData, onNext }) => {
 };
 
 // Step 4: Review & Submit
-const StepReview = ({ formData, onSubmit, loading }) => {
+const StepReview = ({ formData, onSubmit, loading, suppliers = [] }) => {
     const isValid = formData.quantity > 0 && formData.clientRef && formData.clientRef.trim().length > 0;
+    const [showSupplierModal, setShowSupplierModal] = useState(false);
 
     return (
         <div className="space-y-6">
@@ -263,7 +261,7 @@ const StepReview = ({ formData, onSubmit, loading }) => {
                 <div className="flex justify-between border-b border-white/5 pb-2">
                     <span className="text-gray-400">Rifilatura:</span>
                     <span className={formData.isTrimmed ? 'text-orange-400 font-bold' : 'text-gray-300'}>
-                        {formData.isTrimmed ? '✂️ SI' : '❌ NO'}
+                        {formData.isTrimmed ? '🔷 SI' : '🔲 NO'}
                     </span>
                 </div>
                 <div className="flex justify-between items-center pt-2">
@@ -303,6 +301,55 @@ const StepReview = ({ formData, onSubmit, loading }) => {
                 </div>
             </div>
 
+            {/* Supplier Selection - Optional */}
+            <div>
+                <button
+                    type="button"
+                    onClick={() => setShowSupplierModal(true)}
+                    className="w-full py-3 bg-slate-700 hover:bg-slate-600 border-2 border-dashed border-white/20 rounded-xl text-gray-300 font-medium transition-colors flex items-center justify-center gap-2"
+                >
+                    🏭 {formData.supplierLabel ? `Fornitore: ${formData.supplierLabel}` : 'Inserisci Fornitore Specifico (Opzionale)'}
+                </button>
+            </div>
+
+            {/* Supplier Modal */}
+            {showSupplierModal && (
+                <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={() => setShowSupplierModal(false)}>
+                    <div className="bg-slate-800 rounded-2xl p-6 w-full max-w-sm border border-white/10 shadow-2xl" onClick={e => e.stopPropagation()}>
+                        <h3 className="text-lg font-bold text-white mb-4 text-center">Seleziona Fornitore</h3>
+                        <div className="space-y-2">
+                            {suppliers.map(s => (
+                                <button
+                                    key={s.id}
+                                    onClick={() => {
+                                        formData.setSupplier(s);
+                                        setShowSupplierModal(false);
+                                    }}
+                                    className={`w-full py-3 px-4 rounded-lg font-medium text-left transition-colors ${formData.supplierId === s.id ? 'bg-blue-600 text-white' : 'bg-slate-700 text-gray-200 hover:bg-slate-600'}`}
+                                >
+                                    {s.label}
+                                </button>
+                            ))}
+                            <button
+                                onClick={() => {
+                                    formData.setSupplier(null);
+                                    setShowSupplierModal(false);
+                                }}
+                                className="w-full py-3 px-4 rounded-lg font-medium text-left bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors mt-2"
+                            >
+                                ❌ Nessun Fornitore
+                            </button>
+                        </div>
+                        <button
+                            onClick={() => setShowSupplierModal(false)}
+                            className="w-full mt-4 py-2 bg-slate-900 rounded-lg text-gray-400 hover:text-white transition-colors"
+                        >
+                            Chiudi
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Error Message if Invalid */}
             {!isValid && (
                 <div className="text-center text-red-400 text-sm animate-pulse">
@@ -332,6 +379,8 @@ export default function NewOrderPage() {
     const [memoryMaterials, setMemoryMaterials] = useState([]);
     const [spongeDensities, setSpongeDensities] = useState([]);
     const [spongeColors, setSpongeColors] = useState([]);
+    const [blockDimensions, setBlockDimensions] = useState([]);
+    const [suppliers, setSuppliers] = useState([]);
 
     // Form Data
     const [formData, setFormData] = useState({
@@ -348,6 +397,8 @@ export default function NewOrderPage() {
         isTrimmed: false,
         quantity: 0, // Start at 0
         clientRef: '',
+        supplierId: null,
+        supplierLabel: '',
     });
 
     useEffect(() => {
@@ -356,14 +407,18 @@ export default function NewOrderPage() {
 
     const loadConfig = async () => {
         try {
-            const [memory, density, color] = await Promise.all([
+            const [memory, density, color, dims, supps] = await Promise.all([
                 pickingApi.getConfig('memory'),
                 pickingApi.getConfig('sponge_density'),
                 pickingApi.getConfig('sponge_color'),
+                pickingApi.getConfig('block_dimension'),
+                pickingApi.getConfig('supplier'),
             ]);
             setMemoryMaterials(memory || []);
             setSpongeDensities(density || []);
             setSpongeColors(color || []);
+            setBlockDimensions(dims || []);
+            setSuppliers(supps || []);
         } catch (err) {
             console.error('Error loading config:', err);
             toast.error('Errore caricamento configurazione');
@@ -415,6 +470,7 @@ export default function NewOrderPage() {
                 is_trimmed: formData.isTrimmed,
                 quantity: formData.quantity,
                 client_ref: formData.clientRef || null,
+                supplier_id: formData.supplierId || null,
             };
 
             await pickingApi.createRequest(payload);
@@ -467,6 +523,7 @@ export default function NewOrderPage() {
                     formData={formData}
                     setFormData={setFormData}
                     onNext={() => setStep(4)}
+                    dimensions={blockDimensions}
                 />
             )}
             {step === 4 && (
@@ -475,7 +532,9 @@ export default function NewOrderPage() {
                         ...formData,
                         setQuantity: (q) => setFormData(prev => ({ ...prev, quantity: q })),
                         setClientRef: (r) => setFormData(prev => ({ ...prev, clientRef: r })),
+                        setSupplier: (s) => setFormData(prev => ({ ...prev, supplierId: s?.id || null, supplierLabel: s?.label || '' })),
                     }}
+                    suppliers={suppliers}
                     onSubmit={handleSubmit}
                     loading={loading}
                 />
