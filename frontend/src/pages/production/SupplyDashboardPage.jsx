@@ -31,20 +31,22 @@ export default function SupplyDashboardPage() {
 
     const loadOrders = async () => {
         try {
-            // Include cancelled orders in active list so Supply can see them
-            // Request 'active' (pending+processing) to ensure new orders aren't cut off by limit
-            const data = await pickingApi.getRequests('active', 100);
-            // Filter to active + recently cancelled (within 30 mins)
+            // Fetch active orders (pending+processing) - these won't be cut off by limit
+            const activeData = await pickingApi.getRequests('active', 100);
+
+            // Fetch cancelled orders separately for the warning section
+            const cancelledData = await pickingApi.getRequests('cancelled', 50);
+
+            // Combine and filter cancelled to recent ones (7 days)
             const now = Date.now();
-            const filtered = (data || []).filter(o => {
-                if (['pending', 'processing'].includes(o.status)) return true;
-                if (o.status === 'cancelled') {
-                    const cancelTime = new Date(o.created_at).getTime();
-                    return (now - cancelTime) < 7 * 24 * 60 * 60 * 1000; // 7 days (was 30 mins)
-                }
-                return false;
+            const recentCancelled = (cancelledData || []).filter(o => {
+                const cancelTime = new Date(o.created_at).getTime();
+                return (now - cancelTime) < 7 * 24 * 60 * 60 * 1000; // 7 days
             });
-            setOrders(filtered);
+
+            // Combine active + recent cancelled
+            const combined = [...(activeData || []), ...recentCancelled];
+            setOrders(combined);
         } catch (err) {
             console.error('Error loading orders:', err);
         } finally {
