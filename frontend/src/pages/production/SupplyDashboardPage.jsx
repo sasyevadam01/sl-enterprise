@@ -32,7 +32,8 @@ export default function SupplyDashboardPage() {
     const loadOrders = async () => {
         try {
             // Include cancelled orders in active list so Supply can see them
-            const data = await pickingApi.getRequests(null, 100);
+            // Request 'active' (pending+processing) to ensure new orders aren't cut off by limit
+            const data = await pickingApi.getRequests('active', 100);
             // Filter to active + recently cancelled (within 30 mins)
             const now = Date.now();
             const filtered = (data || []).filter(o => {
