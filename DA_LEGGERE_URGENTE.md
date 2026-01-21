@@ -20,7 +20,7 @@ Il server di produzione si trova all'indirizzo **93.186.255.104**.
 Si accede tramite **Putty** con utente `root`.
 
 ### Comandi Fondamentali
-Una volta loggati nel server, eseguire sempre questi comandi nella cartella del progetto (`/root` o `~/sl-enterprise`):
+**NOTA IMPORTANTE:** Sul server, il codice è direttamente in `/root/` (NON esiste una sottocartella `sl-enterprise`). I container Docker montano il codice da lì.
 
 #### A. Aggiornare il Codice (Deploy)
 Dopo aver fatto `git push` dal PC locale, sul server eseguire:
