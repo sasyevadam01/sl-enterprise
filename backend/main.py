@@ -12,7 +12,7 @@ from database import create_tables
 from routers import (
     auth, users, employees, leaves, disciplinary, notifications, expiries, fleet, returns,
     tasks, events, audit, hr_stats, shifts, announcements, facility, factory, kpi, roles,
-    admin_settings, mobile, maintenance, reports, bonuses, chat, production
+    admin_settings, mobile, maintenance, reports, bonuses, chat, production, logistics
 )
 
 
@@ -52,6 +52,15 @@ async def lifespan(app: FastAPI):
                      print("[MIGRATION] Aggiunto campo 'deleted_at' a messages")
                      conn.execute(text("ALTER TABLE messages ADD COLUMN deleted_at DATETIME NULL"))
                      conn.commit()
+
+             # 3. target_sector su block_requests
+             if inspector.has_table("block_requests"):
+                 cols = [c['name'] for c in inspector.get_columns("block_requests")]
+                 if "target_sector" not in cols:
+                     print("[MIGRATION] Aggiunto campo 'target_sector' a block_requests")
+                     conn.execute(text("ALTER TABLE block_requests ADD COLUMN target_sector VARCHAR(50) NULL"))
+                     conn.commit()
+
     except Exception as e:
         print(f"[MIGRATION WARNING] Errore auto-migration: {e}")
 
@@ -222,6 +231,9 @@ app.include_router(admin_settings.router)  # Departments, Job Roles, Banchine, W
 
 # Chat Interna
 app.include_router(chat.router)
+
+# Logistics (Richiesta Materiale)
+app.include_router(logistics.router)
 
 # ============================================================
 # STATIC FILES (per preview documenti)

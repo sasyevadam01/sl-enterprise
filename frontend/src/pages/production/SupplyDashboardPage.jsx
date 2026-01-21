@@ -12,15 +12,9 @@ export default function SupplyDashboardPage() {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // Track acknowledged cancelled orders (localStorage for persistence)
-    const [acknowledgedCancelled, setAcknowledgedCancelled] = useState(() => {
-        try {
-            const stored = localStorage.getItem('acknowledgedCancelledOrders');
-            return stored ? JSON.parse(stored) : [];
-        } catch {
-            return [];
-        }
-    });
+    // Track acknowledged cancelled orders (localStorage removed - now synced with server)
+    // No dedicated state needed, we just reload the list
+
 
     useEffect(() => {
         loadOrders();
@@ -74,12 +68,30 @@ export default function SupplyDashboardPage() {
         }
     };
 
+    // Confirmation Modal State for Delivery
+    const [confirmDeliveryModal, setConfirmDeliveryModal] = useState(null); // holds order object or null
+
+    const requestDeliveryConfirmation = (order) => {
+        setConfirmDeliveryModal(order);
+    };
+
+    const confirmDelivery = () => {
+        if (confirmDeliveryModal) {
+            handleDeliver(confirmDeliveryModal.id);
+            setConfirmDeliveryModal(null);
+        }
+    };
+
     // Handler for acknowledging cancelled orders
-    const handleAcknowledgeCancelled = (orderId) => {
-        const updated = [...acknowledgedCancelled, orderId];
-        setAcknowledgedCancelled(updated);
-        localStorage.setItem('acknowledgedCancelledOrders', JSON.stringify(updated));
-        toast.success('Ordine rimosso dalla lista', { icon: '✓' });
+    const handleAcknowledgeCancelled = async (orderId) => {
+        try {
+            await pickingApi.acknowledge(orderId);
+            toast.success('Ordine rimosso dalla lista', { icon: '✓' });
+            loadOrders();
+        } catch (err) {
+            console.error('Error ack cancelled:', err);
+            toast.error('Errore durante la rimozione');
+        }
     };
 
     const formatTime = (date) => {
@@ -123,6 +135,7 @@ export default function SupplyDashboardPage() {
     const pendingOrders = orders.filter(o => o.status === 'pending');
     const processingOrders = orders.filter(o => o.status === 'processing');
     const cancelledOrders = orders.filter(o => o.status === 'cancelled');
+
 
     // --- SIREN / AUDIO ALERT LOGIC ---
     const [audioAllowed, setAudioAllowed] = useState(false);
@@ -251,6 +264,15 @@ export default function SupplyDashboardPage() {
                                                 ? order.material_label
                                                 : `${order.density_label} ${order.color_label}`}
                                         </span>
+                                        {/* SECTOR BADGE MINI */}
+                                        {order.target_sector && (
+                                            <span className={`ml-2 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase border ${order.target_sector === 'Pantografo'
+                                                ? 'bg-cyan-900/20 text-cyan-400 border-cyan-500/20'
+                                                : 'bg-purple-900/20 text-purple-400 border-purple-500/20'
+                                                }`}>
+                                                {order.target_sector.substring(0, 1)}
+                                            </span>
+                                        )}
                                         <span className="text-yellow-400 text-sm ml-2">x{order.quantity}</span>
                                     </div>
                                     <span className="text-xs text-yellow-500 bg-yellow-500/20 px-2 py-1 rounded">
@@ -269,7 +291,7 @@ export default function SupplyDashboardPage() {
                                 </div>
 
                                 <button
-                                    onClick={() => handleDeliver(order.id)}
+                                    onClick={() => requestDeliveryConfirmation(order)}
                                     className="w-full py-4 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl text-white font-bold text-lg shadow-lg"
                                 >
                                     ✅ CONSEGNATO
@@ -281,27 +303,26 @@ export default function SupplyDashboardPage() {
             )}
 
             {/* Cancelled Orders - REQUIRE ACKNOWLEDGMENT */}
-            {cancelledOrders.filter(o => !acknowledgedCancelled.includes(o.id)).length > 0 && (
+            {cancelledOrders.length > 0 && (
                 <div className="mb-6">
                     <h2 className="text-sm font-bold text-red-400 uppercase mb-3 flex items-center gap-2">
                         🚫 ORDINI BLOCCATI - Conferma lettura!
                     </h2>
                     <div className="space-y-3">
                         {cancelledOrders
-                            .filter(o => !acknowledgedCancelled.includes(o.id))
                             .map(order => (
                                 <div
                                     key={order.id}
-                                    className="relative bg-red-900/40 rounded-xl p-4 border-4 border-red-500 overflow-hidden animate-pulse"
+                                    className="relative bg-red-900/40 rounded-xl p-4 border border-red-500 overflow-hidden"
                                 >
                                     {/* BLOCKED Banner */}
-                                    <div className="absolute top-0 left-0 right-0 bg-red-600 text-white text-center py-2 font-black text-lg tracking-widest">
+                                    <div className="absolute top-0 left-0 right-0 bg-red-600/80 text-white text-center py-1 font-bold text-sm tracking-widest">
                                         ⛔ BLOCCATO - NON PRELEVARE ⛔
                                     </div>
 
-                                    <div className="pt-10 relative z-10">
+                                    <div className="pt-8 relative z-10">
                                         <div className="flex justify-between items-start mb-2">
-                                            <span className="text-xl font-bold text-white">
+                                            <span className="text-lg font-bold text-white">
                                                 {order.request_type === 'memory'
                                                     ? order.material_label
                                                     : `${order.density_label} ${order.color_label}`}
@@ -352,6 +373,15 @@ export default function SupplyDashboardPage() {
                                                 ? order.material_label
                                                 : `${order.density_label} ${order.color_label}`}
                                         </span>
+                                        {/* SECTOR BADGE */}
+                                        {order.target_sector && (
+                                            <span className={`ml-2 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${order.target_sector === 'Pantografo'
+                                                ? 'bg-cyan-900/30 text-cyan-300 border-cyan-500/30'
+                                                : 'bg-purple-900/30 text-purple-300 border-purple-500/30'
+                                                }`}>
+                                                {order.target_sector}
+                                            </span>
+                                        )}
                                         <span className="text-gray-400 text-sm ml-2">x{order.quantity}</span>
                                     </div>
                                     {/* Live SLA Timer with color coding */}
@@ -378,6 +408,40 @@ export default function SupplyDashboardPage() {
                                 </button>
                             </div>
                         ))}
+                    </div>
+                </div>
+            )}
+
+            {/* DELIVERY CONFIRMATION MODAL */}
+            {confirmDeliveryModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                    <div className="bg-[#1e293b] rounded-2xl border border-green-500/30 p-8 max-w-md w-full shadow-2xl text-center">
+
+                        <div className="text-5xl mb-4">📦✅</div>
+                        <h2 className="text-xl font-bold text-white mb-2">CONFERMA CONSEGNA</h2>
+                        <p className="text-gray-400 mb-6">
+                            Stai completando la consegna di <strong className="text-white">{confirmDeliveryModal.quantity}</strong> Blocco/i
+                            <span className="text-cyan-400 font-bold"> {confirmDeliveryModal.request_type === 'memory'
+                                ? confirmDeliveryModal.material_label
+                                : `${confirmDeliveryModal.density_label} ${confirmDeliveryModal.color_label}`}</span>
+                        </p>
+                        <p className="text-lg text-yellow-400 font-bold mb-6">Sei sicuro?</p>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <button
+                                onClick={() => setConfirmDeliveryModal(null)}
+                                className="py-4 rounded-xl border-2 border-gray-500/30 bg-gray-700/30 hover:bg-gray-600/40 text-gray-300 font-bold text-lg transition-all"
+                            >
+                                ❌ NO
+                            </button>
+
+                            <button
+                                onClick={confirmDelivery}
+                                className="py-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-bold text-lg shadow-lg shadow-green-500/30 transition-all active:scale-95"
+                            >
+                                ✅ SÌ, CONSEGNA
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

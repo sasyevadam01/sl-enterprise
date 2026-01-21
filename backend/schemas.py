@@ -930,6 +930,7 @@ class ProductionMaterialUpdate(BaseModel):
 
 class BlockRequestCreate(BaseModel):
     request_type: str  # memory, sponge
+    target_sector: Optional[str] = None # pantografo, giostra
     material_id: Optional[int] = None
     density_id: Optional[int] = None
     color_id: Optional[int] = None
@@ -956,6 +957,7 @@ class BlockRequestResponse(BlockRequestCreate):
     delivered_at: Optional[datetime] = None
     
     # Extra for UI - Populated via Model Properties
+    target_sector: Optional[str] = None
     material_label: Optional[str] = None
     density_label: Optional[str] = None
     color_label: Optional[str] = None

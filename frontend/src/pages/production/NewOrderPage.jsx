@@ -399,7 +399,11 @@ export default function NewOrderPage() {
         clientRef: '',
         supplierId: null,
         supplierLabel: '',
+        targetSector: null, // 'Pantografo' | 'Giostra'
     });
+
+    // Sector Selection Modal State
+    const [showSectorModal, setShowSectorModal] = useState(false);
 
     useEffect(() => {
         loadConfig();
@@ -458,6 +462,12 @@ export default function NewOrderPage() {
     };
 
     const handleSubmit = async () => {
+        // First, open Sector Selection Modal
+        setShowSectorModal(true);
+    };
+
+    const confirmWithSector = async (sector) => {
+        setShowSectorModal(false);
         setLoading(true);
         try {
             const payload = {
@@ -471,6 +481,7 @@ export default function NewOrderPage() {
                 quantity: formData.quantity,
                 client_ref: formData.clientRef || null,
                 supplier_id: formData.supplierId || null,
+                target_sector: sector, // 'Pantografo' | 'Giostra'
             };
 
             await pickingApi.createRequest(payload);
@@ -538,6 +549,42 @@ export default function NewOrderPage() {
                     onSubmit={handleSubmit}
                     loading={loading}
                 />
+            )}
+
+            {/* SECTOR SELECTION MODAL */}
+            {showSectorModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                    <div className="bg-[#1e293b] rounded-2xl border border-blue-500/30 p-8 max-w-md w-full shadow-2xl text-center">
+
+                        <h2 className="text-2xl font-bold text-white mb-2">REPARTO DI DESTINAZIONE?</h2>
+                        <p className="text-gray-400 mb-8">Specifica per chi è questo materiale per aiutare il magazzino.</p>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <button
+                                onClick={() => confirmWithSector('Pantografo')}
+                                className="p-6 rounded-xl border-2 border-cyan-500/30 bg-cyan-900/20 hover:bg-cyan-900/40 hover:border-cyan-400 active:scale-95 transition-all group"
+                            >
+                                <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">✂️</div>
+                                <div className="text-lg font-bold text-cyan-300">PANTOGRAFO</div>
+                            </button>
+
+                            <button
+                                onClick={() => confirmWithSector('Giostra')}
+                                className="p-6 rounded-xl border-2 border-purple-500/30 bg-purple-900/20 hover:bg-purple-900/40 hover:border-purple-400 active:scale-95 transition-all group"
+                            >
+                                <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">🎢</div>
+                                <div className="text-lg font-bold text-purple-300">GIOSTRA</div>
+                            </button>
+                        </div>
+
+                        <button
+                            onClick={() => setShowSectorModal(false)}
+                            className="mt-8 text-gray-400 hover:text-white underline text-sm"
+                        >
+                            Annulla
+                        </button>
+                    </div>
+                </div>
             )}
         </div>
     );

@@ -20,10 +20,21 @@ client.interceptors.request.use((config) => {
   return config;
 });
 
-// Interceptor per risposta (unwrapping data)
+// Interceptor per risposta (unwrapping data + error handling)
 client.interceptors.response.use(
   (response) => response.data,
-  (error) => Promise.reject(error),
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      console.warn("⚠️ Sessione scaduta o non valida (401). Redirect al login...");
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      // Evita loop di redirect se siamo già al login
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  },
 );
 
 // --- API MODULES ---
@@ -413,6 +424,7 @@ export const pickingApi = {
   createRequest: (data) => client.post("/production/requests", data),
   getRequests: (status, limit = 50) => client.get("/production/requests", { params: { status, limit } }),
   updateStatus: (id, status, notes) => client.patch(`/production/requests/${id}/status`, { status, notes }),
+  acknowledge: (id) => client.patch(`/production/requests/${id}/acknowledge`),
 
   // Reporting
   // Reporting
@@ -473,4 +485,49 @@ export const chatApi = {
   },
 };
 
+// ============================================================
+// LOGISTICS (Richiesta Materiale)
+// ============================================================
+export const logisticsApi = {
+  // Material Types
+  getMaterials: (activeOnly = true) => client.get("/logistics/materials", { params: { active_only: activeOnly } }),
+  createMaterial: (data) => client.post("/logistics/materials", data),
+  updateMaterial: (id, data) => client.patch(`/logistics/materials/${id}`, data),
+  deleteMaterial: (id) => client.delete(`/logistics/materials/${id}`),
+
+  // Requests
+  createRequest: (data) => client.post("/logistics/requests", data),
+  getRequests: (params = {}) => client.get("/logistics/requests", { params }),
+  getRequest: (id) => client.get(`/logistics/requests/${id}`),
+  takeRequest: (id, eta_minutes) => client.patch(`/logistics/requests/${id}/take`, { promised_eta_minutes: eta_minutes }),
+  completeRequest: (id) => client.patch(`/logistics/requests/${id}/complete`),
+  releaseRequest: (id) => client.patch(`/logistics/requests/${id}/release`),
+  markUrgent: (id) => client.patch(`/logistics/requests/${id}/urgent`),
+
+  // Messages
+  getMessages: (requestId) => client.get(`/logistics/requests/${requestId}/messages`),
+  sendMessage: (requestId, content, type = "custom") => client.post(`/logistics/requests/${requestId}/messages`, { content, message_type: type }),
+
+  // Preset Messages & ETA Options
+  getPresetMessages: (activeOnly = true) => client.get("/logistics/preset-messages", { params: { active_only: activeOnly } }),
+  createPresetMessage: (data) => client.post("/logistics/preset-messages", data),
+  updatePresetMessage: (id, data) => client.patch(`/logistics/preset-messages/${id}`, data),
+  deletePresetMessage: (id) => client.delete(`/logistics/preset-messages/${id}`),
+
+  getEtaOptions: (activeOnly = true) => client.get("/logistics/eta-options", { params: { active_only: activeOnly } }),
+  createEtaOption: (data) => client.post("/logistics/eta-options", data),
+  updateEtaOption: (id, data) => client.patch(`/logistics/eta-options/${id}`, data),
+  deleteEtaOption: (id) => client.delete(`/logistics/eta-options/${id}`),
+
+  // Performance & Leaderboard
+  getMyPerformance: () => client.get("/logistics/performance/me"),
+  getEmployeePerformance: (employeeId) => client.get(`/logistics/performance/employee/${employeeId}`),
+  getLeaderboard: (month, year) => client.get("/logistics/leaderboard", { params: { month, year } }),
+
+  // Config (Admin)
+  getConfig: () => client.get("/logistics/config"),
+  updateConfig: (key, value) => client.put(`/logistics/config/${key}`, null, { params: { value } }),
+};
+
 export default client;
+

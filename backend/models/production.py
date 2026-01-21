@@ -249,6 +249,7 @@ class BlockRequest(Base):
     
     # Dati Richiesta
     request_type = Column(String(50), nullable=False) # memory, sponge
+    target_sector = Column(String(50), nullable=True) # pantografo, giostra, altro
     
     # References to configuration (Nullable based on type)
     material_id = Column(Integer, ForeignKey("production_materials.id"), nullable=True)

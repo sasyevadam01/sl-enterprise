@@ -238,6 +238,7 @@ async def list_block_requests(
         response_list.append(BlockRequestResponse(
             id=req.id,
             request_type=req.request_type,
+            target_sector=req.target_sector,
             material_id=req.material_id,
             density_id=req.density_id,
             color_id=req.color_id,
@@ -326,6 +327,30 @@ async def update_request_status(
         db.commit()
         
     return req
+
+
+@router.patch("/requests/{req_id}/acknowledge", summary="Conferma Lettura Cancellazione")
+async def acknowledge_cancellation(
+    req_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Marca una richiesta CANCELLATA come 'letta' (cancelled_acked).
+    In questo modo scompare dalla dashboard di tutti (azione globale).
+    """
+    req = db.query(BlockRequest).filter(BlockRequest.id == req_id).first()
+    if not req:
+        raise HTTPException(404, "Richiesta non trovata")
+        
+    if req.status != 'cancelled':
+        raise HTTPException(400, "La richiesta non è cancellata")
+        
+    # Set unique status for acked cancellations
+    req.status = 'cancelled_acked'
+    db.commit()
+    
+    return {"message": "Cancellazione confermata", "status": "cancelled_acked"}
 
 # ============================================================
 # REPORTING & STATS (Excel Export)
