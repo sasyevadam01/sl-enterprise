@@ -95,6 +95,7 @@ export default function OrderDashboardPage() {
 
     const activeOrders = orders.filter(o => ['pending', 'processing'].includes(o.status));
     const deliveredOrders = orders.filter(o => ['delivered'].includes(o.status));
+    const completedOrders = orders.filter(o => ['completed'].includes(o.status));
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 pb-24">
@@ -166,23 +167,52 @@ export default function OrderDashboardPage() {
 
             {/* Delivered Orders */}
             {deliveredOrders.length > 0 && (
-                <div>
-                    <h2 className="text-sm font-bold text-gray-400 uppercase mb-3">Consegnati (clicca per archiviare)</h2>
+                <div className="mb-6">
+                    <h2 className="text-sm font-bold text-gray-400 uppercase mb-3 text-green-400">✅ Pronti per conferma</h2>
                     <div className="space-y-2">
                         {deliveredOrders.map(order => (
                             <div
                                 key={order.id}
                                 onClick={() => handleArchive(order.id)}
-                                className="bg-green-900/20 rounded-xl p-3 border border-green-500/20 cursor-pointer hover:bg-green-900/40 transition-all opacity-70"
+                                className="bg-green-900/20 rounded-xl p-3 border border-green-500/20 cursor-pointer hover:bg-green-900/40 transition-all"
                             >
                                 <div className="flex justify-between items-center">
-                                    <span className="text-green-300 line-through">
+                                    <span className="text-green-300 font-medium">
                                         {order.request_type === 'memory'
                                             ? order.material_label
                                             : `${order.density_label} ${order.color_label}`}
                                         {' '}{order.dimensions}
                                     </span>
-                                    <span className="text-xs text-green-500">Tap per confermare ✓</span>
+                                    <span className="px-3 py-1 bg-green-500 text-slate-900 rounded-full text-xs font-bold animate-pulse">
+                                        Conferma Ricezione
+                                    </span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Completed Orders (History) */}
+            {completedOrders.length > 0 && (
+                <div className="opacity-60 grayscale hover:grayscale-0 transition-all duration-300">
+                    <h2 className="text-xs font-bold text-gray-500 uppercase mb-3">Storico Recente (Archiviati)</h2>
+                    <div className="space-y-2">
+                        {completedOrders.map(order => (
+                            <div
+                                key={order.id}
+                                className="bg-slate-800/50 rounded-xl p-3 border border-white/5"
+                            >
+                                <div className="flex justify-between items-center">
+                                    <span className="text-gray-400 line-through text-sm">
+                                        {order.request_type === 'memory'
+                                            ? order.material_label
+                                            : `${order.density_label} ${order.color_label}`}
+                                        {' '}{order.dimensions}
+                                    </span>
+                                    <span className="text-[10px] text-gray-600">
+                                        {formatTime(order.delivered_at || order.processed_at || order.created_at)}
+                                    </span>
                                 </div>
                             </div>
                         ))}

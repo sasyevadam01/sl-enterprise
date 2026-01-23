@@ -229,7 +229,7 @@ async def list_block_requests(
     if is_order and not is_supply:
         query = query.filter(BlockRequest.created_by_id == current_user.id)
         
-    query = query.order_by(BlockRequest.created_at.asc())
+    query = query.order_by(BlockRequest.created_at.desc())
     
     results = query.limit(limit).all()
     
