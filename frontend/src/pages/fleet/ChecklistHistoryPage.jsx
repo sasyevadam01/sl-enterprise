@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
+
+const API_HOST = `${window.location.protocol}//${window.location.hostname}:8000`;
 import { fleetApi, tasksApi } from '../../api/client';
 import { useUI, StandardModal } from '../../components/ui/CustomUI';
 import { useAuth } from '../../context/AuthContext';
@@ -474,10 +476,10 @@ function ChecklistDetailModal({ checklist, vehicle, onClose, StandardModal, onRe
                                 </span>
                                 <div className="rounded-2xl overflow-hidden border border-white/10 relative group">
                                     <img
-                                        src={`http://127.0.0.1:8000${checklist.tablet_photo_url}`}
+                                        src={`${API_HOST}${checklist.tablet_photo_url}`}
                                         alt="Foto Tablet"
                                         className="w-full h-64 object-cover transition-transform duration-500 group-hover:scale-105 cursor-pointer"
-                                        onClick={() => window.open(`http://127.0.0.1:8000${checklist.tablet_photo_url}`, '_blank')}
+                                        onClick={() => window.open(`${API_HOST}${checklist.tablet_photo_url}`, '_blank')}
                                     />
                                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                                         <span className="text-white font-bold text-xs uppercase tracking-widest flex items-center gap-2">
@@ -547,12 +549,12 @@ function ChecklistDetailModal({ checklist, vehicle, onClose, StandardModal, onRe
                                             {issueData.photo_url && (
                                                 <div className="relative group rounded-xl overflow-hidden border border-red-500/20 bg-black/20 w-full sm:w-1/2">
                                                     <img
-                                                        src={`http://127.0.0.1:8000${issueData.photo_url}`}
+                                                        src={`${API_HOST}${issueData.photo_url}`}
                                                         alt="Dettaglio Problema"
                                                         className="w-full h-40 object-cover"
                                                     />
                                                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                                                        onClick={() => window.open(`http://127.0.0.1:8000${issueData.photo_url}`, '_blank')}
+                                                        onClick={() => window.open(`${API_HOST}${issueData.photo_url}`, '_blank')}
                                                     >
                                                         <Maximize2 size={20} className="text-white" />
                                                     </div>

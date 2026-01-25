@@ -1,6 +1,11 @@
 import axios from "axios";
 
-const API_BASE_URL = "http://127.0.0.1:8000";
+// Dynamic API URL based on current host
+const protocol = window.location.protocol;
+const hostname = window.location.hostname;
+const port = "8000"; // Backend always on 8000
+
+const API_BASE_URL = `${protocol}//${hostname}:${port}`;
 
 // console.log("🔌 [CLIENT] API Base URL set to:", API_BASE_URL);
 
