@@ -24,6 +24,7 @@ from database import (
     LeaveRequest,
     User
 )
+from security import get_current_user
 
 router = APIRouter(prefix="/kpi", tags=["KPI"])
 
@@ -304,7 +305,7 @@ def calculate_staffing(db: Session, sector_name: str, work_date: date, shift_typ
 def create_kpi_entry(
     data: KpiEntryCreate,
     db: Session = Depends(get_db),
-    current_user_id: int = 1  # TODO: da auth
+    current_user: User = Depends(get_current_user)
 ):
     """Registra nuova entry KPI con calcoli automatici."""
     # Verifica config esiste
@@ -368,7 +369,7 @@ def create_kpi_entry(
             operators_required=ops_required,
             staffing_status=status,
             staffing_delta=delta,
-            recorded_by=current_user_id
+            recorded_by=current_user.id
         )
         db.add(entry)
         db.commit()
@@ -1160,7 +1161,8 @@ def get_advanced_pdf_report(
                     t_style.append(('TEXTCOLOR', (8, current_row_idx), (8, current_row_idx), colors.red))
                 elif eff_val >= 100:
                     t_style.append(('TEXTCOLOR', (8, current_row_idx), (8, current_row_idx), colors.green))
-            except: pass
+            except Exception as e:
+                print(f"[PDF WARN] Row style error: {e}")
             current_row_idx += 1
             
         # Riga Subtotale
@@ -1181,7 +1183,8 @@ def get_advanced_pdf_report(
                 t_style.append(('TEXTCOLOR', (8, current_row_idx), (8, current_row_idx), colors.red))
             elif eff_val >= 100:
                 t_style.append(('TEXTCOLOR', (8, current_row_idx), (8, current_row_idx), colors.green))
-        except: pass
+        except Exception as e:
+            print(f"[PDF WARN] Subrow style error: {e}")
         
         current_row_idx += 1
             

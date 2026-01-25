@@ -39,6 +39,11 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     last_seen = Column(DateTime, nullable=True)  # Per monitor online
     
+    # GPS Location (Real-time Tracking)
+    last_lat = Column(Float, nullable=True)
+    last_lon = Column(Float, nullable=True)
+    last_location_update = Column(DateTime, nullable=True)
+    
     # Relazioni
     department_id = Column(Integer, ForeignKey("departments.id"), nullable=True)
     department = relationship("Department", back_populates="users")
@@ -78,7 +83,7 @@ class User(Base):
         # Fallback LEGACY mappings (Sync with Sidebar.jsx)
         PERMISSIONS_MAP = {
             'super_admin': ['*'],
-            'admin': ['view_dashboard', 'manage_employees', 'manage_attendance', 'view_hr_calendar', 'request_events', 'manage_tasks', 'manage_shifts', 'view_announcements', 'access_factory', 'manage_kpi', 'access_logistics', 'admin_users', 'admin_config', 'admin_audit'],
+            'admin': ['view_dashboard', 'manage_employees', 'manage_attendance', 'view_hr_calendar', 'request_events', 'manage_tasks', 'manage_shifts', 'view_announcements', 'access_factory', 'manage_kpi', 'access_logistics', 'manage_fleet', 'admin_users', 'admin_config', 'admin_audit'],
             'hr_manager': ['view_dashboard', 'manage_employees', 'manage_attendance', 'view_hr_calendar', 'request_events', 'manage_tasks', 'manage_shifts', 'view_announcements'],
             'coordinator': ['manage_shifts', 'manage_tasks', 'view_announcements', 'request_events'],
             'factory_controller': ['access_factory', 'manage_kpi', 'view_dashboard'],
@@ -186,3 +191,6 @@ class Announcement(Base):
     
     # Relazioni
     author = relationship("User", backref="announcements")
+
+
+

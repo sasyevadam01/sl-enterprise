@@ -3,13 +3,30 @@ SL Enterprise - Fleet Router
 Gestione parco mezzi e ticket manutenzione.
 """
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
-from typing import List
 from datetime import datetime, timedelta
+from typing import List, Optional
+from pydantic import BaseModel
 import os
 import shutil
+import uuid
+import os
 import json
+from datetime import datetime
+from io import BytesIO
+from PIL import Image
+from fastapi import Form, Request
+
+class VehicleUpdate(BaseModel):
+    vehicle_type: Optional[str] = None
+    brand: Optional[str] = None
+    model: Optional[str] = None
+    internal_code: Optional[str] = None
+    banchina_id: Optional[int] = None
+    assigned_operator: Optional[str] = None
+    is_4_0: Optional[bool] = None
+    status: Optional[str] = None
 
 from database import get_db, Banchina, FleetVehicle, MaintenanceTicket, User
 from security import get_current_user, get_hr_or_admin
@@ -117,6 +134,43 @@ async def update_vehicle_status(
     vehicle.status = new_status
     db.commit()
     return {"message": "Stato aggiornato", "status": new_status}
+
+
+@router.put("/vehicles/{vehicle_id}", summary="Modifica Mezzo")
+async def update_vehicle(
+    vehicle_id: int,
+    data: VehicleUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_hr_or_admin)
+):
+    """Modifica i dati di un mezzo (Solo HR/Admin)."""
+    vehicle = db.query(FleetVehicle).filter(FleetVehicle.id == vehicle_id).first()
+    if not vehicle:
+        raise HTTPException(status_code=404, detail="Mezzo non trovato")
+    
+    # Update fields
+    for key, value in data.model_dump(exclude_unset=True).items():
+        setattr(vehicle, key, value)
+    
+    db.commit()
+    db.refresh(vehicle)
+    return vehicle
+
+
+@router.delete("/vehicles/{vehicle_id}", summary="Elimina Mezzo")
+async def delete_vehicle(
+    vehicle_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_hr_or_admin)
+):
+    """Disattiva un mezzo (Soft Delete)."""
+    vehicle = db.query(FleetVehicle).filter(FleetVehicle.id == vehicle_id).first()
+    if not vehicle:
+        raise HTTPException(status_code=404, detail="Mezzo non trovato")
+    
+    vehicle.is_active = False
+    db.commit()
+    return {"message": "Mezzo eliminato correttamente"}
 
 
 # ============================================================
@@ -348,3 +402,291 @@ async def get_maintenance_kpi(
         "by_banchina": by_banchina,
         "by_vehicle_type": by_vehicle_type
     }
+
+
+# ============================================================
+# CHECKLIST CONTROLLO MEZZI
+# ============================================================
+from models.fleet import FleetChecklist
+
+REQUIRED_CHECKS = [
+    "plastiche_integre", "lampeggiante", "blue_spot", "specchietto", 
+    "cabina_pulita", "clacson", "sterzo", "freni", 
+    "leve_idrauliche", "catene", "tubazioni", "perdite", 
+    "batteria_fissaggio", "batteria_carica", "pulizia_carro", "pulizia_ruote"
+]
+
+class ChecklistSubmission(BaseModel):
+    vehicle_id: int
+    checklist_data: dict
+    notes: Optional[str] = None
+
+class OperatorInfo(BaseModel):
+    id: int
+    username: str
+    full_name: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
+
+class ChecklistResponse(BaseModel):
+    id: int
+    vehicle_id: int
+    operator_id: int
+    timestamp: datetime
+    checklist_data: dict
+    status: str
+    notes: Optional[str] = None
+    resolution_notes: Optional[str] = None
+    resolved_at: Optional[datetime] = None
+    operator: Optional[OperatorInfo] = None
+    tablet_status: Optional[str] = "ok"
+    tablet_photo_url: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
+
+class ResolveChecklistRequest(BaseModel):
+    notes: str
+
+@router.put("/checklists/{checklist_id}/resolve", summary="Risolvi anomalia checklist")
+async def resolve_checklist(
+    checklist_id: int,
+    payload: ResolveChecklistRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    chk = db.query(FleetChecklist).filter(FleetChecklist.id == checklist_id).first()
+    if not chk:
+        raise HTTPException(404, "Checklist non trovata")
+    
+    chk.resolution_notes = payload.notes
+    chk.resolved_at = datetime.utcnow()
+    chk.resolved_by = current_user.id
+    chk.status = 'resolved' # Update status to resolved
+    
+    db.commit()
+    return {"message": "Anomalia risolta"}
+
+@router.post("/checklists", summary="Invia Checklist Inizio Turno")
+async def create_checklist(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Invia checklist con foto.
+    - checklist_data: JSON string dei controlli
+    - photo: File immagine tablet (obbligatorio)
+    - issue_photo_[key]: File immagine opzionali per specifici problemi
+    """
+    import traceback
+    try:
+        # DBG: Print content type
+        print(f"DEBUG CHECKLIST: Content-Type: {request.headers.get('content-type')}")
+        
+        # Log to file
+        with open("debug_fleet.log", "a") as f:
+            f.write(f"\n--- NEW REQUEST {datetime.utcnow()} ---\n")
+            f.write(f"Content-Type: {request.headers.get('content-type')}\n")
+        
+        form = await request.form()
+        
+        with open("debug_fleet.log", "a") as f:
+            f.write(f"Form Keys: {list(form.keys())}\n")
+        
+        checklist_data_str = form.get("checklist_data")
+        
+        with open("debug_fleet.log", "a") as f:
+            f.write(f"Checklist Data: {checklist_data_str}\n")
+
+        notes = form.get("notes")
+        tablet_status = form.get("tablet_status", "ok")
+        tablet_photo = form.get("photo")
+
+        # Parse JSON
+        try:
+            if not checklist_data_str:
+                print("DEBUG: checklist_data is Empty/None")
+                with open("debug_fleet.log", "a") as f:
+                    f.write("ERROR: checklist_data is Empty\n")
+                raise ValueError(f"checklist_data form field is missing. Keys received: {list(form.keys())}")
+                
+            data_dict = json.loads(checklist_data_str)
+            vehicle_id = data_dict.get("vehicle_id")
+            checks = data_dict.get("checklist_data", {})
+        except Exception as e:
+            print(f"DEBUG: JSON Parse Error: {e}")
+            raise HTTPException(400, f"Invalid JSON data: {str(e)}")
+
+        # 1. Validazione Mezzo
+        vehicle = db.query(FleetVehicle).filter(FleetVehicle.id == vehicle_id).first()
+        if not vehicle:
+            raise HTTPException(404, "Veicolo non trovato")
+
+        # 2. setup directories
+        BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        CHECKLIST_DIR = os.path.join(BASE_DIR, "uploads", "checklists")
+        ISSUES_DIR = os.path.join(CHECKLIST_DIR, "issues")
+        os.makedirs(CHECKLIST_DIR, exist_ok=True)
+        os.makedirs(ISSUES_DIR, exist_ok=True)
+
+        async def process_and_save_image(upload_file, dest_dir, prefix=""):
+            if not upload_file: return None
+            
+            # Check if it's a string (e.g. "null", "undefined")
+            if isinstance(upload_file, str):
+                print(f"DEBUG: Unexpected string for file: '{upload_file}'")
+                with open("debug_fleet.log", "a") as f:
+                     f.write(f"WARNING: File field was string: '{upload_file}'\n")
+                return None
+
+            # Verify it has content_type (it should be an UploadFile)
+            if not hasattr(upload_file, "content_type"):
+                print(f"DEBUG: upload_file has no content_type: {type(upload_file)}")
+                return None
+            
+            ext = ".jpg"
+            save_format = "JPEG"
+            if upload_file.content_type == "image/png" or upload_file.filename.lower().endswith(".png"):
+                ext = ".png"
+                save_format = "PNG"
+            
+            filename = f"{prefix}{uuid.uuid4()}{ext}"
+            file_path = os.path.join(dest_dir, filename)
+            
+            contents = await upload_file.read()
+            img = Image.open(BytesIO(contents))
+            
+            # Max dimensions
+            max_width = 1280
+            if img.width > max_width:
+                ratio = max_width / img.width
+                new_height = int(img.height * ratio)
+                img = img.resize((max_width, new_height), Image.Resampling.LANCZOS)
+            
+            if save_format == "JPEG":
+                if img.mode != 'RGB': img = img.convert('RGB')
+                img.save(file_path, "JPEG", quality=70, optimize=True)
+            else:
+                img.save(file_path, "PNG", optimize=True)
+                
+            return filename
+
+        # 3. Save Tablet Photo
+        # Mandatory per user requirement
+        tablet_filename = None
+        if tablet_photo:
+            tablet_filename = await process_and_save_image(tablet_photo, CHECKLIST_DIR)
+        
+        # If tablet_filename is None here, it means either tablet_photo was missing 
+        # OR it was an invalid string (handled by process_and_save_image returning None)
+        if not tablet_filename:
+             raise HTTPException(400, "Foto Tablet obbligatoria (Mancante o file non valido)")
+        
+        # 4. Process Specific Issue Photos
+        # Iterate over cheks to find issues that expect a photo
+        new_checks_data = {}
+        
+        for key, val in checks.items():
+            # If val is dict, it's a granular issue: {status: false, note: "...", photo_temp_id: "..."}
+            if isinstance(val, dict):
+                temp_id = val.get("photo_temp_id")
+                photo_url = None
+                
+                # Look for file with key "issue_photo_{key}" or just "issue_photo_{temp_id}"
+                # Frontend should send key as `issue_photo_${key}`
+                issue_file = form.get(f"issue_photo_{key}")
+                
+                if issue_file:
+                     issue_filename = await process_and_save_image(issue_file, ISSUES_DIR, prefix="issue_")
+                     if issue_filename:
+                        photo_url = f"/uploads/checklists/issues/{issue_filename}"
+                
+                new_checks_data[key] = {
+                    "status": val.get("status"),
+                    "note": val.get("note"),
+                    "photo_url": photo_url
+                }
+            else:
+                # Legacy/Simple boolean
+                new_checks_data[key] = val
+
+        # 5. Validation Logic (Updated for Object structure)
+        has_issues = False
+        for key, val in new_checks_data.items():
+            # Check if boolean false OR dict with status false
+            if val is False:
+                has_issues = True
+            elif isinstance(val, dict) and val.get("status") is False:
+                has_issues = True
+
+        status = 'ok'
+        if has_issues:
+            status = 'warning'
+        if tablet_status != 'ok':
+           status = 'warning' 
+        
+        tablet_photo_url = f"/uploads/checklists/{tablet_filename}" if tablet_filename else None
+
+        # 6. Save
+        checklist = FleetChecklist(
+            vehicle_id=vehicle_id,
+            operator_id=current_user.id,
+            checklist_data=new_checks_data,
+            status=status,
+            notes=notes,
+            tablet_status=tablet_status,
+            tablet_photo_url=tablet_photo_url
+        )
+        db.add(checklist)
+        db.commit()
+        db.refresh(checklist)
+        return checklist
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        import traceback
+        err_msg = traceback.format_exc()
+        print(f"CRITICAL ERROR creating checklist: {str(e)}")
+        print(err_msg)
+        with open("debug_fleet.log", "a") as f:
+            f.write(f"\nCRITICAL ERROR: {str(e)}\n")
+            f.write(err_msg)
+        raise HTTPException(500, f"Critical Error: {str(e)}")
+
+
+@router.get("/checklists", summary="Storico Checklist", response_model=List[ChecklistResponse])
+async def list_checklists(
+    vehicle_id: int = None,
+    operator_id: int = None,
+    date: str = None,
+    limit: int = 50,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Storico checklist."""
+    query = db.query(FleetChecklist).options(joinedload(FleetChecklist.operator))
+    if vehicle_id:
+        query = query.filter(FleetChecklist.vehicle_id == vehicle_id)
+    if operator_id:
+        query = query.filter(FleetChecklist.operator_id == operator_id)
+    if date:
+        query = query.filter(func.date(FleetChecklist.timestamp) == date)
+    
+    return query.order_by(FleetChecklist.timestamp.desc()).limit(limit).all()
+
+
+@router.get("/vehicles/{vehicle_id}/checklist/latest", summary="Ultima Checklist")
+async def get_latest_checklist(
+    vehicle_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Recupera l'ultima checklist fatta per questo mezzo."""
+    return db.query(FleetChecklist)\
+        .filter(FleetChecklist.vehicle_id == vehicle_id)\
+        .order_by(FleetChecklist.timestamp.desc())\
+        .first()

@@ -2,13 +2,13 @@
 SL Enterprise - Users Router
 Gestione utenti (CRUD).
 """
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Body
 from sqlalchemy.orm import Session, joinedload
 from typing import List
 from datetime import datetime, timedelta
 
 from database import get_db, User, AuditLog, Employee
-from schemas import UserCreate, UserUpdate, UserResponse, MessageResponse
+from schemas import UserCreate, UserUpdate, UserResponse, MessageResponse, LocationUpdate
 from security import (
     get_current_user, 
     get_current_admin,
@@ -55,10 +55,32 @@ async def get_online_users(
             "username": u.username,
             "fullName": u.full_name,
             "role": u.role,
-            "lastSeen": u.last_seen
+            "lastSeen": u.last_seen,
+            "lat": u.last_lat,
+            "lon": u.last_lon,
+            "lastUpdate": u.last_location_update
         } 
         for u in online_users
     ]
+
+
+@router.patch("/me/location", summary="Aggiorna Posizione GPS")
+async def update_location(
+    location: LocationUpdate = Body(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Riceve le coordinate GPS dall'app client e aggiorna l'ultima posizione nota.
+    """
+    current_user.last_lat = location.latitude
+    current_user.last_lon = location.longitude
+    current_user.last_location_update = datetime.utcnow()
+    # Aggiorna anche last_seen per mantenerlo online
+    current_user.last_seen = datetime.utcnow()
+    
+    db.commit()
+    return {"status": "ok", "lat": location.latitude, "lon": location.longitude}
 
 
 # ============================================================
@@ -358,20 +380,67 @@ async def delete_user(
             detail="Non puoi eliminare un Super Admin!"
         )
     
-    username = user.username
-    db.delete(user)
+    # 1. Unlink from Employee (if any)
+    from models.hr import Employee
+    emp = db.query(Employee).filter(Employee.user_id == user.id).first()
+    if emp:
+        emp.user_id = None
+        db.add(emp) 
     
-    # Log azione
-    log = AuditLog(
-        user_id=current_user.id,
-        action="DELETE_USER",
-        details=f"Eliminato utente: {username}"
-    )
-    db.add(log)
-    
-    db.commit()
-    
-    return {"message": f"Utente {username} eliminato", "success": True}
+    # 2. Manual Cascade / Cleanup
+    try:
+        username = user.username
+        
+        # --- A. DELETE STRICT DEPENDENCIES (Where user_id is NOT NULL) ---
+        
+        # Audit Logs
+        db.query(AuditLog).filter(AuditLog.user_id == user.id).delete(synchronize_session=False)
+        
+        # Task Comments & Attachments
+        from models.tasks import TaskComment, TaskAttachment, Task
+        db.query(TaskComment).filter(TaskComment.user_id == user.id).delete(synchronize_session=False)
+        db.query(TaskAttachment).filter(TaskAttachment.uploaded_by == user.id).delete(synchronize_session=False)
+        
+        # Notifications (Create/Receive)
+        from models.core import Notification
+        db.query(Notification).filter(Notification.recipient_user_id == user.id).delete(synchronize_session=False)
+        
+        # --- B. HANDLE TASKS & ANNOUNCEMENTS (Created by user) ---
+        # If user created tasks, we can either delete them or reassign. To be clean, if user is deleted, maybe wipe their tasks?
+        # Or better -> Reassign to Admin? Let's Delete for "Clean" approach requested.
+        db.query(Task).filter(Task.assigned_by == user.id).delete(synchronize_session=False) 
+        # Also tasks assigned TO user -> Set to NULL
+        db.query(Task).filter(Task.assigned_to == user.id).update({"assigned_to": None}, synchronize_session=False)
+        
+        # Announcements
+        from models.core import Announcement
+        db.query(Announcement).filter(Announcement.created_by == user.id).delete(synchronize_session=False)
+
+        # Logistics (Requests, Messages, etc might be linked). 
+        # Ideally we should check EVERYTHING but for now this covers the main blockers.
+        
+        # --- C. DELETE USER ---
+        db.delete(user)
+        db.commit()
+        
+        # Log by Current Admin
+        log = AuditLog(
+            user_id=current_user.id,
+            action="DELETE_USER",
+            details=f"Eliminato utente e dati collegati: {username}"
+        )
+        db.add(log)
+        db.commit()
+        
+        return {"message": f"Utente {username} e tutti i dati collegati eliminati.", "success": True}
+        
+    except Exception as e:
+        db.rollback()
+        # Fallback if we missed something
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+            detail=f"Errore eliminazione forzata: {str(e)}"
+        )
 
 
 

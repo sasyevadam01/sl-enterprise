@@ -35,6 +35,12 @@ import NewOrderPage from './pages/production/NewOrderPage';
 import SupplyDashboardPage from './pages/production/SupplyDashboardPage';
 import ChatPage from './pages/ChatPage';
 import ComingSoonPage from './pages/ComingSoonPage';
+import MaterialRequestPage from './pages/logistics/MaterialRequestPage';
+import LogisticsPoolPage from './pages/logistics/LogisticsPoolPage';
+import LogisticsDashboardPage from './pages/logistics/LogisticsDashboardPage';
+import LogisticsConfigPage from './pages/admin/LogisticsConfigPage';
+import VehicleChecklistPage from './pages/fleet/VehicleChecklistPage';
+import ChecklistHistoryPage from './pages/fleet/ChecklistHistoryPage';
 
 function App() {
   return (
@@ -188,6 +194,34 @@ function App() {
                   <SupplyDashboardPage />
                 </PermissionRoute>
               } />
+              <Route path="production/checklist" element={
+                <PermissionRoute permission="perform_checklists">
+                  <VehicleChecklistPage />
+                </PermissionRoute>
+              } />
+              <Route path="production/checklist/history" element={
+                <PermissionRoute permission="view_checklist_history">
+                  <ChecklistHistoryPage />
+                </PermissionRoute>
+              } />
+
+              {/* Logistics - Richiesta Materiale */}
+              <Route path="logistics/request" element={
+                <PermissionRoute permission="request_logistics">
+                  <MaterialRequestPage />
+                </PermissionRoute>
+              } />
+              <Route path="logistics/pool" element={
+                <PermissionRoute permission="manage_logistics_pool">
+                  <LogisticsPoolPage />
+                </PermissionRoute>
+              } />
+              <Route path="logistics/dashboard" element={
+                <PermissionRoute permission="supervise_logistics">
+                  <LogisticsDashboardPage />
+                </PermissionRoute>
+              } />
+
               <Route path="coming-soon" element={<ComingSoonPage />} />
 
               {/* Admin Routes */}
@@ -214,6 +248,11 @@ function App() {
               <Route path="admin/production/reports" element={
                 <PermissionRoute permission="admin_users">
                   <ProductionReportsPage />
+                </PermissionRoute>
+              } />
+              <Route path="admin/logistics" element={
+                <PermissionRoute permission="admin_users">
+                  <LogisticsConfigPage />
                 </PermissionRoute>
               } />
             </Route>

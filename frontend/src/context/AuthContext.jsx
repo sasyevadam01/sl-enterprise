@@ -13,12 +13,17 @@ export function AuthProvider({ children }) {
     const [error, setError] = useState(null);
 
     // Carica utente da localStorage all'avvio
+    // Carica utente da localStorage all'avvio
     useEffect(() => {
         const token = localStorage.getItem('token');
         const savedUser = localStorage.getItem('user');
 
         if (token && savedUser) {
-            setUser(JSON.parse(savedUser));
+            try {
+                setUser(JSON.parse(savedUser));
+            } catch (e) {
+                console.error("AuthContext: Failed to parse user JSON", e);
+            }
         }
         setLoading(false);
     }, []);

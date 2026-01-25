@@ -28,6 +28,7 @@ class FleetVehicle(Base):
     # Relazioni
     banchina = relationship("Banchina", back_populates="vehicles")
     tickets = relationship("MaintenanceTicket", back_populates="vehicle")
+    checklists = relationship("FleetChecklist", back_populates="vehicle")
 
 
 class MaintenanceTicket(Base):
@@ -42,6 +43,7 @@ class MaintenanceTicket(Base):
     
     # Descrizione
     title = Column(String(200), nullable=False)
+
     description = Column(Text, nullable=True)
     
     # Tipo e urgenza
@@ -70,7 +72,7 @@ class MaintenanceTicket(Base):
     
     # Relazioni
     vehicle = relationship("FleetVehicle", back_populates="tickets")
-    
+
     def calculate_priority(self):
         """Calcola punteggio priorità."""
         score = 0
@@ -87,3 +89,38 @@ class MaintenanceTicket(Base):
         if self.is_unique_vehicle:
             score += 20
         return score
+
+
+class FleetChecklist(Base):
+    """Checklist inizio turno mezzi (Forklift Check)."""
+    __tablename__ = "fleet_checklists"
+
+    id = Column(Integer, primary_key=True, index=True)
+    
+    vehicle_id = Column(Integer, ForeignKey("fleet_vehicles.id"), nullable=False)
+    operator_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+    
+    # Dati Checklist JSON (Es. {"freni": true, "luci": false})
+    # Valori: true=OK, false=KO
+    checklist_data = Column(JSON, nullable=False)
+    
+    # Stato: OK (tutto true), WARNING (anomalie lievi), CRITICAL (bloccante)
+    status = Column(String(20), default='ok')
+    
+    # Note (Obbligatorie se status != OK)
+    notes = Column(Text, nullable=True)
+
+    # Tablet Check
+    tablet_photo_url = Column(String(255), nullable=True)
+    tablet_status = Column(String(20), default='ok')
+    
+    # Risoluzione Problemi
+    resolution_notes = Column(Text, nullable=True)
+    resolved_at = Column(DateTime, nullable=True)
+    resolved_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+
+    # Relazioni
+    vehicle = relationship("FleetVehicle", back_populates="checklists")
+    operator = relationship("User", foreign_keys=[operator_id])
+    resolver = relationship("User", foreign_keys=[resolved_by])

@@ -479,7 +479,7 @@ export default function BonusManagementPanel() {
                                     <div className="font-medium text-white">{ev.employee_name}</div>
                                     <div className="text-sm text-emerald-400">{ev.event_type} • +{ev.points} punti</div>
                                     {(ev.notes || ev.description) && (
-                                        <div className="text-xs text-gray-300 mt-1 italic border-l-2 border-emerald-500/30 pl-2">
+                                        <div className="text-xs text-gray-300 mt-1 italic border-l-2 border-emerald-500/30 pl-2 whitespace-pre-wrap">
                                             "{ev.notes || ev.description}"
                                         </div>
                                     )}
@@ -535,7 +535,19 @@ export default function BonusManagementPanel() {
                                 {bonuses.map(b => (
                                     <tr key={b.id} className="hover:bg-yellow-500/5">
                                         <td className="p-3 font-medium text-white">{b.employee_name}</td>
-                                        <td className="p-3 text-gray-300">{b.event_description || b.description || '-'}</td>
+                                        <td className="p-3 text-gray-300">
+                                            <div className="flex flex-col">
+                                                <span className="font-bold text-white">{b.event_description || b.description || '-'}</span>
+                                                {b.event_notes && (
+                                                    <span className="text-[10px] text-gray-500 italic border-l border-white/10 pl-2 mt-1 whitespace-pre-wrap line-clamp-2 hover:line-clamp-none transition-all duration-300">
+                                                        {b.event_notes}
+                                                    </span>
+                                                )}
+                                                {b.event_description && b.description && b.description !== b.event_description && (
+                                                    <span className="text-[10px] text-yellow-500/70 mt-1">Note: {b.description}</span>
+                                                )}
+                                            </div>
+                                        </td>
                                         <td className="p-3 text-gray-400">{b.event_requester || b.created_by_name || '-'}</td>
                                         <td className="p-3 text-right font-bold text-yellow-400">€ {b.amount.toLocaleString()}</td>
                                         <td className="p-3 text-center">

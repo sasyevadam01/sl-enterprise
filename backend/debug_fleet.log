@@ -1,0 +1,181 @@
+
+--- NEW REQUEST 2026-01-25 14:50:14.433248 ---
+Content-Type: application/json
+Form Keys: []
+Checklist Data: None
+ERROR: checklist_data is Empty
+
+--- NEW REQUEST 2026-01-25 14:52:30.220070 ---
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryoC1ofaZJr0ovjUiY
+Form Keys: ['checklist_data', 'notes', 'tablet_status', 'photo']
+Checklist Data: {"vehicle_id":4,"checklist_data":{"lampeggiante":true,"plastiche_integre":true,"blue_spot":true,"specchietto":true,"cabina_pulita":true,"clacson":true,"sterzo":true,"freni":true,"leve_idrauliche":true,"catene":true,"tubazioni":true,"perdite":true,"batteria_fissaggio":true,"batteria_carica":true,"pulizia_carro":{"status":false,"note":"dsfsdfsfsf","photo_temp_id":null},"pulizia_ruote":true}}
+
+--- NEW REQUEST 2026-01-25 14:54:47.593644 ---
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryo3Ohl2sRjcCZRMTt
+Form Keys: ['checklist_data', 'notes', 'tablet_status', 'photo']
+Checklist Data: {"vehicle_id":4,"checklist_data":{"lampeggiante":true,"plastiche_integre":true,"blue_spot":true,"specchietto":true,"cabina_pulita":true,"clacson":true,"sterzo":true,"freni":true,"leve_idrauliche":true,"catene":true,"tubazioni":true,"perdite":true,"batteria_fissaggio":true,"batteria_carica":true,"pulizia_carro":{"status":false,"note":"dsfsdfsfsf","photo_temp_id":null},"pulizia_ruote":true}}
+
+CRITICAL ERROR: name 'tablet_photo' is not defined
+Traceback (most recent call last):
+  File "C:\Users\sasys\Desktop\VERSIONE PORTABLE\SL Project\backend\routers\fleet.py", line 561, in create_checklist
+    if not tablet_photo:
+           ^^^^^^^^^^^^
+NameError: name 'tablet_photo' is not defined
+
+--- NEW REQUEST 2026-01-25 14:55:59.688701 ---
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary6WEJIwfQA7pAdfnk
+Form Keys: ['checklist_data', 'notes', 'tablet_status', 'photo', 'issue_photo_pulizia_carro']
+Checklist Data: {"vehicle_id":4,"checklist_data":{"plastiche_integre":true,"lampeggiante":true,"blue_spot":true,"specchietto":true,"cabina_pulita":true,"clacson":true,"sterzo":true,"freni":true,"leve_idrauliche":true,"catene":true,"tubazioni":true,"batteria_fissaggio":true,"perdite":true,"batteria_carica":true,"pulizia_carro":{"status":false,"note":"sdfdsfdss","photo_temp_id":"a0373a4f-58aa-4b5b-ae0c-de2b66d972e0"},"pulizia_ruote":true}}
+
+CRITICAL ERROR: name 'tablet_photo' is not defined
+Traceback (most recent call last):
+  File "C:\Users\sasys\Desktop\VERSIONE PORTABLE\SL Project\backend\routers\fleet.py", line 561, in create_checklist
+    if not tablet_photo:
+           ^^^^^^^^^^^^
+NameError: name 'tablet_photo' is not defined
+
+--- NEW REQUEST 2026-01-25 14:57:36.061818 ---
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundarydkROLGyW0LmMfuE3
+Form Keys: ['checklist_data', 'notes', 'tablet_status', 'photo', 'issue_photo_pulizia_carro']
+Checklist Data: {"vehicle_id":4,"checklist_data":{"plastiche_integre":true,"lampeggiante":true,"blue_spot":true,"specchietto":true,"cabina_pulita":true,"clacson":true,"sterzo":true,"freni":true,"leve_idrauliche":true,"catene":true,"tubazioni":true,"batteria_fissaggio":true,"perdite":true,"batteria_carica":true,"pulizia_carro":{"status":false,"note":"sdfdsfdss","photo_temp_id":"a0373a4f-58aa-4b5b-ae0c-de2b66d972e0"},"pulizia_ruote":true}}
+
+CRITICAL ERROR: 'str' object has no attribute 'content_type'
+Traceback (most recent call last):
+  File "C:\Users\sasys\Desktop\VERSIONE PORTABLE\SL Project\backend\routers\fleet.py", line 568, in create_checklist
+    tablet_filename = await process_and_save_image(tablet_photo, CHECKLIST_DIR)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sasys\Desktop\VERSIONE PORTABLE\SL Project\backend\routers\fleet.py", line 539, in process_and_save_image
+    if upload_file.content_type == "image/png" or upload_file.filename.lower().endswith(".png"):
+       ^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'content_type'
+
+--- NEW REQUEST 2026-01-25 14:58:11.900411 ---
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundarycgiUhTC4lxKBBZtY
+Form Keys: ['checklist_data', 'notes', 'tablet_status', 'photo']
+Checklist Data: {"vehicle_id":4,"checklist_data":{"plastiche_integre":true,"lampeggiante":true,"blue_spot":true,"specchietto":true,"cabina_pulita":true,"clacson":true,"sterzo":true,"freni":true,"catene":true,"leve_idrauliche":true,"tubazioni":true,"perdite":true,"batteria_fissaggio":true,"batteria_carica":true,"pulizia_carro":true,"pulizia_ruote":true}}
+
+CRITICAL ERROR: 'str' object has no attribute 'content_type'
+Traceback (most recent call last):
+  File "C:\Users\sasys\Desktop\VERSIONE PORTABLE\SL Project\backend\routers\fleet.py", line 568, in create_checklist
+    tablet_filename = await process_and_save_image(tablet_photo, CHECKLIST_DIR)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sasys\Desktop\VERSIONE PORTABLE\SL Project\backend\routers\fleet.py", line 539, in process_and_save_image
+    if upload_file.content_type == "image/png" or upload_file.filename.lower().endswith(".png"):
+       ^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'content_type'
+
+--- NEW REQUEST 2026-01-25 14:59:15.640305 ---
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryoukVysYpt0LjInld
+Form Keys: ['checklist_data', 'notes', 'tablet_status', 'photo', 'issue_photo_pulizia_ruote']
+Checklist Data: {"vehicle_id":4,"checklist_data":{"plastiche_integre":true,"lampeggiante":true,"blue_spot":true,"specchietto":true,"cabina_pulita":true,"clacson":true,"sterzo":true,"freni":true,"leve_idrauliche":true,"catene":true,"tubazioni":true,"perdite":true,"batteria_fissaggio":true,"batteria_carica":true,"pulizia_carro":true,"pulizia_ruote":{"status":false,"note":"dfgcxgdfgd","photo_temp_id":"f10804d5-aefa-455c-9b5a-a6ba34d50c01"}}}
+
+CRITICAL ERROR: 'str' object has no attribute 'content_type'
+Traceback (most recent call last):
+  File "C:\Users\sasys\Desktop\VERSIONE PORTABLE\SL Project\backend\routers\fleet.py", line 568, in create_checklist
+    tablet_filename = await process_and_save_image(tablet_photo, CHECKLIST_DIR)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sasys\Desktop\VERSIONE PORTABLE\SL Project\backend\routers\fleet.py", line 539, in process_and_save_image
+    if upload_file.content_type == "image/png" or upload_file.filename.lower().endswith(".png"):
+       ^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'content_type'
+
+--- NEW REQUEST 2026-01-25 14:59:17.958727 ---
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryYFBVupY4v0WUYVgM
+Form Keys: ['checklist_data', 'notes', 'tablet_status', 'photo', 'issue_photo_pulizia_ruote']
+Checklist Data: {"vehicle_id":4,"checklist_data":{"plastiche_integre":true,"lampeggiante":true,"blue_spot":true,"specchietto":true,"cabina_pulita":true,"clacson":true,"sterzo":true,"freni":true,"leve_idrauliche":true,"catene":true,"tubazioni":true,"perdite":true,"batteria_fissaggio":true,"batteria_carica":true,"pulizia_carro":true,"pulizia_ruote":{"status":false,"note":"dfgcxgdfgd","photo_temp_id":"f10804d5-aefa-455c-9b5a-a6ba34d50c01"}}}
+
+CRITICAL ERROR: 'str' object has no attribute 'content_type'
+Traceback (most recent call last):
+  File "C:\Users\sasys\Desktop\VERSIONE PORTABLE\SL Project\backend\routers\fleet.py", line 568, in create_checklist
+    tablet_filename = await process_and_save_image(tablet_photo, CHECKLIST_DIR)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\sasys\Desktop\VERSIONE PORTABLE\SL Project\backend\routers\fleet.py", line 539, in process_and_save_image
+    if upload_file.content_type == "image/png" or upload_file.filename.lower().endswith(".png"):
+       ^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'content_type'
+
+--- NEW REQUEST 2026-01-25 15:01:38.283237 ---
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary3YnIBu9EN0ZQwxXf
+Form Keys: ['checklist_data', 'notes', 'tablet_status', 'photo', 'issue_photo_pulizia_ruote']
+Checklist Data: {"vehicle_id":4,"checklist_data":{"plastiche_integre":true,"lampeggiante":true,"blue_spot":true,"specchietto":true,"cabina_pulita":true,"clacson":true,"sterzo":true,"freni":true,"leve_idrauliche":true,"catene":true,"tubazioni":true,"perdite":true,"batteria_fissaggio":true,"batteria_carica":true,"pulizia_carro":true,"pulizia_ruote":{"status":false,"note":"dfgcxgdfgd","photo_temp_id":"f10804d5-aefa-455c-9b5a-a6ba34d50c01"}}}
+WARNING: File field was string: 'null'
+
+--- NEW REQUEST 2026-01-25 15:02:04.873479 ---
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary14sU3brhHGhRPLrt
+Form Keys: ['checklist_data', 'notes', 'tablet_status', 'photo']
+Checklist Data: {"vehicle_id":4,"checklist_data":{"plastiche_integre":true,"lampeggiante":true,"blue_spot":true,"specchietto":true,"cabina_pulita":true,"clacson":true,"sterzo":true,"freni":true,"leve_idrauliche":true,"catene":true,"tubazioni":true,"perdite":true,"batteria_fissaggio":true,"batteria_carica":true,"pulizia_carro":true,"pulizia_ruote":true}}
+WARNING: File field was string: 'null'
+
+--- NEW REQUEST 2026-01-25 15:03:43.091063 ---
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryge3mW1y00VVvpklk
+Form Keys: ['checklist_data', 'notes', 'tablet_status', 'photo']
+Checklist Data: {"vehicle_id":4,"checklist_data":{"plastiche_integre":true,"lampeggiante":true,"blue_spot":true,"specchietto":true,"cabina_pulita":true,"clacson":true,"sterzo":true,"freni":true,"leve_idrauliche":true,"catene":true,"tubazioni":true,"perdite":true,"batteria_fissaggio":true,"batteria_carica":true,"pulizia_carro":true,"pulizia_ruote":true}}
+WARNING: File field was string: 'null'
+
+--- NEW REQUEST 2026-01-25 15:06:55.831956 ---
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryHrqpZUSHKhMl3WpD
+Form Keys: ['checklist_data', 'notes', 'tablet_status', 'photo']
+Checklist Data: {"vehicle_id":5,"checklist_data":{"lampeggiante":true,"plastiche_integre":true,"blue_spot":true,"specchietto":true,"cabina_pulita":true,"clacson":true,"sterzo":true,"freni":true,"leve_idrauliche":true,"catene":true,"tubazioni":true,"perdite":true,"batteria_fissaggio":true,"batteria_carica":true,"pulizia_carro":true,"pulizia_ruote":true}}
+WARNING: File field was string: 'null'
+
+--- NEW REQUEST 2026-01-25 15:07:31.909376 ---
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryXUTkBlT8R2oCyw9Y
+Form Keys: ['checklist_data', 'notes', 'tablet_status', 'photo']
+Checklist Data: {"vehicle_id":5,"checklist_data":{"plastiche_integre":true,"lampeggiante":true,"blue_spot":true,"specchietto":true,"cabina_pulita":true,"clacson":true,"sterzo":true,"freni":true,"leve_idrauliche":true,"catene":true,"tubazioni":true,"perdite":true,"batteria_fissaggio":true,"batteria_carica":true,"pulizia_carro":true,"pulizia_ruote":true}}
+WARNING: File field was string: 'null'
+
+--- NEW REQUEST 2026-01-25 15:09:50.212261 ---
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary59wBBXwNLIILW4Ec
+Form Keys: ['checklist_data', 'notes', 'tablet_status', 'photo']
+Checklist Data: {"vehicle_id":5,"checklist_data":{"plastiche_integre":true,"lampeggiante":true,"blue_spot":true,"specchietto":true,"cabina_pulita":true,"clacson":true,"sterzo":true,"freni":true,"leve_idrauliche":true,"catene":true,"tubazioni":true,"perdite":true,"batteria_fissaggio":true,"batteria_carica":true,"pulizia_carro":true,"pulizia_ruote":true}}
+WARNING: File field was string: 'null'
+
+--- NEW REQUEST 2026-01-25 15:10:46.489499 ---
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryhV53Xgt7Y8FXu7HA
+Form Keys: ['checklist_data', 'notes', 'tablet_status', 'photo']
+Checklist Data: {"vehicle_id":5,"checklist_data":{"plastiche_integre":true,"lampeggiante":true,"blue_spot":true,"specchietto":true,"cabina_pulita":true,"clacson":true,"sterzo":true,"freni":true,"leve_idrauliche":true,"catene":true,"tubazioni":true,"perdite":true,"batteria_fissaggio":true,"batteria_carica":true,"pulizia_carro":true,"pulizia_ruote":true}}
+WARNING: File field was string: 'null'
+
+--- NEW REQUEST 2026-01-25 15:13:24.073592 ---
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryvGoR1D8JiuORO2xZ
+Form Keys: ['checklist_data', 'notes', 'tablet_status', 'photo']
+Checklist Data: {"vehicle_id":5,"checklist_data":{"plastiche_integre":true,"lampeggiante":true,"blue_spot":true,"specchietto":true,"cabina_pulita":true,"clacson":true,"sterzo":true,"freni":true,"leve_idrauliche":true,"catene":true,"tubazioni":true,"perdite":true,"batteria_fissaggio":true,"batteria_carica":true,"pulizia_carro":true,"pulizia_ruote":true}}
+WARNING: File field was string: 'null'
+
+--- NEW REQUEST 2026-01-25 15:13:32.002670 ---
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryLLSPEgVV0Z7jJjzF
+Form Keys: ['checklist_data', 'notes', 'tablet_status', 'photo']
+Checklist Data: {"vehicle_id":5,"checklist_data":{"plastiche_integre":true,"lampeggiante":true,"blue_spot":true,"specchietto":true,"cabina_pulita":true,"clacson":true,"sterzo":true,"freni":true,"leve_idrauliche":true,"catene":true,"tubazioni":true,"perdite":true,"batteria_fissaggio":true,"batteria_carica":true,"pulizia_carro":true,"pulizia_ruote":true}}
+WARNING: File field was string: 'null'
+
+--- NEW REQUEST 2026-01-25 15:13:41.377014 ---
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryIAOyQr70HicRVorc
+Form Keys: ['checklist_data', 'notes', 'tablet_status', 'photo']
+Checklist Data: {"vehicle_id":5,"checklist_data":{"plastiche_integre":true,"lampeggiante":true,"blue_spot":true,"specchietto":true,"cabina_pulita":true,"clacson":true,"sterzo":true,"freni":true,"leve_idrauliche":true,"catene":true,"tubazioni":true,"perdite":true,"batteria_fissaggio":true,"batteria_carica":true,"pulizia_carro":true,"pulizia_ruote":true}}
+
+--- NEW REQUEST 2026-01-25 15:18:30.890631 ---
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundarys3W8dB7BBGCfjNaU
+Form Keys: ['checklist_data', 'notes', 'tablet_status', 'photo']
+Checklist Data: {"vehicle_id":6,"checklist_data":{"plastiche_integre":true,"lampeggiante":true,"blue_spot":true,"specchietto":true,"cabina_pulita":true,"clacson":true,"sterzo":true,"freni":true,"leve_idrauliche":true,"catene":true,"tubazioni":true,"perdite":true,"batteria_fissaggio":true,"batteria_carica":true,"pulizia_carro":true,"pulizia_ruote":true}}
+WARNING: File field was string: 'null'
+
+--- NEW REQUEST 2026-01-25 15:18:59.276399 ---
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryko55JuT6B5vyooGH
+Form Keys: ['checklist_data', 'notes', 'tablet_status', 'photo']
+Checklist Data: {"vehicle_id":6,"checklist_data":{"plastiche_integre":{"status":false,"note":"rottura","photo_temp_id":null},"lampeggiante":true,"blue_spot":true,"specchietto":true,"cabina_pulita":true,"clacson":true,"sterzo":true,"freni":true,"leve_idrauliche":true,"catene":true,"tubazioni":true,"perdite":true,"batteria_fissaggio":true,"batteria_carica":true,"pulizia_carro":true,"pulizia_ruote":true}}
+
+--- NEW REQUEST 2026-01-25 15:21:14.445799 ---
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryyQ1jAeQvavBlH03S
+Form Keys: ['checklist_data', 'notes', 'tablet_status', 'photo']
+Checklist Data: {"vehicle_id":9,"checklist_data":{"plastiche_integre":true,"lampeggiante":true,"blue_spot":true,"specchietto":true,"cabina_pulita":true,"clacson":true,"sterzo":true,"freni":true,"leve_idrauliche":true,"catene":true,"tubazioni":true,"perdite":true,"batteria_fissaggio":true,"batteria_carica":true,"pulizia_carro":true,"pulizia_ruote":true}}
+WARNING: File field was string: 'null'
+
+--- NEW REQUEST 2026-01-25 15:21:28.409211 ---
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryHXqHMHJv9kUkUFc7
+Form Keys: ['checklist_data', 'notes', 'tablet_status', 'photo']
+Checklist Data: {"vehicle_id":9,"checklist_data":{"plastiche_integre":true,"lampeggiante":true,"blue_spot":true,"specchietto":true,"cabina_pulita":true,"clacson":true,"sterzo":true,"freni":true,"leve_idrauliche":true,"catene":true,"tubazioni":true,"perdite":true,"batteria_fissaggio":true,"batteria_carica":true,"pulizia_carro":true,"pulizia_ruote":true}}
+
+--- NEW REQUEST 2026-01-25 15:23:21.233033 ---
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryOYW3dzs4hOIiFrnE
+Form Keys: ['checklist_data', 'notes', 'tablet_status', 'photo', 'issue_photo_lampeggiante']
+Checklist Data: {"vehicle_id":7,"checklist_data":{"lampeggiante":{"status":false,"note":"i zozozozo","photo_temp_id":"b116d0b0-7813-48e7-b7cb-1ff299dc6fbe"},"plastiche_integre":true,"blue_spot":true,"specchietto":true,"cabina_pulita":true,"clacson":true,"sterzo":true,"freni":true,"leve_idrauliche":true,"catene":true,"tubazioni":true,"perdite":true,"batteria_fissaggio":true,"batteria_carica":true,"pulizia_carro":true,"pulizia_ruote":true}}

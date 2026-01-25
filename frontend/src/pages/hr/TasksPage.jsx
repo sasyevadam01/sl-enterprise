@@ -128,8 +128,8 @@ const TaskItem = ({
             <div className="flex items-center gap-2 bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 px-3 py-1.5 rounded-lg">
               <span className="text-lg">👤</span>
               <div className="flex flex-col">
-                <span className="text-sm font-semibold text-white">{task.assignee_name || "Non assegnato"}</span>
                 <span className="text-[10px] text-gray-400 uppercase tracking-wide">Assegnato a</span>
+                <span className="text-sm font-semibold text-white">{task.assignee_name || "Non assegnato"}</span>
               </div>
             </div>
 
@@ -381,7 +381,7 @@ export default function TasksPage() {
         const tData = await tasksApi.getTasks({});
         const validTasks = Array.isArray(tData) ? tData : [];
         setTasks(validTasks);
-        console.log("Tasks loaded:", validTasks.length);
+        // console.log("Tasks loaded:", validTasks.length);
 
         // 2. Try to load users list (only managers/admins can access this)
         try {
@@ -725,7 +725,7 @@ export default function TasksPage() {
     const validTasks = Array.isArray(tasks) ? tasks : [];
 
     // DEBUG: Log initial state
-    console.log(`[FILTER START] ValidTasks: ${validTasks.length}, Filter: "${filter}", QuickFilters:`, quickFilters);
+    // console.log(`[FILTER START] ValidTasks: ${validTasks.length}, Filter: "${filter}", QuickFilters:`, quickFilters);
 
     return validTasks.filter((t) => {
       // DEBUG: Log each task evaluation

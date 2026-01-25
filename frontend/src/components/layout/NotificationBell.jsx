@@ -88,16 +88,42 @@ export default function NotificationBell() {
                 });
 
                 if (!isFirstLoadRef.current) {
+                    // Chat Toasts
                     (chatData.conversations || []).forEach(conv => {
                         const prevCount = prevConversationsRef.current[conv.conversation_id] || 0;
                         if (conv.unread_count > prevCount) {
-                            // Nuovo messaggio in questa chat!
                             toast.info(`Nuovo messaggio da ${conv.name}`);
                         }
                     });
 
+                    // System Notification Toasts (NEW)
+                    // We check if total unread count increased more than what chat accounted for
+                    // Or simply track the previous System Unread Count separately.
+                    // Let's use a simpler heuristic for now: if total unread increased, and sound played, show generic toast if not chat.
+                    // Better: Let's fetch the latest notification if count increased.
+
                     if (newTotal > unreadCount) {
                         playElegantSound();
+
+                        // Se l'incremento non è solo chat, mostra toast di sistema
+                        const chatIncrease = Object.values(currentConvs).reduce((a, b) => a + b, 0) -
+                            Object.values(prevConversationsRef.current || {}).reduce((a, b) => a + b, 0);
+
+                        if ((newTotal - unreadCount) > chatIncrease) {
+                            // È arrivata una notifica di sistema!
+                            try {
+                                const latest = await notificationsApi.getNotifications({ limit: 1 });
+                                if (latest[0]) {
+                                    // Custom toast based on type
+                                    const n = latest[0];
+                                    if (n.notif_type === 'critical') toast.error(n.title);
+                                    else if (n.notif_type === 'urgent') toast.warning(n.title);
+                                    else toast.info(n.title);
+                                }
+                            } catch (err) {
+                                console.error("Failed to fetch latest notif for toast", err);
+                            }
+                        }
                     }
                 } else {
                     isFirstLoadRef.current = false;
@@ -217,6 +243,8 @@ export default function NotificationBell() {
             case 'alert': return '⚠️';
             case 'expiry': return '⏰';
             case 'priority': return '🚨';
+            case 'urgent': return '🔥'; // NEW
+            case 'critical': return '🆘'; // NEW
             case 'info': return 'ℹ️';
             case 'chat': return '💬';
             default: return '🔔';
@@ -244,7 +272,7 @@ export default function NotificationBell() {
 
             {/* Dropdown */}
             {isOpen && (
-                <div className="absolute right-0 mt-2 w-96 bg-slate-800 border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden">
+                <div className="absolute right-0 mt-2 w-96 bg-slate-800 border border-white/10 rounded-xl shadow-2xl z-[110] overflow-hidden">
                     {/* Header */}
                     <div className="flex items-center justify-between px-4 py-3 bg-slate-700/50 border-b border-white/10">
                         <h3 className="font-semibold text-white">Notifiche</h3>
@@ -279,8 +307,10 @@ export default function NotificationBell() {
                                         setIsOpen(false);
                                     }}
                                     className={`block px-4 py-3 border-b border-white/5 hover:bg-white/5 cursor-pointer transition ${notif.notif_type === 'priority' ? 'bg-red-500/10 border-l-4 border-l-red-500' :
-                                        notif.notif_type === 'chat' ? 'bg-blue-600/10 border-l-4 border-l-blue-500' :
-                                            (!notif.is_read ? 'bg-blue-500/5' : '')
+                                        notif.notif_type === 'critical' ? 'bg-red-900/20 border-l-4 border-l-red-600 animate-pulse' :
+                                            notif.notif_type === 'urgent' ? 'bg-orange-500/10 border-l-4 border-l-orange-500' :
+                                                notif.notif_type === 'chat' ? 'bg-blue-600/10 border-l-4 border-l-blue-500' :
+                                                    (!notif.is_read ? 'bg-blue-500/5' : '')
                                         }`}
                                 >
                                     <div className="flex items-start gap-3">

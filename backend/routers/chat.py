@@ -50,8 +50,21 @@ async def upload_attachment(
     current_user: User = Depends(get_current_user)
 ):
     """Carica un file o immagine per la chat."""
-    # Validate Size/Type (Basic)
-    # TODO: Implement stricter checks
+    # 1. Validate Size (Max 10MB)
+    MAX_SIZE = 10 * 1024 * 1024
+    size = await file.read()
+    if len(size) > MAX_SIZE:
+        raise HTTPException(status_code=413, detail="File troppo grande (Max 10MB)")
+    await file.seek(0)
+
+    # 2. Validate Type (Magic Bytes)
+    import filetype
+    kind = filetype.guess(size[:2048])
+    ALLOWED_MIMES = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+    
+    if not kind or kind.mime not in ALLOWED_MIMES:
+         # Fallback for text files or standard extensions if magic bytes fail (optional, but safer to block)
+         raise HTTPException(status_code=400, detail="Tipo file non supportato")
     
     # Create unique filename
     ext = os.path.splitext(file.filename)[1]

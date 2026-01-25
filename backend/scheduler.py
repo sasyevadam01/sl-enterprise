@@ -181,8 +181,96 @@ def start_scheduler():
         # Avvia subito un backup all'avvio per sicurezza
         scheduler.add_job(auto_backup_db, trigger='date', run_date=datetime.now() + timedelta(seconds=10))
         
+        # 4. Logistics Escalation Check (Ogni 1 minuto)
+        scheduler.add_job(
+            check_logistics_escalations,
+            trigger=IntervalTrigger(minutes=1),
+            id='logistics_escalation',
+            name='Logistics Escalation Matrix',
+            replace_existing=True
+        )
+
         scheduler.start()
         logger.info("Scheduler avviato correttamente.")
+
+# ============================================================
+# ESCALATION LOGIC
+# ============================================================
+from models.logistics import LogisticsRequest
+from models.core import User
+
+def check_logistics_escalations():
+    """
+    Controlla ritardi logistica e invia notifiche scalari.
+    Level 1 (> 3 min): Coordinatori (Iasevoli, Acone, Piccirillo, Marino)
+    Level 2 (> 7 min): Factory Controller (Esposito) + Admin (Sasy)
+    Level 3 (> 10 min): Direttori (Diodasto, Brescia)
+    """
+    db = SessionLocal()
+    try:
+        now = datetime.utcnow()
+        pending_requests = db.query(LogisticsRequest).filter(
+            LogisticsRequest.status == 'pending'
+        ).all()
+        
+        for req in pending_requests:
+            minutes_waiting = (now - req.created_at).total_seconds() / 60.0
+            new_level = req.escalation_level or 0
+            
+            # Target Users Cache (To avoid repeat queries inside loop, ideally move outside but for safety keep here)
+            # Level 1 Targets
+            coord_names = ["Iasevoli", "Acone", "Piccirillo", "Marino"]
+            # Level 2 Targets
+            controller_names = ["Esposito Antonio", "Sasy"] 
+            # Level 3 Targets
+            director_names = ["Diodasto", "Brescia"]
+
+            if minutes_waiting > 10 and new_level < 3:
+                # Level 3
+                notify_users_by_partial_name(db, director_names, req, "DA 10 MINUTI", "critical")
+                new_level = 3
+                
+            elif minutes_waiting > 7 and new_level < 2:
+                # Level 2
+                notify_users_by_partial_name(db, controller_names, req, "DA 7 MINUTI", "urgent")
+                new_level = 2
+                
+            elif minutes_waiting > 3 and new_level < 1:
+                # Level 1
+                notify_users_by_partial_name(db, coord_names, req, "DA 3 MINUTI", "alert")
+                new_level = 1
+            
+            if new_level != req.escalation_level:
+                req.escalation_level = new_level
+                db.commit()
+                
+    except Exception as e:
+        logger.error(f"Errore logistics escalation: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
+def notify_users_by_partial_name(db, names, req, delay_str, type_notif):
+    """Cerca utenti per nome parziale e crea notifica."""
+    target_ids = set()
+    for name in names:
+        users = db.query(User).filter(User.full_name.ilike(f"%{name}%")).all()
+        for u in users:
+            target_ids.add(u.id)
+            
+    for uid in target_ids:
+        # Avoid duplicate unread notifications for same request? 
+        # For simplicity, we send. The user will see pile of alerts.
+        n = Notification(
+            recipient_user_id=uid,
+            notif_type=type_notif,
+            title=f"⚠️ RITARDO RITIRO {delay_str}",
+            message=f"Banchina {req.banchina.code if req.banchina else '?'} aspetta da {int((datetime.utcnow() - req.created_at).total_seconds()/60)} min. Materiale: {req.material_type.label if req.material_type else '?'}.",
+            link_url="/logistics/pool"
+        )
+        db.add(n)
+    db.commit()
+
 
 def shutdown_scheduler():
     """Spegne lo scheduler."""

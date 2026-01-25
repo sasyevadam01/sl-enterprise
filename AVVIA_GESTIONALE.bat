@@ -1,4 +1,5 @@
 @echo off
+SET "PATH=%PATH%;C:\Program Files\nodejs;C:\Users\sasys\AppData\Local\Programs\Python\Python311;C:\Users\sasys\AppData\Local\Programs\Python\Python311\Scripts;C:\Program Files\Git\cmd"
 TITLE SL Enterprise Launcher
 COLOR 0A
 CLS

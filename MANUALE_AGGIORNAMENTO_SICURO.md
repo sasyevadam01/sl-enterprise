@@ -84,9 +84,16 @@ Sempre su Putty, aggiorna i "container" che fanno girare il programma.
     docker compose up -d --build frontend
     ```
 *   **Nel dubbio (o se hai toccato tutto):**
-    ```bash
     docker compose up -d --build
     ```
+
+### Passo D: Aggiorna il Database (Migrazione)
+Poiché abbiamo aggiunto nuove funzioni (es. codice OTP, foto Carrelli), dobbiamo dire al database vecchio di "imparare" le nuove colonne.
+1.  Sempre su Putty (cartella del progetto):
+    ```bash
+    docker compose exec backend python migrate_deploy.py
+    ```
+2.  Dovresti vedere una serie di messaggi "Checked/Added...". Se dice "already exists", va bene uguale.
 
 ---
 

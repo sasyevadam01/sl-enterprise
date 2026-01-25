@@ -135,6 +135,9 @@ export default function EventsManager() {
                                                 <p className="text-blue-300 font-medium mt-1 text-xs md:text-sm bg-blue-500/10 px-2 py-0.5 rounded-md w-fit border border-blue-500/20">
                                                     {event.event_label}
                                                 </p>
+                                                <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                                                    Richiesto da: <span className="text-white font-bold bg-white/10 px-1.5 py-0.5 rounded">{event.creator?.full_name || 'Sistema'}</span>
+                                                </p>
                                                 {event.description && (
                                                     <p className="text-slate-400 text-xs md:text-sm mt-2 md:mt-3 bg-slate-800/50 p-2 md:p-3 rounded-xl border border-white/5 italic">
                                                         "{event.description}"

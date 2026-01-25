@@ -210,6 +210,38 @@ export function UIProvider({ children }) {
     );
 }
 
+// ============================================================
+// STANDARD MODAL (GENERIC)
+// ============================================================
+export function StandardModal({ title, isOpen, onClose, children }) {
+    if (!isOpen) return null;
+
+    return (
+        <div
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fadeIn"
+            onClick={onClose}
+        >
+            <div
+                className="bg-slate-800/95 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl max-w-2xl w-full transform animate-scaleIn flex flex-col max-h-[90vh]"
+                onClick={e => e.stopPropagation()}
+            >
+                {/* Header */}
+                <div className="p-6 border-b border-white/10 flex justify-between items-center">
+                    <h3 className="text-xl font-bold text-white">{title}</h3>
+                    <button onClick={onClose} className="text-gray-400 hover:text-white transition text-2xl">
+                        ×
+                    </button>
+                </div>
+
+                {/* Content - Scrollable */}
+                <div className="p-6 overflow-y-auto custom-scrollbar">
+                    {children}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 // Hook for easy access
 export function useUI() {
     const context = useContext(UIContext);

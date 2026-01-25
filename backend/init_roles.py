@@ -19,7 +19,7 @@ DEFAULT_ROLES = [
         "label": "Amministratore",
         "description": "Gestione utenti e configurazioni",
         "is_static": True,
-        "permissions": ["view_dashboard", "manage_employees", "view_hr_management", "view_approvals", "manage_attendance", "view_hr_calendar", "request_events", "manage_tasks", "manage_shifts", "view_announcements", "access_factory", "manage_kpi", "access_logistics", "admin_users", "admin_audit"],
+        "permissions": ["view_dashboard", "manage_employees", "view_hr_management", "view_approvals", "manage_attendance", "view_hr_calendar", "request_events", "manage_tasks", "manage_shifts", "view_announcements", "access_factory", "manage_kpi", "admin_users", "admin_audit", "supervise_logistics", "request_logistics", "manage_production_config", "view_production_reports", "perform_checklists", "view_checklist_history", "manage_logistics_config"],
         "default_home": "/dashboard"
     },
     {
@@ -43,7 +43,7 @@ DEFAULT_ROLES = [
         "label": "Coordinatore",
         "description": "Gestione turni e task del team",
         "is_static": False,
-        "permissions": ["manage_shifts", "manage_tasks", "view_announcements", "request_events", "view_hr_calendar"],
+        "permissions": ["manage_shifts", "manage_tasks", "view_announcements", "request_events", "view_hr_calendar", "supervise_logistics", "view_dashboard", "request_logistics", "manage_logistics_pool"],
         "default_home": "/hr/tasks"
     },
     {
@@ -57,9 +57,9 @@ DEFAULT_ROLES = [
     {
         "name": "order_user",
         "label": "Order User",
-        "description": "Gestione ordini Live Production",
+        "description": "Gestione ordini Live Production e Richieste Materiale",
         "is_static": False,
-        "permissions": ["create_production_orders"],
+        "permissions": ["create_production_orders", "request_logistics"],
         "default_home": "/production/orders"
     },
     {
@@ -69,6 +69,22 @@ DEFAULT_ROLES = [
         "is_static": False,
         "permissions": ["manage_production_supply"],
         "default_home": "/production/blocks"
+    },
+    {
+        "name": "warehouse_operator",
+        "label": "Magazziniere",
+        "description": "Gestione richieste materiali - Pool logistica",
+        "is_static": False,
+        "permissions": ["manage_logistics_pool", "request_logistics"],
+        "default_home": "/logistics/pool"
+    },
+    {
+        "name": "security",
+        "label": "Sicurezza",
+        "description": "Responsabile Sicurezza e Controlli",
+        "is_static": False,
+        "permissions": ["view_dashboard", "view_announcements", "view_checklist_history", "manage_tasks", "perform_checklists", "access_factory"],
+        "default_home": "/dashboard"
     },
 ]
 

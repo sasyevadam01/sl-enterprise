@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { hrStatsApi, chatApi, pickingApi } from '../../api/client';
+import { hrStatsApi, chatApi, pickingApi, logisticsApi } from '../../api/client';
 import OnlineUsersWidget from '../ui/OnlineUsersWidget';
 
 // Menu items builder function - now uses hasPermission function
@@ -87,22 +87,31 @@ const getMenuItems = (hasPermission) => {
         icon: '🔴',
         permission: null, // Will be checked per-child
         children: [
+            { type: 'divider', label: 'Logistica Taglio' },
             { title: '📦 Richiesta Blocchi', path: '/production/orders', permission: 'create_production_orders' },
             { title: '🚚 Lista Prelievi', path: '/production/blocks', permission: 'manage_production_supply' },
-            { title: '⚙️ Config. Produzione', path: '/admin/production/config', permission: 'admin_users' },
-            { title: '📊 Report & Stats', path: '/admin/production/reports', permission: 'admin_users' },
+            { title: '⚙️ Config. Blocchi', path: '/admin/production/config', permission: 'manage_production_config' },
+            { title: '📊 Report Forniture Blocchi', path: '/admin/production/reports', permission: 'view_production_reports' },
+            { type: 'divider', label: 'Logistica Materiali' }, // Visual separator
+            { title: '📋 Richiesta Materiali', path: '/logistics/request', permission: 'request_logistics' },
+            { title: '🚛 Gestione Richieste', path: '/logistics/pool', permission: 'manage_logistics_pool' },
+            { title: '📊 Mappa Richieste', path: '/logistics/dashboard', permission: 'supervise_logistics' },
+            { title: '📦 Config. Logistica', path: '/admin/logistics', permission: 'manage_logistics_config' },
+            { type: 'divider', label: 'Check List Obbligatorie' },
+            { title: '🚜 Check List Carrelli', path: '/production/checklist', permission: 'perform_checklists' },
+            { title: '📜 Storico Check Carrelli', path: '/production/checklist/history', permission: 'view_checklist_history' },
         ],
     });
 
     // Logistics
-    items.push({
-        title: 'Logistica',
-        icon: '📦',
-        permission: 'access_logistics',
-        children: [
-            { title: '↩️ Gestione Resi', path: '/ops/returns', permission: 'access_logistics' },
-        ],
-    });
+    // items.push({
+    //     title: 'Logistica',
+    //     icon: '📦',
+    //     permission: 'access_logistics',
+    //     children: [
+    //         { title: '↩️ Gestione Resi', path: '/ops/returns', permission: 'access_logistics' },
+    //     ],
+    // });
 
     // Admin - Based on permission
     if (showAdmin) {
@@ -143,6 +152,9 @@ function SidebarItem({ item, isOpen, pendingCounts, onItemClick, onResetBadge })
                             {(item.title === 'HR Suite' || item.title === 'Coordinator Suite') && (pendingCounts.events + pendingCounts.leaves) > 0 && (
                                 <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-slate-900" />
                             )}
+                            {(item.title === 'Live Production') && (pendingCounts.productionSupply + (pendingCounts.logisticsPending || 0)) > 0 && (
+                                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-slate-900" />
+                            )}
                         </span>
                         {isOpen && (
                             <span className={item.isAnimated ? 'bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400 font-semibold' : ''}>
@@ -158,38 +170,58 @@ function SidebarItem({ item, isOpen, pendingCounts, onItemClick, onResetBadge })
                 </button>
                 {expanded && isOpen && (
                     <div className="ml-8 mt-1 space-y-1">
-                        {item.children.map((child) => (
-                            <Link
-                                key={child.path}
-                                to={child.path}
-                                onClick={() => {
-                                    if (onItemClick) onItemClick();
-                                    if (child.path === '/production/blocks' && onResetBadge) onResetBadge();
-                                }}
-                                className={`block px-4 py-2 text-sm rounded-lg transition ${location.pathname === child.path
-                                    ? 'bg-blue-600 text-white'
-                                    : 'text-gray-400 hover:bg-white/10 hover:text-white'
-                                    }`}
-                            >
-                                {child.title}
-                                {child.path === '/hr/approvals' && (pendingCounts.leaves + pendingCounts.events) > 0 && (
-                                    <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                                        {pendingCounts.leaves + pendingCounts.events}
-                                    </span>
-                                )}
-                                {child.path === '/production/blocks' && item.title === 'Live Production' && (
-                                    // Calculate badge
-                                    (() => {
-                                        const count = Math.max(0, (pendingCounts.productionSupply || 0) - (pendingCounts.acknowledgedSupply || 0));
-                                        return count > 0 ? (
-                                            <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                                                {count}
-                                            </span>
-                                        ) : null;
-                                    })()
-                                )}
-                            </Link>
-                        ))}
+                        {item.children.map((child, idx) => {
+                            // Handle divider items
+                            if (child.type === 'divider') {
+                                return (
+                                    <div key={`divider-${idx}`} className="py-2">
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex-1 h-px bg-white/20"></div>
+                                            <span className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">{child.label}</span>
+                                            <div className="flex-1 h-px bg-white/20"></div>
+                                        </div>
+                                    </div>
+                                );
+                            }
+                            // Normal menu item
+                            return (
+                                <Link
+                                    key={child.path}
+                                    to={child.path}
+                                    onClick={() => {
+                                        if (onItemClick) onItemClick();
+                                        if (child.path === '/production/blocks' && onResetBadge) onResetBadge();
+                                    }}
+                                    className={`block px-4 py-2 text-sm rounded-lg transition ${location.pathname === child.path
+                                        ? 'bg-blue-600 text-white'
+                                        : 'text-gray-400 hover:bg-white/10 hover:text-white'
+                                        }`}
+                                >
+                                    {child.title}
+                                    {child.path === '/hr/approvals' && (pendingCounts.leaves + pendingCounts.events) > 0 && (
+                                        <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                                            {pendingCounts.leaves + pendingCounts.events}
+                                        </span>
+                                    )}
+                                    {child.path === '/production/blocks' && item.title === 'Live Production' && (
+                                        // Calculate badge
+                                        (() => {
+                                            const count = Math.max(0, (pendingCounts.productionSupply || 0) - (pendingCounts.acknowledgedSupply || 0));
+                                            return count > 0 ? (
+                                                <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                                                    {count}
+                                                </span>
+                                            ) : null;
+                                        })()
+                                    )}
+                                    {child.path === '/logistics/pool' && pendingCounts.logisticsPending > 0 && (
+                                        <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                                            {pendingCounts.logisticsPending}
+                                        </span>
+                                    )}
+                                </Link>
+                            );
+                        })}
                     </div>
                 )}
             </div>
@@ -232,6 +264,11 @@ function SidebarItem({ item, isOpen, pendingCounts, onItemClick, onResetBadge })
             {isOpen && item.path === '/production/blocks' && badgeCount > 0 && (
                 <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
                     {badgeCount}
+                </span>
+            )}
+            {isOpen && item.path === '/logistics/pool' && pendingCounts.logisticsPending > 0 && (
+                <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                    {pendingCounts.logisticsPending}
                 </span>
             )}
         </Link>
@@ -289,24 +326,24 @@ export default function Sidebar({ isOpen, onToggle, mobileOpen, setMobileOpen })
             if (hasPermission('manage_production_supply') || hasPermission('admin_users')) {
                 try {
                     // Fetch pending blocks
-                    // Note: getRequests returns array, check length. If fails, 0.
-                    const blocks = await pickingApi.getRequests('pending', 1); // limit 1 just to check count? No api needs full list to filter? 
-                    // Optimization: if API supports count, use it. Client.js: getRequests(status, limit).
-                    // We fetch up to 100 to get a count (approximated)
                     const blocksData = await pickingApi.getRequests('pending', 100);
-                    // Filter checks (client side logic repeated? Backend filters by pending)
-                    // The API returns mixed status? verify client.js. 
-                    // Usually getRequests(status) filters by status.
                     const pending = Array.isArray(blocksData) ? blocksData.filter(b => b.status === 'pending') : [];
                     newCounts.productionSupply = pending.length;
-
-                    // Logic: If new count > old count, reset acknowledged? 
-                    // No, user wants manual clear. But if new orders arrive, badge should grow?
-                    // Complexity: Real Sync. 
-                    // Simplest: Just show Total Pending. When user clicks, we set "Acknowledged = Total Pending".
-                    // If Total Pending grows later, Badge = Total Pending - Acknowledged > 0 -> Show Diff.
                 } catch (err) {
                     console.error("Failed to fetch production counts", err);
+                }
+            }
+
+            // Logistics Stats (Pending Requests for Warehouse)
+            if (hasPermission('manage_logistics_pool') || hasPermission('supervise_logistics')) {
+                try {
+                    const logData = await logisticsApi.getRequests({ status: 'pending' });
+                    // logData.items is array, or logData itself if not paginated? 
+                    // Client usually returns { items: [], total: ... }
+                    const items = logData.items || [];
+                    newCounts.logisticsPending = items.length;
+                } catch (err) {
+                    console.error("Failed to fetch logistics counts", err);
                 }
             }
 
@@ -326,7 +363,7 @@ export default function Sidebar({ isOpen, onToggle, mobileOpen, setMobileOpen })
     if (!user) return null;
 
     return (
-        <aside className={`fixed left-0 top-0 h-screen bg-slate-900 border-r border-white/10 transition-all duration-300 z-50
+        <aside className={`fixed left-0 top-0 h-screen bg-slate-900 border-r border-white/10 transition-all duration-300 z-50 flex flex-col
             ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
             ${isOpen ? 'md:w-64' : 'md:w-20'} 
             w-64`}>
@@ -355,18 +392,41 @@ export default function Sidebar({ isOpen, onToggle, mobileOpen, setMobileOpen })
             </div>
 
             {/* Menu */}
-            <nav className="p-4 space-y-2">
+            <nav className="p-4 space-y-2 flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar">
                 {menuItems.map((item) => {
                     // Filter Parent by permission
                     if (item.permission && !hasPermission(item.permission)) return null;
 
-                    // Filter Children
+                    // Filter Children and Handle Dividers
                     const filteredItem = { ...item };
                     if (item.children) {
-                        filteredItem.children = item.children.filter(child =>
+                        // 1. Filter out items user doesn't have permission for
+                        let visibleChildren = item.children.filter(child =>
                             !child.permission || hasPermission(child.permission)
                         );
-                        if (filteredItem.children.length === 0) return null;
+
+                        // 2. Remove Dividers that are at the end or followed by another divider
+                        // We iterate backwards to easily remove trailing dividers
+                        for (let i = visibleChildren.length - 1; i >= 0; i--) {
+                            const child = visibleChildren[i];
+                            const isDivider = child.type === 'divider';
+
+                            // If it's a divider and it's the last item OR followed by another divider
+                            if (isDivider) {
+                                const nextItem = visibleChildren[i + 1];
+                                if (!nextItem || nextItem.type === 'divider') {
+                                    visibleChildren.splice(i, 1);
+                                }
+                            }
+                        }
+
+                        // 3. Remove leading divider if exists (optional, but good for cleanup)
+                        if (visibleChildren.length > 0 && visibleChildren[0].type === 'divider') {
+                            visibleChildren.splice(0, 1);
+                        }
+
+                        if (visibleChildren.length === 0) return null;
+                        filteredItem.children = visibleChildren;
                     }
 
                     return (
@@ -387,7 +447,7 @@ export default function Sidebar({ isOpen, onToggle, mobileOpen, setMobileOpen })
             </nav>
 
             {/* User & Logout */}
-            <div className={`absolute bottom-0 left-0 right-0 p-4 border-t border-white/10 md:pb-4 pb-24 bg-slate-900`}>
+            <div className={`p-4 border-t border-white/10 md:pb-4 pb-24 bg-slate-900 flex-none`}>
                 {(isOpen || mobileOpen) && user && (
                     <div className="mb-3 px-4 py-2 bg-white/5 rounded-lg">
                         <p className="text-white font-medium truncate">{user.full_name}</p>

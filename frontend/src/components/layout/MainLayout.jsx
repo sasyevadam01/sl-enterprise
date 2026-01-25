@@ -67,7 +67,7 @@ export default function MainLayout() {
             {/* Main Content */}
             <main className={`transition-all duration-300 ${desktopExpanded ? 'md:ml-64' : 'md:ml-20'} ml-0`}>
                 {/* Top Bar */}
-                <header className="sticky top-0 z-40 bg-slate-900/80 backdrop-blur-lg border-b border-white/10">
+                <header className="sticky top-0 z-[100] bg-slate-900/80 backdrop-blur-lg border-b border-white/10">
                     <div className="flex items-center justify-between px-6 py-4">
                         <div className="flex items-center gap-4">
                             {/* Hamburger Menu (Mobile Only) */}

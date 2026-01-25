@@ -21,6 +21,8 @@ class UserRole(str, Enum):
     record_user = "record_user"
     order_user = "order_user"       # <-- Added
     block_supply = "block_supply"   # <-- Added
+    warehouse_operator = "warehouse_operator"
+    security = "security"  # <-- Added
 
 
 # ============================================================
@@ -61,9 +63,19 @@ class UserResponse(UserBase):
     permissions: List[str] = []
     employee_id: Optional[int] = None
     default_home: Optional[str] = None
+    
+    # Location Info
+    last_lat: Optional[float] = None
+    last_lon: Optional[float] = None
+    last_location_update: Optional[datetime] = None
 
     class Config:
         from_attributes = True
+
+class LocationUpdate(BaseModel):
+    """Schema per aggiornamento GPS."""
+    latitude: float
+    longitude: float
 
 
 class UserLogin(BaseModel):
@@ -760,6 +772,12 @@ class EventCreate(BaseModel):
     event_type: str # Ora accetta l'ID del tipo evento come stringa
     description: Optional[str] = None
     event_date: datetime
+
+
+class EventUpdate(BaseModel):
+    description: Optional[str] = None
+    points: Optional[int] = None
+    event_date: Optional[datetime] = None
 
 
 class EventReview(BaseModel):

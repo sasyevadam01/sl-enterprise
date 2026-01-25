@@ -91,5 +91,45 @@ class ChatConnectionManager:
 chat_manager = ChatConnectionManager()
 
 
+class LogisticsConnectionManager:
+    """Gestisce connessioni per Dashboard Logistica e Produzione."""
+    
+    def __init__(self):
+        # pool_name -> lista di websocket
+        self.pools: Dict[str, List[WebSocket]] = {
+            "logistics": [],
+            "production_blocks": [],
+            "notifications": [] # Per tutti gli utenti per alert globali
+        }
+    
+    async def connect(self, websocket: WebSocket, pool: str):
+        await websocket.accept()
+        if pool not in self.pools:
+            self.pools[pool] = []
+        self.pools[pool].append(websocket)
+        print(f"[WS] Client joined pool '{pool}'. Total: {len(self.pools[pool])}")
+    
+    def disconnect(self, websocket: WebSocket, pool: str):
+        if pool in self.pools and websocket in self.pools[pool]:
+            self.pools[pool].remove(websocket)
+        print(f"[WS] Client left pool '{pool}'")
+    
+    async def broadcast(self, pool: str, message: dict):
+        """Invia a tutti i connessi a un pool specifico."""
+        if pool in self.pools:
+            dead = []
+            for ws in self.pools[pool]:
+                try:
+                    await ws.send_json(message)
+                except Exception:
+                    dead.append(ws)
+            for ws in dead:
+                self.disconnect(ws, pool)
+
+logistics_manager = LogisticsConnectionManager()
+
 def get_chat_manager() -> ChatConnectionManager:
     return chat_manager
+
+def get_logistics_manager() -> LogisticsConnectionManager:
+    return logistics_manager

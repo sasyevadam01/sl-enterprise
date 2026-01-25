@@ -61,6 +61,10 @@ async def lifespan(app: FastAPI):
                      conn.execute(text("ALTER TABLE block_requests ADD COLUMN target_sector VARCHAR(50) NULL"))
                      conn.commit()
 
+             # 4. logistics_requests: escalation, cancel, secure delivery
+             # RIMOSSO: La migrazione viene fatta esternamente con fix_db.py per evitare crash all'avvio
+             pass
+
     except Exception as e:
         print(f"[MIGRATION WARNING] Errore auto-migration: {e}")
 
@@ -236,6 +240,35 @@ app.include_router(chat.router)
 app.include_router(logistics.router)
 
 # ============================================================
+# LOGISTICS & PRODUCTION WEBSOCKETS
+# ============================================================
+from fastapi import WebSocket, WebSocketDisconnect
+from websocket_manager import get_logistics_manager
+
+@app.websocket("/ws/logistics")
+async def logistics_websocket(websocket: WebSocket, pool: str = "logistics"):
+    """WebSocket per dashboard logistica (real-time requests)."""
+    manager = get_logistics_manager()
+    await manager.connect(websocket, pool)
+    try:
+        while True:
+            # Rimaniamo in attesa (il client riceve solo)
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, pool)
+
+@app.websocket("/ws/production")
+async def production_websocket(websocket: WebSocket, pool: str = "production_blocks"):
+    """WebSocket per fermi produzione."""
+    manager = get_logistics_manager()
+    await manager.connect(websocket, pool)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, pool)
+
+# ============================================================
 # STATIC FILES (per preview documenti)
 # ============================================================
 UPLOADS_DIR = os.path.join(os.path.dirname(__file__), "uploads")
@@ -272,4 +305,4 @@ def health_check():
 # ============================================================
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)

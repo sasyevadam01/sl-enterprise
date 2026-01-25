@@ -35,6 +35,7 @@ class BonusResponse(BaseModel):
     employee_name: str
     event_id: Optional[int] = None
     event_description: Optional[str] = None
+    event_notes: Optional[str] = None
     event_requester: Optional[str] = None
     event_date: Optional[str] = None
     amount: float
@@ -84,10 +85,12 @@ async def list_bonuses(
         emp_name = f"{b.employee.last_name} {b.employee.first_name}" if b.employee else "N/D"
         
         event_desc = None
+        event_notes = None
         event_req = None
         event_date = None
         if b.event:
             event_desc = b.event.event_label or b.event.event_type
+            event_notes = b.event.description
             event_req = b.event.creator.full_name if b.event.creator else "N/D"
             event_date = b.event.event_date.strftime("%d/%m/%Y") if b.event.event_date else None
         
@@ -97,6 +100,7 @@ async def list_bonuses(
             employee_name=emp_name,
             event_id=b.event_id,
             event_description=event_desc,
+            event_notes=event_notes,
             event_requester=event_req,
             event_date=event_date,
             amount=b.amount,
@@ -206,10 +210,12 @@ async def create_bonus(
     emp_name = f"{emp.last_name} {emp.first_name}"
     
     event_desc = None
+    event_notes = None
     event_req = None
     event_date = None
     if event:
         event_desc = event.event_label or event.event_type
+        event_notes = event.description
         event_req = event.creator.full_name if event.creator else "N/D"
         event_date = event.event_date.strftime("%d/%m/%Y") if event.event_date else None
     
@@ -219,6 +225,7 @@ async def create_bonus(
         employee_name=emp_name,
         event_id=bonus.event_id,
         event_description=event_desc,
+        event_notes=event_notes,
         event_requester=event_req,
         event_date=event_date,
         amount=bonus.amount,
@@ -328,7 +335,8 @@ async def export_bonuses_pdf(
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.units import mm
     from reportlab.pdfgen import canvas
-    from reportlab.platypus import Table, TableStyle
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.platypus import Table, TableStyle, Paragraph
     
     # Get bonuses for the month
     bonuses = db.query(Bonus).options(
@@ -347,6 +355,27 @@ async def export_bonuses_pdf(
     buffer = io.BytesIO()
     c = canvas.Canvas(buffer, pagesize=A4)
     width, height = A4
+    
+    # Styles for wrapping text
+    styles = getSampleStyleSheet()
+    style_normal = styles["BodyText"]
+    style_normal.fontSize = 8
+    style_normal.leading = 10
+    
+    style_bold = ParagraphStyle(
+        'BoldStyle',
+        parent=style_normal,
+        fontName='Helvetica-Bold',
+        fontSize=9
+    )
+    
+    style_notes = ParagraphStyle(
+        'NotesStyle',
+        parent=style_normal,
+        fontSize=7,
+        leftIndent=2*mm,
+        textColor=colors.grey
+    )
     
     # Month names in Italian
     months = ["", "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
@@ -375,41 +404,69 @@ async def export_bonuses_pdf(
     
     # Table
     if bonuses:
-        data = [["Dipendente", "Evento/Motivo", "Richiesto Da", "Data", "Importo €"]]
+        data = [["V", "Dipendente", "Evento/Motivo", "Richiesto Da", "Data", "Importo €"]]
         
         for b in bonuses:
             emp_name = f"{b.employee.last_name} {b.employee.first_name}" if b.employee else "N/D"
             
-            event_desc = b.description or ""
-            event_req = ""
-            event_date = ""
+            # Complex description logic
+            primary_desc = b.description or "-"
+            notes_desc = ""
+            
             if b.event:
-                event_desc = b.event.event_label or b.event.event_type or ""
-                event_req = b.event.creator.full_name if b.event.creator else ""
-                event_date = b.event.event_date.strftime("%d/%m") if b.event.event_date else ""
+                primary_desc = b.event.event_label or b.event.event_type or primary_desc
+                notes_desc = b.event.description or ""
+            
+            # Check if b.description is different and worth showing
+            extra_msg = ""
+            if b.description and b.event and b.description != (b.event.event_label or b.event.event_type):
+                extra_msg = f"<br/><font color='orange' size='7'>Note Bonus: {b.description}</font>"
+            
+            # Formatting as a list of Paragraph objects for the cell
+            desc_para = Paragraph(
+                f"<b>{primary_desc}</b>" + 
+                (f"<br/><i>{notes_desc}</i>" if notes_desc else "") +
+                extra_msg,
+                style_normal
+            )
+            
+            event_req = "-"
+            event_date = "-"
+            if b.event:
+                event_req = b.event.creator.full_name if b.event.creator else "N/D"
+                event_date = b.event.event_date.strftime("%d/%m") if b.event.event_date else "-"
             
             data.append([
-                emp_name[:25],
-                event_desc[:30],
-                event_req[:20],
+                "[  ]", # Checkbox
+                emp_name,
+                desc_para,
+                event_req,
                 event_date,
                 f"€ {b.amount:,.2f}"
             ])
         
-        col_widths = [55*mm, 50*mm, 35*mm, 20*mm, 25*mm]
+        # Col widths: Check(8), Name(38), Desc(70), Req(25), Date(17), Amount(22) = 180mm
+        col_widths = [8*mm, 38*mm, 70*mm, 25*mm, 17*mm, 22*mm]
         
-        t = Table(data, colWidths=col_widths)
+        t = Table(data, colWidths=col_widths, repeatRows=1)
         t.setStyle(TableStyle([
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 9),
+            ('FONTSIZE', (0, 0), (-1, -1), 8),
             ('BACKGROUND', (0, 0), (-1, 0), colors.Color(30/255, 41/255, 59/255)),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('ALIGN', (0, 0), (0, -1), 'CENTER'), # Center checkbox
+            ('ALIGN', (1, 0), (-2, -1), 'LEFT'),
             ('ALIGN', (-1, 0), (-1, -1), 'RIGHT'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.Color(241/255, 245/255, 249/255)])
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.Color(241/255, 245/255, 249/255)]),
+            ('TOPPADDING', (0, 0), (-1, -1), 3),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
         ]))
+        
+        # Wrapping logic for multiple pages if needed is handled by platypus.Frame usually
+        # but here we follow the existing pattern using drawOn if it fits.
+        # However, many bonuses might overflow.
         
         w, h = t.wrap(width - 30*mm, height)
         t.drawOn(c, 15*mm, height - 60*mm - h)

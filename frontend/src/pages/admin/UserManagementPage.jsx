@@ -241,7 +241,7 @@ const PermissionsMatrix = ({ roles, definitions, onTogglePermission, onChangeDef
             </div>
 
             {/* Role Headers - Sticky */}
-            <div className="bg-slate-800 rounded-xl border border-white/10 overflow-hidden sticky top-0 z-30">
+            <div className="bg-slate-800 rounded-xl border border-white/10 overflow-hidden sticky top-20 z-30 shadow-2xl">
                 <div className="flex">
                     <div className="w-64 shrink-0 p-3 bg-slate-900 border-r border-white/10 font-bold text-gray-400 text-xs uppercase">
                         Permesso
@@ -461,7 +461,18 @@ export default function UserManagementPage() {
             setShowPassword(false); // Reset password visibility
             loadData(); // Reload to get updated user list
         } catch (error) {
-            toast.error(error.response?.data?.detail || "Errore operazione");
+            console.error("Create/Update Error:", error);
+            const detail = error.response?.data?.detail;
+            let msg = "Errore operazione";
+            if (typeof detail === 'string') {
+                msg = detail;
+            } else if (Array.isArray(detail)) {
+                // Pydantic validation error
+                msg = detail.map(e => `${e.loc?.join('.')}: ${e.msg}`).join('\n');
+            } else if (typeof detail === 'object') {
+                msg = JSON.stringify(detail);
+            }
+            toast.error(msg);
         }
     };
 
@@ -540,7 +551,18 @@ export default function UserManagementPage() {
             toast.success(`Utente ${user.username} eliminato`);
             loadData();
         } catch (error) {
-            toast.error(error.response?.data?.detail || "Errore eliminazione utente");
+
+            console.error("Delete Error:", error);
+            const detail = error.response?.data?.detail;
+            let msg = "Errore eliminazione utente";
+            if (typeof detail === 'string') {
+                msg = detail;
+            } else if (Array.isArray(detail)) {
+                msg = detail.map(e => `${e.loc?.join('.')}: ${e.msg}`).join('\n');
+            } else if (typeof detail === 'object') {
+                msg = JSON.stringify(detail);
+            }
+            toast.error(msg);
         }
     };
 

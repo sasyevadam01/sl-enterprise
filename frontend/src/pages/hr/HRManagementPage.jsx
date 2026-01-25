@@ -243,6 +243,40 @@ export default function HRManagementPage() {
         }
     };
 
+    // Event Edit Modal State
+    const [editEventModal, setEditEventModal] = useState({
+        isOpen: false,
+        event: null,
+        description: '',
+        points: 0,
+        eventDate: ''
+    });
+
+    const handleEditEvent = (ev) => {
+        setEditEventModal({
+            isOpen: true,
+            event: ev,
+            description: ev.description || '',
+            points: ev.points || 0,
+            eventDate: ev.event_date ? ev.event_date.split('T')[0] : format(new Date(), 'yyyy-MM-dd')
+        });
+    };
+
+    const handleSaveEvent = async () => {
+        try {
+            const updated = await eventsApi.updateEvent(editEventModal.event.id, {
+                description: editEventModal.description,
+                points: parseInt(editEventModal.points),
+                event_date: editEventModal.eventDate
+            });
+
+            setEvents(prev => prev.map(e => e.id === updated.id ? { ...e, ...updated } : e));
+            setEditEventModal(prev => ({ ...prev, isOpen: false }));
+        } catch (err) {
+            alert("Errore durante il salvataggio: " + err.message);
+        }
+    };
+
     // --- LOCK SCREEN RENDER ---
     if (!isUnlocked) {
         return (
@@ -283,6 +317,8 @@ export default function HRManagementPage() {
             </div>
         );
     }
+
+
 
     // --- MAIN DASHBOARD RENDER ---
     return (
@@ -405,11 +441,11 @@ export default function HRManagementPage() {
                                         <span className="text-xs font-mono text-gray-400">SYNCED: {new Date().toLocaleTimeString()}</span>
                                     </div>
                                     <div className="overflow-x-auto max-h-[600px]">
-                                        <table className="w-full text-left text-sm text-gray-300"> {/* Increased text size and contrast */}
+                                        <table className="w-full text-left text-sm text-gray-300">
                                             <thead className="bg-black/40 text-xs uppercase font-mono text-gray-400 sticky top-0 backdrop-blur-sm">
                                                 <tr>
                                                     <th className="px-6 py-3 whitespace-nowrap">Dipendente</th>
-                                                    <th className="px-6 py-3 whitespace-nowrap">Stato</th> {/* New Status Column */}
+                                                    <th className="px-6 py-3 whitespace-nowrap">Stato</th>
                                                     <th className="px-6 py-3 whitespace-nowrap">Tipo</th>
                                                     <th className="px-6 py-3 whitespace-nowrap">Data Richiesta</th>
                                                     <th className="px-6 py-3 whitespace-nowrap text-center">Periodo Assenza</th>
@@ -418,69 +454,68 @@ export default function HRManagementPage() {
                                                     <th className="px-6 py-3 text-right">Azioni</th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-white/5 text-sm"> {/* text-sm for body */}
-                                                {leaves.map((l) => {
-                                                    const emp = employees.find(e => e.id === l.employee_id);
-                                                    const empName = emp ? `${emp.last_name} ${emp.first_name}` : 'Unknown';
-                                                    const daysCount = differenceInCalendarDays(parseISO(l.end_date), parseISO(l.start_date)) + 1;
-                                                    const statusInfo = STATUS_LABELS[l.status] || STATUS_LABELS.pending;
-                                                    const leaveLabel = LEAVE_LABELS[l.leave_type] || l.leave_type;
+                                            <tbody className="divide-y divide-white/5 text-sm">{leaves.map((l) => {
+                                                const emp = employees.find(e => e.id === l.employee_id);
+                                                const empName = emp ? `${emp.last_name} ${emp.first_name}` : 'Unknown';
+                                                const daysCount = differenceInCalendarDays(parseISO(l.end_date), parseISO(l.start_date)) + 1;
+                                                const statusInfo = STATUS_LABELS[l.status] || STATUS_LABELS.pending;
+                                                const leaveLabel = LEAVE_LABELS[l.leave_type] || l.leave_type;
 
-                                                    return (
-                                                        <tr key={l.id} className="hover:bg-white/5 transition group">
-                                                            <td className="px-6 py-4 font-bold text-white">{empName}</td>
-                                                            <td className="px-6 py-4">
-                                                                <span className={`px-2 py-1 rounded text-xs font-bold border border-white/5 ${statusInfo.color}`}>
-                                                                    {statusInfo.label}
+                                                return (
+                                                    <tr key={l.id} className="hover:bg-white/5 transition group">
+                                                        <td className="px-6 py-4 font-bold text-white">{empName}</td>
+                                                        <td className="px-6 py-4">
+                                                            <span className={`px-2 py-1 rounded text-xs font-bold border border-white/5 ${statusInfo.color}`}>
+                                                                {statusInfo.label}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <span className="text-gray-300">{leaveLabel}</span>
+                                                        </td>
+                                                        <td className="px-6 py-4 text-gray-400">
+                                                            {format(parseISO(l.requested_at || l.created_at || new Date().toISOString()), "dd/MM/yy HH:mm")}
+                                                        </td>
+                                                        <td className="px-6 py-4 text-center">
+                                                            <div className="inline-flex items-center gap-2 bg-slate-950 border border-white/10 rounded-lg px-3 py-1.5">
+                                                                <span className="text-white font-bold">{format(parseISO(l.start_date), "dd/MM")}</span>
+                                                                <span className="text-gray-600">➜</span>
+                                                                <span className="text-white font-bold">{format(parseISO(l.end_date), "dd/MM")}</span>
+                                                                <span className="text-[10px] text-gray-500 ml-1">({format(parseISO(l.end_date), "yyyy")})</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4 text-center font-bold text-white">
+                                                            {daysCount} gg
+                                                        </td>
+                                                        <td className="px-6 py-4 text-gray-400">
+                                                            {l.reviewer ? (
+                                                                <span className="flex items-center gap-1 text-emerald-500/80">
+                                                                    <span className="text-[10px]">✔</span> {l.reviewer.full_name}
                                                                 </span>
-                                                            </td>
-                                                            <td className="px-6 py-4">
-                                                                <span className="text-gray-300">{leaveLabel}</span>
-                                                            </td>
-                                                            <td className="px-6 py-4 text-gray-400">
-                                                                {format(parseISO(l.requested_at || l.created_at || new Date().toISOString()), "dd/MM/yy HH:mm")}
-                                                            </td>
-                                                            <td className="px-6 py-4 text-center">
-                                                                <div className="inline-flex items-center gap-2 bg-slate-950 border border-white/10 rounded-lg px-3 py-1.5">
-                                                                    <span className="text-white font-bold">{format(parseISO(l.start_date), "dd/MM")}</span>
-                                                                    <span className="text-gray-600">➜</span>
-                                                                    <span className="text-white font-bold">{format(parseISO(l.end_date), "dd/MM")}</span>
-                                                                    <span className="text-[10px] text-gray-500 ml-1">({format(parseISO(l.end_date), "yyyy")})</span>
-                                                                </div>
-                                                            </td>
-                                                            <td className="px-6 py-4 text-center font-bold text-white">
-                                                                {daysCount} gg
-                                                            </td>
-                                                            <td className="px-6 py-4 text-gray-400">
-                                                                {l.reviewer ? (
-                                                                    <span className="flex items-center gap-1 text-emerald-500/80">
-                                                                        <span className="text-[10px]">✔</span> {l.reviewer.full_name}
-                                                                    </span>
-                                                                ) : (
-                                                                    <span className="text-yellow-500/50 text-xs italic">In attesa</span>
-                                                                )}
-                                                            </td>
-                                                            <td className="px-6 py-4 text-right">
-                                                                <div className="flex justify-end gap-2 opacity-100">
-                                                                    <Link
-                                                                        to={`/hr/employees/${l.employee_id}?tab=absences`}
-                                                                        className="w-9 h-9 rounded bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 flex items-center justify-center border border-blue-500/30 transition"
-                                                                        title="Vai al Dossier"
-                                                                    >
-                                                                        ✏️
-                                                                    </Link>
-                                                                    <button
-                                                                        onClick={() => requestDeleteLeave(l)}
-                                                                        className="w-9 h-9 rounded bg-red-500/10 hover:bg-red-500/20 text-red-400 flex items-center justify-center border border-red-500/30 transition"
-                                                                        title="Elimina Definitivamente"
-                                                                    >
-                                                                        🗑️
-                                                                    </button>
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                    );
-                                                })}
+                                                            ) : (
+                                                                <span className="text-yellow-500/50 text-xs italic">In attesa</span>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-6 py-4 text-right">
+                                                            <div className="flex justify-end gap-2 opacity-100">
+                                                                <Link
+                                                                    to={`/hr/employees/${l.employee_id}?tab=absences`}
+                                                                    className="w-9 h-9 rounded bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 flex items-center justify-center border border-blue-500/30 transition"
+                                                                    title="Vai al Dossier"
+                                                                >
+                                                                    ✏️
+                                                                </Link>
+                                                                <button
+                                                                    onClick={() => requestDeleteLeave(l)}
+                                                                    className="w-9 h-9 rounded bg-red-500/10 hover:bg-red-500/20 text-red-400 flex items-center justify-center border border-red-500/30 transition"
+                                                                    title="Elimina Definitivamente"
+                                                                >
+                                                                    🗑️
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
                                             </tbody>
                                         </table>
                                     </div>
@@ -564,54 +599,53 @@ export default function HRManagementPage() {
                                                     <th className="px-6 py-3 text-right">Azioni</th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-white/5 font-mono text-xs">
-                                                {events.map((ev) => {
-                                                    const emp = employees.find(e => e.id === ev.employee_id);
-                                                    const empName = emp ? `${emp.last_name} ${emp.first_name}` : 'Unknown';
+                                            <tbody className="divide-y divide-white/5 font-mono text-xs">{events.map((ev) => {
+                                                const emp = employees.find(e => e.id === ev.employee_id);
+                                                const empName = emp ? `${emp.last_name} ${emp.first_name}` : 'Unknown';
 
-                                                    return (
-                                                        <tr key={ev.id} className="hover:bg-white/5 transition group">
-                                                            <td className="px-6 py-4 font-bold text-white">{empName}</td>
-                                                            <td className="px-6 py-4">
-                                                                <div className="flex flex-col">
-                                                                    <span className="text-white font-bold">{ev.event_label}</span>
-                                                                    <span className="text-[10px] opacity-70 truncate max-w-[150px]">{ev.notes || ev.description}</span>
-                                                                </div>
-                                                            </td>
-                                                            <td className="px-6 py-4 text-gray-400">{ev.creator?.full_name || '-'}</td>
-                                                            <td className="px-6 py-4 text-gray-500">{format(parseISO(ev.created_at || new Date().toISOString()), "dd/MM/yy")}</td>
-                                                            <td className="px-6 py-4 text-gray-400">
-                                                                <span className="flex items-center gap-1 text-blue-400/80">
-                                                                    <span className="text-[10px]">✔</span>
-                                                                    {ev.approver?.full_name || 'System'}
-                                                                </span>
-                                                            </td>
-                                                            <td className="px-6 py-4 text-right">
-                                                                <span className={`font-bold text-lg ${ev.points >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                                                                    {ev.points > 0 ? '+' : ''}{ev.points}
-                                                                </span>
-                                                            </td>
-                                                            <td className="px-6 py-4 text-right">
-                                                                <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition">
-                                                                    <button
-                                                                        className="w-8 h-8 rounded bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 flex items-center justify-center border border-blue-500/30"
-                                                                        title="Modifica"
-                                                                        onClick={() => alert("Per modificare un evento approvato, eliminalo e ricrealo.")}
-                                                                    >
-                                                                        ✎
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() => requestDeleteEvent(ev)}
-                                                                        className="w-8 h-8 rounded bg-red-500/10 hover:bg-red-500/20 text-red-400 flex items-center justify-center border border-red-500/30"
-                                                                        title="Elimina Definitivamente"
-                                                                    >
-                                                                        🗑️
-                                                                    </button>
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                    );
-                                                })}
+                                                return (
+                                                    <tr key={ev.id} className="hover:bg-white/5 transition group">
+                                                        <td className="px-6 py-4 font-bold text-white">{empName}</td>
+                                                        <td className="px-6 py-4">
+                                                            <div className="flex flex-col">
+                                                                <span className="text-white font-bold">{ev.event_label}</span>
+                                                                <span className="text-xs text-gray-300 mt-1 italic border-l-2 border-emerald-500/30 pl-2 whitespace-pre-wrap">{ev.description || ev.notes || "Nessuna nota aggiuntiva"}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4 text-gray-400">{ev.creator?.full_name || '-'}</td>
+                                                        <td className="px-6 py-4 text-gray-500">{format(parseISO(ev.created_at || new Date().toISOString()), "dd/MM/yy")}</td>
+                                                        <td className="px-6 py-4 text-gray-400">
+                                                            <span className="flex items-center gap-1 text-blue-400/80">
+                                                                <span className="text-[10px]">✔</span>
+                                                                {ev.approver?.full_name || 'System'}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-6 py-4 text-right">
+                                                            <span className={`font-bold text-lg ${ev.points >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                                                                {ev.points > 0 ? '+' : ''}{ev.points}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-6 py-4 text-right">
+                                                            <div className="flex justify-end gap-2 opacity-100 transition">
+                                                                <button
+                                                                    className="w-8 h-8 rounded bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 flex items-center justify-center border border-blue-500/30"
+                                                                    title="Modifica"
+                                                                    onClick={() => handleEditEvent(ev)}
+                                                                >
+                                                                    ✎
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => requestDeleteEvent(ev)}
+                                                                    className="w-8 h-8 rounded bg-red-500/10 hover:bg-red-500/20 text-red-400 flex items-center justify-center border border-red-500/30"
+                                                                    title="Elimina Definitivamente"
+                                                                >
+                                                                    🗑️
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
                                             </tbody>
                                         </table>
                                     </div>
@@ -685,6 +719,77 @@ export default function HRManagementPage() {
             </AnimatePresence>
 
             {/* SECURITY CONFIRM MODAL */}
+            {/* EDIT EVENT MODAL */}
+            <AnimatePresence>
+                {editEventModal.isOpen && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-slate-900 border border-blue-500/30 rounded-3xl p-8 w-full max-w-lg shadow-[0_0_50px_rgba(59,130,246,0.2)]"
+                        >
+                            <h2 className="text-xl font-black text-white uppercase tracking-wider mb-6 flex items-center gap-3">
+                                <span className="text-2xl">📝</span> Modifica Evento
+                            </h2>
+
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Descrizione / Note</label>
+                                    <textarea
+                                        value={editEventModal.description}
+                                        onChange={e => setEditEventModal({ ...editEventModal, description: e.target.value })}
+                                        className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:border-blue-500 outline-none transition h-32 resize-none"
+                                        placeholder="Inserisci i dettagli dell'evento..."
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Punteggio</label>
+                                        <input
+                                            type="number"
+                                            value={editEventModal.points}
+                                            onChange={e => setEditEventModal({ ...editEventModal, points: e.target.value })}
+                                            className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:border-blue-500 outline-none transition"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Data Evento</label>
+                                        <input
+                                            type="date"
+                                            value={editEventModal.eventDate}
+                                            onChange={e => setEditEventModal({ ...editEventModal, eventDate: e.target.value })}
+                                            className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white focus:border-blue-500 outline-none transition"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-4 mt-8">
+                                <button
+                                    onClick={() => setEditEventModal({ ...editEventModal, isOpen: false })}
+                                    className="flex-1 py-3 bg-slate-800 text-gray-400 font-bold uppercase rounded-xl hover:bg-slate-700 transition"
+                                >
+                                    Annulla
+                                </button>
+                                <button
+                                    onClick={handleSaveEvent}
+                                    className="flex-1 py-3 bg-blue-600 text-white font-bold uppercase rounded-xl hover:bg-blue-500 shadow-lg shadow-blue-600/20 transition"
+                                >
+                                    Salva Modifiche
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             <SecurityConfirmModal
 
                 isOpen={confirmModal.isOpen}

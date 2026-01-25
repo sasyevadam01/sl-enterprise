@@ -1,8 +1,8 @@
 import axios from "axios";
 
-const API_BASE_URL = "/api";
+const API_BASE_URL = "http://127.0.0.1:8000";
 
-console.log("🔌 [CLIENT] API Base URL set to:", API_BASE_URL);
+// console.log("🔌 [CLIENT] API Base URL set to:", API_BASE_URL);
 
 const client = axios.create({
   baseURL: API_BASE_URL,
@@ -83,14 +83,75 @@ export const machinesApi = {
 };
 
 export const fleetApi = {
-  createTicket: (data) => client.post("/fleet/tickets/", data),
-  getTickets: (params) => client.get("/fleet/tickets/", { params }),
+  createTicket: (data) => client.post("/fleet/tickets", data),
+  getTickets: (params) => client.get("/fleet/tickets", { params }),
   resolveTicket: (id, notes) =>
-    client.patch(`/fleet/tickets/${id}/resolve/`, null, {
+    client.patch(`/fleet/tickets/${id}/resolve`, null, {
       params: { resolution_notes: notes },
     }),
-  getBanchine: () => client.get("/fleet/banchine/"),
-  getVehicles: (params) => client.get("/fleet/vehicles/", { params }),
+  getBanchine: () => client.get("/fleet/banchine"),
+  getVehicles: (params) => client.get("/fleet/vehicles", { params }),
+  createVehicle: (data) => client.post("/fleet/vehicles", null, { params: data }),
+  updateVehicle: (id, data) => client.put(`/fleet/vehicles/${id}`, data),
+  deleteVehicle: (id) => client.delete(`/fleet/vehicles/${id}`),
+  // Checklists
+  submitChecklist: async (vehicleId, checks, notes = null, file = null, tabletStatus = 'ok') => {
+    const formData = new FormData();
+    const data = JSON.stringify({
+      vehicle_id: vehicleId,
+      checklist_data: checks
+    });
+
+    formData.append('checklist_data', data);
+    formData.append('notes', notes || "");
+    formData.append('tablet_status', tabletStatus);
+
+    if (file) {
+      formData.append('photo', file);
+    } else {
+      console.warn("⚠️ submitChecklist: Photo is missing!");
+    }
+
+    // Debug
+    for (var pair of formData.entries()) {
+      console.log("Checklist FormData: " + pair[0] + ', ' + pair[1]);
+    }
+
+    const response = await client.post('/fleet/checklists', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+  getChecklists: (params) => client.get("/fleet/checklists", { params }),
+  getLatestChecklist: (vehicleId) => client.get(`/fleet/vehicles/${vehicleId}/checklist/latest`),
+  submitChecklistV2: async ({ vehicleId, checks, notes, tabletPhoto, tabletStatus, issuePhotos }) => {
+    const formData = new FormData();
+    const data = {
+      vehicle_id: vehicleId,
+      checklist_data: checks
+    };
+
+    formData.append('checklist_data', JSON.stringify(data));
+    formData.append('notes', notes || '');
+    formData.append('tablet_status', tabletStatus || 'ok');
+    formData.append('photo', tabletPhoto);
+
+    // Append issue photos
+    if (issuePhotos) {
+      Object.entries(issuePhotos).forEach(([key, file]) => {
+        formData.append(key, file);
+      });
+    }
+
+    return client.post('/fleet/checklists', formData, {
+      headers: {
+        'Content-Type': undefined
+      }
+    });
+  },
+  resolveChecklist: (id, notes) => client.put(`/fleet/checklists/${id}/resolve`, { notes }),
 };
 
 export const notificationsApi = {
@@ -213,6 +274,7 @@ export const eventsApi = {
   getBadges: (employeeId) =>
     client.get(`/events/employee/${employeeId}/badges`),
   getBadgeDefinitions: () => client.get("/events/badges/definitions"),
+  updateEvent: (id, data) => client.patch(`/events/${id}`, data),
   deleteEvent: (id) => client.delete(`/events/${id}`),
 };
 
@@ -500,9 +562,11 @@ export const logisticsApi = {
   getRequests: (params = {}) => client.get("/logistics/requests", { params }),
   getRequest: (id) => client.get(`/logistics/requests/${id}`),
   takeRequest: (id, eta_minutes) => client.patch(`/logistics/requests/${id}/take`, { promised_eta_minutes: eta_minutes }),
-  completeRequest: (id) => client.patch(`/logistics/requests/${id}/complete`),
+  completeRequest: (id, code) => client.patch(`/logistics/requests/${id}/complete`, { confirmation_code: code }),
   releaseRequest: (id) => client.patch(`/logistics/requests/${id}/release`),
   markUrgent: (id) => client.patch(`/logistics/requests/${id}/urgent`),
+  cancelRequest: (id, reason) => client.patch(`/logistics/requests/${id}/cancel`, { reason }),
+  takeRequestBatch: (ids, eta) => client.patch("/logistics/requests/take-batch", ids, { params: { eta_minutes: eta } }),
 
   // Messages
   getMessages: (requestId) => client.get(`/logistics/requests/${requestId}/messages`),

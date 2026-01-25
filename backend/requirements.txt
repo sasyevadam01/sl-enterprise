@@ -18,3 +18,4 @@ reportlab
 pywebpush
 py-vapid
 websockets
+filetype

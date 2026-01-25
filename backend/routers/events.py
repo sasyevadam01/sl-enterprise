@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from database import get_db, EmployeeEvent, EmployeeBadge, Employee, User, Notification
 from schemas import (
     EventCreate, EventReview, EventResponse, BadgeResponse,
-    EVENT_CONFIG, BADGE_DEFINITIONS, MessageResponse
+    EVENT_CONFIG, BADGE_DEFINITIONS, MessageResponse, EventUpdate
 )
 from security import get_current_user, get_hr_or_admin
 
@@ -199,6 +199,51 @@ async def review_event(
     db.commit()
     db.refresh(event)
     
+    return event
+
+
+@router.patch("/{event_id}", response_model=EventResponse, summary="Modifica Evento")
+async def update_event(
+    event_id: int,
+    data: EventUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_hr_or_admin)
+):
+    """Modifica descrizione, punteggio o data di un evento."""
+    event = db.query(EmployeeEvent).filter(EmployeeEvent.id == event_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Evento non trovato")
+    
+    if data.description is not None:
+        event.description = data.description
+    
+    if data.event_date is not None:
+        event.event_date = data.event_date
+        
+    if data.points is not None and data.points != event.points:
+        # Se era già approvato, dobbiamo stornare il vecchio e mettere il nuovo
+        if event.status == 'approved':
+            employee = db.query(Employee).filter(Employee.id == event.employee_id).first()
+            if employee:
+                # Storna vecchio
+                if event.points > 0:
+                    employee.bonus_points = max(0, (employee.bonus_points or 0) - event.points)
+                else:
+                    employee.malus_points = max(0, (employee.malus_points or 0) - abs(event.points))
+                
+                # Applica nuovo
+                _update_employee_score(db, employee, data.points)
+        
+        event.points = data.points
+        
+    db.commit()
+    db.refresh(event)
+    
+    # Ricalcola badges se approvato e i punti sono cambiati
+    if event.status == 'approved' and data.points is not None:
+        _check_and_award_badges(db, event.employee_id)
+        db.commit()
+        
     return event
 
 

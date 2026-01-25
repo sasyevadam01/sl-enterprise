@@ -20,8 +20,9 @@ from schemas import (
     BlockRequestResponse, BlockRequestCreate, BlockRequestUpdate
 )
 from security import get_current_user
+from websocket_manager import get_logistics_manager
 
-router = APIRouter(prefix="/production", tags=["Live Production"])
+router = APIRouter(prefix="/production", tags=["Production"])
 
 # Helper: Audit Log
 def log_audit(db: Session, user_id: int, action: str, details: str):
@@ -140,6 +141,13 @@ async def create_block_request(
         # Audio Log
         log_audit(db, current_user.id, "PRODUCTION_ORDER_CREATED", f"Order {new_req.id} created. Type: {new_req.request_type}")
         db.commit()
+
+        # WebSocket Broadcast
+        try:
+            lm = get_logistics_manager()
+            await lm.broadcast("production_blocks", {"type": "new_block", "block_id": new_req.id})
+        except Exception as e:
+            print(f"[WS BROADCAST ERROR] Error broadcasting new block: {e}")
 
         # --- NOTIFICHE PUSH ---
         try:
@@ -322,6 +330,13 @@ async def update_request_status(
     db.commit()
     db.refresh(req)
     
+    # WebSocket Broadcast
+    try:
+        lm = get_logistics_manager()
+        await lm.broadcast("production_blocks", {"type": "status_update", "block_id": req.id, "new_status": req.status})
+    except Exception as e:
+        print(f"[WS BROADCAST ERROR] Error broadcasting status update for block {req.id}: {e}")
+
     if log_action:
         log_audit(db, current_user.id, log_action, f"Order {req.id} status changed to {new_status}")
         db.commit()
@@ -349,6 +364,13 @@ async def acknowledge_cancellation(
     # Set unique status for acked cancellations
     req.status = 'cancelled_acked'
     db.commit()
+    
+    # WebSocket Broadcast
+    try:
+        lm = get_logistics_manager()
+        await lm.broadcast("production_blocks", {"type": "block_resolved", "block_id": req_id})
+    except Exception as e:
+        print(f"[WS BROADCAST ERROR] Error broadcasting block resolved for block {req_id}: {e}")
     
     return {"message": "Cancellazione confermata", "status": "cancelled_acked"}
 

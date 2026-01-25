@@ -4,7 +4,7 @@
  */
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
-import { employeesApi, eventsApi, leavesApi } from '../../api/client';
+import { employeesApi, eventsApi, leavesApi, logisticsApi } from '../../api/client';
 import LeaveHoursWidget from '../../components/LeaveHoursWidget';
 import { useUI } from '../../components/ui/CustomUI';
 
@@ -57,7 +57,7 @@ const DocumentsTab = ({ employeeId, employeeName }) => {
 
     const openPreview = (filePath) => {
         // Base URL for static files served by backend
-        const url = `http://localhost:8000/${filePath}`;
+        const url = `/uploads/${fileName}`;
         setPreviewUrl(url);
     };
 
@@ -735,6 +735,94 @@ const EventsTab = ({ employeeId, employeeName }) => {
     );
 };
 
+const LogisticsTab = ({ employeeId }) => {
+    const [performance, setPerformance] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const loadPerf = async () => {
+            try {
+                const data = await logisticsApi.getEmployeePerformance(employeeId);
+                setPerformance(data);
+            } catch (error) {
+                console.error("Error loading logistics performance:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadPerf();
+    }, [employeeId]);
+
+    if (loading) return <div className="text-gray-400 text-center py-8">Caricamento performance...</div>;
+
+    if (!performance || performance.missions_completed === 0) {
+        return (
+            <div className="text-center py-12">
+                <p className="text-gray-500 text-lg">Nessuna attività logistica registrata</p>
+                <p className="text-gray-600 text-sm mt-2">I dati appariranno qui quando il dipendente completerà missioni di magazzino</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="rounded-xl p-4 bg-blue-500/10 border border-blue-500/30">
+                    <p className="text-gray-400 text-sm">Punti Totali</p>
+                    <p className="text-3xl font-bold text-blue-400">{performance.net_points}</p>
+                </div>
+                <div className="rounded-xl p-4 bg-green-500/10 border border-green-500/30">
+                    <p className="text-gray-400 text-sm">Missioni Completate</p>
+                    <p className="text-3xl font-bold text-green-400">{performance.missions_completed}</p>
+                </div>
+                <div className="rounded-xl p-4 bg-yellow-500/10 border border-yellow-500/30">
+                    <p className="text-gray-400 text-sm">Reazione Media</p>
+                    <p className="text-3xl font-bold text-yellow-400">{performance.avg_reaction_seconds}s</p>
+                </div>
+                <div className="rounded-xl p-4 bg-red-500/10 border border-red-500/30">
+                    <p className="text-gray-400 text-sm">Urgenti Gestite</p>
+                    <p className="text-3xl font-bold text-red-400">{performance.missions_urgent}</p>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-slate-700/30 rounded-xl p-4">
+                    <h4 className="text-white font-medium mb-4">Dettagli Performance</h4>
+                    <div className="space-y-3">
+                        <div className="flex justify-between items-center p-2 bg-slate-800/50 rounded">
+                            <span className="text-gray-400">Punti Lordi</span>
+                            <span className="text-white font-bold">{performance.total_points}</span>
+                        </div>
+                        <div className="flex justify-between items-center p-2 bg-slate-800/50 rounded">
+                            <span className="text-gray-400">Penalità</span>
+                            <span className="text-red-400 font-bold">-{performance.penalties_received}</span>
+                        </div>
+                        <div className="flex justify-between items-center p-2 bg-slate-800/50 rounded">
+                            <span className="text-gray-400">Missioni Rilasciate</span>
+                            <span className="text-white">{performance.missions_released}</span>
+                        </div>
+                        <div className="flex justify-between items-center p-2 bg-slate-800/50 rounded">
+                            <span className="text-gray-400">Record Velocità</span>
+                            <span className="text-green-400 font-bold">{performance.fastest_reaction_seconds}s</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-slate-700/30 rounded-xl p-4 flex flex-col items-center justify-center text-center">
+                    <div className="w-32 h-32 rounded-full border-4 border-blue-500 flex items-center justify-center mb-4">
+                        <span className="text-3xl font-bold text-white">{performance.eta_accuracy_percent}%</span>
+                    </div>
+                    <p className="text-white font-medium">Accuratezza ETA</p>
+                    <p className="text-gray-400 text-sm">Percentuale missioni completate entro l'ETA promesso</p>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
+
+
 const AbsenceTab = ({ employeeId, employeeName }) => {
     const { showConfirm, toast } = useUI();
     const [absences, setAbsences] = useState([]);
@@ -1127,6 +1215,7 @@ export default function EmployeeDetailPage() {
         { id: 'certifications', label: '🎓 Certificazioni' },
         { id: 'medical', label: '⚕️ Visite Mediche' },
         { id: 'events', label: '📋 Eventi & Badge' },
+        { id: 'logistics', label: '📦 Logistica & Magazzino' },
         { id: 'absences', label: '🏖️ Assenze' },
     ];
 
@@ -1168,7 +1257,8 @@ export default function EmployeeDetailPage() {
                                                 'hr_manager': 'HR Manager',
                                                 'coordinator': 'Coordinatore',
                                                 'factory_controller': 'Responsabile Fabbrica',
-                                                'record_user': 'Utente Base'
+                                                'record_user': 'Utente Base',
+                                                'security': 'Sicurezza'
                                             }[employee.user.role] || employee.user.role}
                                         </div>
                                     )}
@@ -1371,6 +1461,7 @@ export default function EmployeeDetailPage() {
                 }
 
                 {activeTab === 'events' && !isNew && <EventsTab employeeId={id} employeeName={`${employee.first_name} ${employee.last_name}`} />}
+                {activeTab === 'logistics' && !isNew && <LogisticsTab employeeId={id} />}
                 {activeTab === 'documents' && !isNew && <DocumentsTab employeeId={id} employeeName={`${employee.first_name} ${employee.last_name}`} />}
                 {activeTab === 'certifications' && !isNew && <CertificationsTab employeeId={id} employeeName={`${employee.first_name} ${employee.last_name}`} />}
                 {activeTab === 'medical' && !isNew && <MedicalTab employeeId={id} employeeName={`${employee.first_name} ${employee.last_name}`} />}

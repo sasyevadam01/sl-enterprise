@@ -13,7 +13,7 @@ from models.hr import (
 )
 from models.tasks import Task, TaskComment, TaskAttachment
 from models.factory import Banchina, Machine, MachineMaintenance, FacilityMaintenance
-from models.fleet import FleetVehicle, MaintenanceTicket
+from models.fleet import FleetVehicle, MaintenanceTicket, FleetChecklist
 from models.shifts import ShiftRequirement, ShiftAssignment
 from models.production import (
     ProductionSession, DowntimeLog, ProductionEntry, 
@@ -24,9 +24,15 @@ from models.logistics import ReturnTicket
 from models.maintenance import MaintenanceRequest
 from models.chat import Conversation, ConversationMember, Message, PushSubscription
 
-load_dotenv()
+# Force absolute path to avoid CWD confusion
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+env_path = os.path.join(BASE_DIR, ".env")
+load_dotenv(env_path)
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./sl_enterprise.db")
+# Force absolute path to avoid CWD confusion
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+db_path = os.path.join(BASE_DIR, "sl_enterprise.db")
+DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{db_path}")
 connect_args = {"check_same_thread": False} if "sqlite" in DATABASE_URL else {}
 
 engine = create_engine(DATABASE_URL, connect_args=connect_args)
