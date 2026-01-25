@@ -5,6 +5,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
+import DecryptedText from '../../components/ui/DecryptedText';
+
 export default function LoginPage() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
@@ -26,11 +28,19 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex-col">
             <div className="max-w-md w-full mx-4">
                 {/* Logo */}
                 <div className="text-center mb-8">
-                    <h1 className="text-4xl font-bold text-white mb-2">SL Enterprise</h1>
+                    <h1 className="text-4xl font-bold text-white mb-2 tracking-wider">
+                        <DecryptedText
+                            text="SL Enterprise"
+                            speed={70}
+                            maxIterations={20}
+                            animateOn="view"
+                            revealDirection="center"
+                        />
+                    </h1>
                     <p className="text-blue-300">Sistema Gestionale Aziendale</p>
                 </div>
 
@@ -94,8 +104,20 @@ export default function LoginPage() {
                 </div>
 
                 <p className="text-center text-blue-300/60 text-sm mt-6">
-                    SL Enterprise v4.0 - Backend API Ready
+                    SL Enterprise v4.1 - Backend API Ready
                 </p>
+            </div>
+
+            {/* Copyright Footer */}
+            <div className="mt-12 text-blue-500/40 text-xs font-mono tracking-widest uppercase">
+                <DecryptedText
+                    text="Copyright © 2026 by Salvatore Laezza"
+                    speed={50}
+                    maxIterations={15}
+                    animateOn="view"
+                    characters="01"
+                    sequential={true}
+                />
             </div>
         </div>
     );
