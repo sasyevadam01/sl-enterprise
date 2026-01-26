@@ -263,7 +263,7 @@ export default function VehicleChecklistPage() {
             status: false,
             note: reportingIssue.note,
             photo: reportingIssue.photo, // File object
-            photo_temp_id: reportingIssue.photo ? crypto.randomUUID() : null
+            photo_temp_id: reportingIssue.photo ? (Date.now() + '-' + Math.random().toString(36).substr(2, 9)) : null
         };
 
         setChecks(prev => ({ ...prev, [reportingIssue.key]: issueData }));
@@ -891,6 +891,7 @@ export default function VehicleChecklistPage() {
                                                             <input
                                                                 type="file"
                                                                 accept="image/*"
+                                                                capture="environment"
                                                                 className="hidden"
                                                                 onChange={(e) => {
                                                                     const file = e.target.files[0];
