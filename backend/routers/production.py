@@ -318,11 +318,22 @@ async def update_request_status(
         
     elif new_status == 'cancelled':
         is_owner = req.created_by_id == current_user.id
-        is_supply = current_user.has_permission("manage_production_supply")
-        if not (is_owner or is_supply or current_user.role == "super_admin"):
+        is_supply = current_user.has_permission("manage_production_supply") or current_user.role == "super_admin"
+        
+        if not (is_owner or is_supply):
              raise HTTPException(403, "Permesso negato")
+        
         req.status = 'cancelled'
-        log_action = "PRODUCTION_ORDER_CANCELLED"
+        
+        # LOGICA RIFIUTO vs CANCELLAZIONE
+        if is_supply and not is_owner:
+            # RIFIUTO MAGAZZINIERE: Segnamo chi ha rifiutato
+            req.processed_by_id = current_user.id
+            log_action = "PRODUCTION_ORDER_REJECTED"
+        else:
+            # CANCELLAZIONE UTENTE: Resettiamo il processore (non è una lavorazione)
+            req.processed_by_id = None
+            log_action = "PRODUCTION_ORDER_CANCELLED"
     
     if data.notes:
         req.notes = data.notes

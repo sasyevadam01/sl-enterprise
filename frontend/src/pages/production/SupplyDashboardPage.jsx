@@ -12,6 +12,10 @@ export default function SupplyDashboardPage() {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    // Modal State for Rejection
+    const [rejectModal, setRejectModal] = useState({ isOpen: false, order: null });
+    const [rejectReason, setRejectReason] = useState('');
+
     // Track acknowledged cancelled orders (localStorage removed - now synced with server)
     // No dedicated state needed, we just reload the list
 
@@ -65,6 +69,24 @@ export default function SupplyDashboardPage() {
             loadOrders();
         } catch (err) {
             toast.error(err.response?.data?.detail || 'Errore');
+        }
+    };
+
+    const openRejectModal = (order) => {
+        setRejectModal({ isOpen: true, order });
+        setRejectReason('');
+    };
+
+    const confirmRejection = async () => {
+        if (!rejectModal.order) return;
+        try {
+            // "cancelled" with reason. production.py will handle it as "Rejected" if I am Supply
+            await pickingApi.updateStatus(rejectModal.order.id, 'cancelled', rejectReason);
+            toast.success('Richiesta rifiutata (Utente notificato)');
+            setRejectModal({ isOpen: false, order: null });
+            loadOrders();
+        } catch (err) {
+            toast.error(err.response?.data?.detail || 'Errore rifiuto');
         }
     };
 
@@ -134,7 +156,9 @@ export default function SupplyDashboardPage() {
     // Separate pending, processing, and cancelled
     const pendingOrders = orders.filter(o => o.status === 'pending');
     const processingOrders = orders.filter(o => o.status === 'processing');
-    const cancelledOrders = orders.filter(o => o.status === 'cancelled');
+    // "Cancelled" orders displayed here are ONLY those cancelled by the USER (processed_by_id is null)
+    // If *I* rejected them (processed_by_id is me), I don't need to see them as "Blocked"
+    const cancelledOrders = orders.filter(o => o.status === 'cancelled' && !o.processed_by_id);
 
 
     // --- SIREN / AUDIO ALERT LOGIC ---
@@ -406,6 +430,13 @@ export default function SupplyDashboardPage() {
                                 >
                                     🏃 PRENDI IN CARICO
                                 </button>
+
+                                <button
+                                    onClick={() => openRejectModal(order)}
+                                    className="w-full mt-2 py-2 bg-red-500/10 text-red-400 rounded-lg text-sm font-medium hover:bg-red-500/20 transition-colors border border-red-500/20 flex items-center justify-center gap-2"
+                                >
+                                    ❌ NON DISPONIBILE
+                                </button>
                             </div>
                         ))}
                     </div>
@@ -441,6 +472,53 @@ export default function SupplyDashboardPage() {
                             >
                                 ✅ SÌ, CONSEGNA
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* REJECTION MODAL */}
+            {rejectModal.isOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setRejectModal({ isOpen: false, order: null })} />
+                    <div className="relative bg-slate-800 rounded-2xl border border-white/10 shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="bg-gradient-to-r from-red-800 to-pink-900 p-6 text-center">
+                            <h3 className="text-xl font-bold text-white">Rifiuta Richiesta</h3>
+                            <p className="text-red-100 text-sm mt-1">Segnala perché non puoi evadere l'ordine</p>
+                        </div>
+                        <div className="p-6">
+                            <p className="text-gray-300 text-center mb-6">
+                                Richiesta di <strong className="text-white">{rejectModal.order?.creator_name}</strong><br />
+                                <span className="text-cyan-400 font-bold">
+                                    {rejectModal.order?.request_type === 'memory' ? rejectModal.order?.material_label : `${rejectModal.order?.density_label} ${rejectModal.order?.color_label}`}
+                                </span>
+                            </p>
+
+                            <div className="mb-6">
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Motivazione</label>
+                                <textarea
+                                    className="w-full bg-slate-900 border border-white/10 rounded-lg p-3 text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                                    rows="2"
+                                    placeholder="Es. Manca materiale a terra, Arrivo tra 1 ora..."
+                                    value={rejectReason}
+                                    onChange={(e) => setRejectReason(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <button
+                                    onClick={() => setRejectModal({ isOpen: false, order: null })}
+                                    className="py-3 px-4 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-bold"
+                                >
+                                    Annulla
+                                </button>
+                                <button
+                                    onClick={confirmRejection}
+                                    className="py-3 px-4 bg-gradient-to-r from-red-600 to-pink-700 hover:from-red-500 hover:to-pink-600 text-white rounded-xl font-bold shadow-lg"
+                                >
+                                    🚫 RIFIUTA
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

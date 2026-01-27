@@ -49,6 +49,17 @@ export default function OrderDashboardPage() {
         }
     };
 
+    const handleAcknowledge = async (orderId) => {
+        try {
+            // Acknowledge a rejection (clears it from list)
+            await pickingApi.acknowledge(orderId);
+            toast.success('Rimosso dalla lista');
+            loadOrders();
+        } catch (err) {
+            toast.error('Errore operazione');
+        }
+    };
+
     const openCancelModal = (order) => {
         setCancelModal({ isOpen: true, order });
         setCancelReason('');
@@ -96,6 +107,7 @@ export default function OrderDashboardPage() {
     const activeOrders = orders.filter(o => ['pending', 'processing'].includes(o.status));
     const deliveredOrders = orders.filter(o => ['delivered'].includes(o.status));
     const completedOrders = orders.filter(o => ['completed'].includes(o.status));
+    const rejectedOrders = orders.filter(o => o.status === 'cancelled' && o.processed_by_id); // Rejected by Supply
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 pb-24">
@@ -159,6 +171,51 @@ export default function OrderDashboardPage() {
                                         ❌ Annulla Richiesta
                                     </button>
                                 )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* REJECTED Orders */}
+            {rejectedOrders.length > 0 && (
+                <div className="mb-6">
+                    <h2 className="text-sm font-bold text-red-400 uppercase mb-3 flex items-center gap-2">
+                        🚫 Richieste Rifiutate
+                    </h2>
+                    <div className="space-y-3">
+                        {rejectedOrders.map(order => (
+                            <div
+                                key={order.id}
+                                className="bg-red-900/20 rounded-xl p-4 border border-red-500/30"
+                            >
+                                <div className="flex justify-between items-start mb-2">
+                                    <div>
+                                        <span className="text-lg font-bold text-white">
+                                            {order.request_type === 'memory'
+                                                ? order.material_label
+                                                : `${order.density_label} ${order.color_label}`}
+                                        </span>
+                                        <span className="text-gray-400 text-sm ml-2">x{order.quantity}</span>
+                                    </div>
+                                    <span className="px-2 py-1 rounded-lg text-xs font-bold bg-red-500/30 text-red-300">
+                                        ❌ RIFIUTATO
+                                    </span>
+                                </div>
+
+                                <div className="text-sm text-gray-400 mb-4">
+                                    <div className="bg-red-500/10 p-3 rounded-lg border border-red-500/20">
+                                        <p className="text-xs text-red-400 font-bold mb-1 uppercase">Motivazione:</p>
+                                        <p className="text-white italic">"{order.notes}"</p>
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={() => handleAcknowledge(order.id)}
+                                    className="w-full py-3 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-xl font-bold border border-red-500/30 transition-colors flex items-center justify-center gap-2"
+                                >
+                                    👋 OK, HO CAPITO
+                                </button>
                             </div>
                         ))}
                     </div>
