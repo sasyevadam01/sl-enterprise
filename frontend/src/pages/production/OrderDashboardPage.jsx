@@ -233,16 +233,33 @@ export default function OrderDashboardPage() {
                                 onClick={() => handleArchive(order.id)}
                                 className="bg-green-900/20 rounded-xl p-3 border border-green-500/20 cursor-pointer hover:bg-green-900/40 transition-all"
                             >
-                                <div className="flex justify-between items-center">
-                                    <span className="text-green-300 font-medium">
-                                        {order.request_type === 'memory'
-                                            ? order.material_label
-                                            : `${order.density_label} ${order.color_label}`}
-                                        {' '}{order.dimensions}
-                                    </span>
-                                    <span className="px-3 py-1 bg-green-500 text-slate-900 rounded-full text-xs font-bold animate-pulse">
-                                        Conferma Ricezione
-                                    </span>
+                                <div className="flex flex-col gap-2">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <span className="text-lg font-bold text-white block">
+                                                {order.request_type === 'memory'
+                                                    ? order.material_label
+                                                    : `${order.density_label} ${order.color_label}`}
+                                            </span>
+                                            <div className="text-sm text-green-300/80 space-y-0.5 mt-1">
+                                                <p>📐 {order.dimensions} {order.custom_height ? `(H: ${order.custom_height}cm)` : ''}</p>
+                                                {order.client_ref && <p className="font-bold text-white">👤 Rif: {order.client_ref}</p>}
+                                                {order.supplier_label && <p>🏭 {order.supplier_label}</p>}
+                                                <p className="text-xs opacity-70">{order.is_trimmed ? '🔷 Rifilare' : '🔲 Non Rifilato'}</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handleArchive(order.id); }}
+                                            className="px-4 py-2 bg-green-500 hover:bg-green-400 text-slate-900 rounded-lg text-sm font-bold shadow-lg shadow-green-500/20 transition-all flex items-center gap-2"
+                                        >
+                                            Conferma Ricezione
+                                        </button>
+                                    </div>
+                                    {order.notes && (
+                                        <div className="text-xs text-gray-400 italic border-t border-white/5 pt-2 mt-1">
+                                            "Note: {order.notes}"
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ))}
