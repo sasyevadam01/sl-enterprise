@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { fleetApi } from '../../api/client';
 import { useUI, StandardModal } from '../../components/ui/CustomUI';
 import { useAuth } from '../../context/AuthContext';
@@ -58,6 +59,7 @@ const CHECKS = [
 
 export default function VehicleChecklistPage() {
     const { toast } = useUI();
+    const navigate = useNavigate();
     const { user } = useAuth();
     const [step, setStep] = useState(1); // 1: Select, 2: Check, 3: Success
     const [vehicles, setVehicles] = useState([]);
@@ -970,7 +972,7 @@ export default function VehicleChecklistPage() {
                                         </button>
                                         {(user?.permissions?.includes('view_checklist_history') || user?.permissions?.includes('*')) && (
                                             <button
-                                                onClick={() => window.location.href = "/production/checklist/history"}
+                                                onClick={() => navigate("/production/checklist/history")}
                                                 className="w-full h-16 bg-blue-600 hover:bg-blue-500 text-white rounded-[28px] font-black uppercase tracking-widest transition-all shadow-xl shadow-blue-600/20 active:scale-95 flex items-center justify-center gap-3"
                                             >
                                                 Storico <ChevronRight size={18} />

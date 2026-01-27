@@ -23,6 +23,12 @@ import {
     Maximize2
 } from 'lucide-react';
 import StylishCalendar from '../../components/ui/StylishCalendar';
+import { isValid } from 'date-fns';
+
+const safeFormat = (date, fmt, options = {}) => {
+    const d = new Date(date);
+    return isValid(d) ? format(d, fmt, options) : 'Data non valida';
+};
 
 export default function ChecklistHistoryPage() {
     const { toast } = useUI();
@@ -304,7 +310,7 @@ function ChecklistCard({ checklist, vehicle, index, onClick }) {
                             <div className="text-right">
                                 <div className="flex items-center gap-2 text-slate-400 font-black text-lg">
                                     <Clock size={16} className="text-slate-500" />
-                                    {format(new Date(checklist.timestamp), 'HH:mm')}
+                                    {safeFormat(checklist.timestamp, 'HH:mm')}
                                 </div>
                                 <span className="text-[10px] font-black text-slate-600 uppercase tracking-tighter">Check-in Time</span>
                             </div>
@@ -436,7 +442,7 @@ function ChecklistDetailModal({ checklist, vehicle, onClose, StandardModal, onRe
                             {isWarning ? 'Stato: CRITICO' : isResolved ? 'Stato: RIPRISTINATO' : 'Stato: OPERATIVO'}
                         </h4>
                         <p className="text-slate-500 font-bold mt-2 uppercase tracking-widest text-xs">
-                            Ispezione completata alle {format(new Date(checklist.timestamp), 'HH:mm')}
+                            Ispezione completata alle {safeFormat(checklist.timestamp, 'HH:mm')}
                         </p>
                     </div>
                 </div>
@@ -449,7 +455,7 @@ function ChecklistDetailModal({ checklist, vehicle, onClose, StandardModal, onRe
                     </div>
                     <div className="bg-white/5 p-6 rounded-[32px] border border-white/5 text-right">
                         <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">Data</span>
-                        <p className="text-white font-black text-lg">{format(new Date(checklist.timestamp), 'dd MMM yyyy', { locale: it })}</p>
+                        <p className="text-white font-black text-lg">{safeFormat(checklist.timestamp, 'dd MMM yyyy', { locale: it })}</p>
                     </div>
                 </div>
 
