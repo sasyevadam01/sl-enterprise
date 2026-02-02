@@ -4,9 +4,82 @@
  */
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { employeesApi } from '../../api/client';
+import { employeesApi, usersApi } from '../../api/client';
 import StatCard from '../../components/common/StatCard';
 import StatusBadge from '../../components/common/StatusBadge';
+
+// ============================================================
+// DEPARTMENT COLOR MAP - Colori unici per ogni reparto
+// ============================================================
+const DEPARTMENT_COLORS = {
+    'Coordinamento': { bg: 'bg-purple-500/10', text: 'text-purple-400', border: 'border-purple-500/20' },
+    'Incollaggio': { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' },
+    'Magazzinieri': { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20' },
+    'Sartoria': { bg: 'bg-pink-500/10', text: 'text-pink-400', border: 'border-pink-500/20' },
+    'Autista': { bg: 'bg-sky-500/10', text: 'text-sky-400', border: 'border-sky-500/20' },
+    'Taglio Poliuretano': { bg: 'bg-orange-500/10', text: 'text-orange-400', border: 'border-orange-500/20' },
+    'Bordatura': { bg: 'bg-rose-500/10', text: 'text-rose-400', border: 'border-rose-500/20' },
+    'Ufficio': { bg: 'bg-slate-500/10', text: 'text-slate-400', border: 'border-slate-500/20' },
+    'default': { bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/20' }
+};
+
+// ============================================================
+// ROLE ICONS - SVG per ogni tipo di ruolo
+// ============================================================
+const RoleIcon = ({ role }) => {
+    const iconClass = "w-4 h-4 mr-2 flex-shrink-0";
+
+    // Match ruolo a icona
+    const r = (role || '').toLowerCase();
+
+    if (r.includes('coordinat')) return (
+        <svg className={`${iconClass} text-purple-400`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+        </svg>
+    );
+    if (r.includes('magazzin') || r.includes('carrellista')) return (
+        <svg className={`${iconClass} text-emerald-400`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+        </svg>
+    );
+    if (r.includes('autista')) return (
+        <svg className={`${iconClass} text-sky-400`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+        </svg>
+    );
+    if (r.includes('sart') || r.includes('cuci')) return (
+        <svg className={`${iconClass} text-pink-400`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+        </svg>
+    );
+    if (r.includes('pantograf') || r.includes('taglio') || r.includes('giostra')) return (
+        <svg className={`${iconClass} text-orange-400`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 10-4.243 4.243 3 3 0 004.243-4.243zm0-5.758a3 3 0 10-4.243-4.243 3 3 0 004.243 4.243z" />
+        </svg>
+    );
+    if (r.includes('bordat') || r.includes('prepara')) return (
+        <svg className={`${iconClass} text-rose-400`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+        </svg>
+    );
+    if (r.includes('ufficio') || r.includes('admin') || r.includes('impiegat')) return (
+        <svg className={`${iconClass} text-slate-400`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+    );
+    if (r.includes('incolla') || r.includes('vernicia')) return (
+        <svg className={`${iconClass} text-amber-400`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+        </svg>
+    );
+
+    // Default: operaio generico
+    return (
+        <svg className={`${iconClass} text-blue-400`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+    );
+};
 
 // Helper Component for 3-Dot Menu
 const ActionMenu = ({ employeeId }) => {
@@ -88,6 +161,12 @@ export default function EmployeesPage() {
 
     const [stats, setStats] = useState({ total: 0, active: 0, absent: 0, expiring: 0 });
 
+    // NEW: Online users tracking
+    const [onlineUserIds, setOnlineUserIds] = useState(new Set());
+
+    // NEW: Sorting state
+    const [sortConfig, setSortConfig] = useState({ key: 'last_name', direction: 'asc' });
+
     useEffect(() => {
         const fetchEmployees = async () => {
             try {
@@ -135,6 +214,30 @@ export default function EmployeesPage() {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    // NEW: Fetch online users periodically
+    useEffect(() => {
+        const fetchOnlineUsers = async () => {
+            try {
+                const response = await usersApi.getOnlineUsers();
+                const ids = new Set((response.data || response || []).map(u => u.id || u.user_id));
+                setOnlineUserIds(ids);
+            } catch (err) {
+                console.log("Online users fetch error (non-critical):", err);
+            }
+        };
+        fetchOnlineUsers();
+        const interval = setInterval(fetchOnlineUsers, 30000); // Refresh ogni 30s
+        return () => clearInterval(interval);
+    }, []);
+
+    // NEW: Sorting handler
+    const handleSort = (key) => {
+        setSortConfig(prev => ({
+            key,
+            direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
+        }));
+    };
+
     const filteredEmployees = employees.filter(emp => {
         const matchesSearch = `${emp.last_name} ${emp.first_name}`.toLowerCase().includes(search.toLowerCase()) ||
             (emp.fiscal_code && emp.fiscal_code.toLowerCase().includes(search.toLowerCase()));
@@ -143,6 +246,15 @@ export default function EmployeesPage() {
         const matchesRole = roleFilter === 'all' || emp.current_role === roleFilter;
 
         return matchesSearch && matchesDept && matchesRole;
+    });
+
+    // NEW: Apply sorting
+    const sortedEmployees = [...filteredEmployees].sort((a, b) => {
+        const aVal = (a[sortConfig.key] || '').toString().toLowerCase();
+        const bVal = (b[sortConfig.key] || '').toString().toLowerCase();
+        if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
     });
 
     // Unique Departments/Roles for dropdowns
@@ -266,50 +378,100 @@ export default function EmployeesPage() {
                 <table className="w-full text-left border-collapse">
                     <thead>
                         <tr className="border-b border-white/5 bg-slate-900/30 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                            <th className="px-6 py-5 rounded-tl-2xl">Nome</th>
-                            <th className="px-6 py-5">Reparto</th>
-                            <th className="px-6 py-5">Ruolo</th>
+                            <th
+                                className="px-6 py-5 rounded-tl-2xl cursor-pointer hover:text-white transition-colors group"
+                                onClick={() => handleSort('last_name')}
+                            >
+                                <span className="flex items-center gap-2">
+                                    Nome
+                                    <svg className={`w-3 h-3 transition-transform ${sortConfig.key === 'last_name' ? 'text-blue-400' : 'text-slate-600'} ${sortConfig.key === 'last_name' && sortConfig.direction === 'desc' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                    </svg>
+                                </span>
+                            </th>
+                            <th
+                                className="px-6 py-5 cursor-pointer hover:text-white transition-colors"
+                                onClick={() => handleSort('department_name')}
+                            >
+                                <span className="flex items-center gap-2">
+                                    Reparto
+                                    <svg className={`w-3 h-3 transition-transform ${sortConfig.key === 'department_name' ? 'text-blue-400' : 'text-slate-600'} ${sortConfig.key === 'department_name' && sortConfig.direction === 'desc' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                    </svg>
+                                </span>
+                            </th>
+                            <th
+                                className="px-6 py-5 cursor-pointer hover:text-white transition-colors"
+                                onClick={() => handleSort('current_role')}
+                            >
+                                <span className="flex items-center gap-2">
+                                    Ruolo
+                                    <svg className={`w-3 h-3 transition-transform ${sortConfig.key === 'current_role' ? 'text-blue-400' : 'text-slate-600'} ${sortConfig.key === 'current_role' && sortConfig.direction === 'desc' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                    </svg>
+                                </span>
+                            </th>
                             <th className="px-6 py-5">Stato</th>
                             <th className="px-6 py-5 text-right w-24 rounded-tr-2xl">Azioni</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5 text-sm">
-                        {filteredEmployees.length === 0 ? (
+                        {sortedEmployees.length === 0 ? (
                             <tr>
                                 <td colSpan={5} className="px-6 py-16 text-center text-slate-500">
-                                    <span className="block text-4xl mb-2 opacity-50">🕵️‍♂️</span>
+                                    <svg className="w-12 h-12 mx-auto mb-3 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    </svg>
                                     Nessun dipendente trovato
                                 </td>
                             </tr>
                         ) : (
-                            filteredEmployees.map((emp, index) => (
-                                <tr
-                                    key={emp.id}
-                                    className={`group hover:bg-white/[0.03] transition-colors relative ${index === filteredEmployees.length - 1 ? 'rounded-b-2xl' : ''}`}
-                                >
-                                    <td className="px-6 py-4">
-                                        <Link to={`/hr/employees/${emp.id}`} className="block">
-                                            <p className="text-white font-semibold text-base hover:text-blue-400 transition-colors">
-                                                {emp.last_name} {emp.first_name}
-                                            </p>
-                                        </Link>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-blue-500/5 text-blue-400 border border-blue-500/10">
-                                            {emp.department_name || '-'}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-slate-400">
-                                        {emp.current_role || '-'}
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <StatusBadge status={emp.is_active ? 'active' : 'terminated'} />
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <ActionMenu employeeId={emp.id} />
-                                    </td>
-                                </tr>
-                            ))
+                            sortedEmployees.map((emp, index) => {
+                                const deptColors = DEPARTMENT_COLORS[emp.department_name] || DEPARTMENT_COLORS['default'];
+                                const isOnline = onlineUserIds.has(emp.user_id);
+
+                                return (
+                                    <tr
+                                        key={emp.id}
+                                        className={`group hover:bg-gradient-to-r hover:from-white/[0.03] hover:to-transparent transition-all duration-200 relative ${index === sortedEmployees.length - 1 ? 'rounded-b-2xl' : ''}`}
+                                    >
+                                        {/* Enhanced hover glow effect */}
+                                        <td className="px-6 py-4">
+                                            <Link to={`/hr/employees/${emp.id}`} className="flex items-center gap-3">
+                                                {/* Online indicator */}
+                                                <div className="relative">
+                                                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center text-sm font-bold text-white border border-white/10">
+                                                        {emp.last_name?.charAt(0)}{emp.first_name?.charAt(0)}
+                                                    </div>
+                                                    {isOnline && (
+                                                        <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-slate-900 animate-pulse" title="Online"></span>
+                                                    )}
+                                                </div>
+                                                <p className="text-white font-semibold text-base group-hover:text-blue-400 transition-colors">
+                                                    {emp.last_name} {emp.first_name}
+                                                </p>
+                                            </Link>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ${deptColors.bg} ${deptColors.text} border ${deptColors.border}`}>
+                                                {emp.department_name || '-'}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className="flex items-center text-slate-300">
+                                                <RoleIcon role={emp.current_role} />
+                                                {emp.current_role || '-'}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <StatusBadge status={emp.is_active ? 'active' : 'terminated'} />
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <ActionMenu employeeId={emp.id} />
+                                        </td>
+                                    </tr>
+                                );
+                            })
                         )}
                     </tbody>
                 </table>
