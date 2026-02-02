@@ -139,7 +139,7 @@ const filteredLeaves = leaves.filter(l => {
 if (loading) {
     return (
         <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-400"></div>
         </div>
     );
 }
@@ -156,14 +156,14 @@ return (
             </div>
             <div className="flex items-center gap-4">
                 {pendingCount > 0 && isHR && (
-                    <div className="px-4 py-2 bg-yellow-500/20 border border-yellow-500/50 rounded-lg">
-                        <span className="text-yellow-400 font-bold">{pendingCount}</span>
-                        <span className="text-yellow-300 ml-2">in attesa</span>
+                    <div className="px-4 py-2 bg-orange-500/10 border border-orange-500/30 rounded-xl">
+                        <span className="neon-orange font-bold">{pendingCount}</span>
+                        <span className="text-orange-300/70 ml-2">in attesa</span>
                     </div>
                 )}
                 <button
                     onClick={() => setShowModal(true)}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition flex items-center gap-2"
+                    className="action-btn action-btn-primary"
                 >
                     <span>+</span> Nuova Richiesta
                 </button>
@@ -181,9 +181,9 @@ return (
                 <button
                     key={f.id}
                     onClick={() => setFilter(f.id)}
-                    className={`px-4 py-2 rounded-lg transition ${filter === f.id
-                        ? 'bg-blue-600 text-white'
-                        : 'text-gray-400 hover:bg-white/5 border border-white/10'
+                    className={`px-4 py-2 rounded-xl transition ${filter === f.id
+                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                        : 'text-zinc-500 hover:bg-white/5 border border-white/5 hover:border-white/10'
                         }`}
                 >
                     {f.label}
@@ -192,8 +192,8 @@ return (
         </div>
 
         {/* Table */}
-        <div className="bg-slate-800/50 rounded-2xl border border-white/10 overflow-hidden">
-            <table className="w-full">
+        <div className="master-card overflow-hidden">
+            <table className="data-table">
                 <thead className="bg-slate-800">
                     <tr>
                         <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">Dipendente</th>
@@ -271,8 +271,8 @@ return (
 
         {/* New Request Modal */}
         {showModal && (
-            <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-                <div className="bg-slate-800 rounded-2xl border border-white/10 p-6 w-full max-w-md">
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+                <div className="master-card p-6 w-full max-w-md">
                     <div className="flex items-center justify-between mb-6">
                         <h2 className="text-xl font-bold text-white">Nuova Richiesta</h2>
                         <button

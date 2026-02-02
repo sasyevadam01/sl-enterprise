@@ -75,7 +75,7 @@ DEFAULT_ROLES = [
         "label": "Magazziniere",
         "description": "Gestione richieste materiali - Pool logistica",
         "is_static": False,
-        "permissions": ["manage_logistics_pool", "request_logistics"],
+        "permissions": ["manage_logistics_pool", "request_logistics", "perform_checklists", "view_announcements"],
         "default_home": "/logistics/pool"
     },
     {

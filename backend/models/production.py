@@ -268,6 +268,7 @@ class BlockRequest(Base):
     
     # Status Flow
     status = Column(String(50), default="pending") # pending, processing, delivered, completed, cancelled
+    is_urgent = Column(Boolean, default=False)     # NEW: Urgency flag
     
     # Tracking
     created_by_id = Column(Integer, ForeignKey("users.id"))

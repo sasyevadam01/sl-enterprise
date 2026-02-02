@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 
 export default function WeatherWidget() {
     const [weather, setWeather] = useState(null);
@@ -19,7 +18,7 @@ export default function WeatherWidget() {
             });
     }, []);
 
-    if (loading) return <div className="h-full bg-slate-800/40 rounded-2xl animate-pulse"></div>;
+    if (loading) return <div className="h-full master-card animate-pulse"></div>;
 
     if (!weather) return null;
 
@@ -34,30 +33,47 @@ export default function WeatherWidget() {
         return '🌥️';
     };
 
-    const isDay = weather.is_day === 1;
+    const getCondition = (code) => {
+        if (code === 0) return 'Sereno';
+        if (code >= 1 && code <= 3) return 'Nuvoloso';
+        if (code >= 45 && code <= 48) return 'Nebbia';
+        if (code >= 51 && code <= 67) return 'Pioggia';
+        if (code >= 71 && code <= 77) return 'Neve';
+        if (code >= 95) return 'Temporale';
+        return 'Variabile';
+    };
 
     return (
-        <div className={`relative h-full overflow-hidden rounded-2xl border border-white/10 p-6 flex items-center justify-between shadow-lg ${isDay ? 'bg-gradient-to-br from-blue-600/20 to-cyan-500/20' : 'bg-gradient-to-br from-indigo-900/40 to-purple-900/40'}`}>
-            {/* Background Decor */}
-            <div className="absolute -right-8 -top-8 text-9xl opacity-10 select-none">
+        <div className="master-card h-full p-6 flex flex-col justify-between relative overflow-hidden">
+            {/* Giant Background Icon */}
+            <div className="absolute -right-6 -bottom-6 text-[10rem] opacity-[0.08] select-none pointer-events-none">
                 {getIcon(weather.weathercode)}
             </div>
 
-            <div className="z-10">
-                <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-1 flex items-center gap-2">
-                    📍 Meteo (Napoli)
-                </h3>
-                <div className="text-4xl font-bold text-white flex items-start gap-2">
-                    {Math.round(weather.temperature)}
-                    <span className="text-lg text-gray-400 font-normal">°C</span>
+            {/* Header */}
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <span className="text-zinc-500 text-xs font-semibold uppercase tracking-wider">📍 Napoli</span>
                 </div>
-                <p className="text-xs text-blue-200 mt-1 flex items-center gap-1">
-                    🍃 Vento: {weather.windspeed} km/h
-                </p>
+                <span className="text-zinc-600 text-xs">{getCondition(weather.weathercode)}</span>
             </div>
 
-            <div className="z-10 text-center">
-                <div className="text-6xl filter drop-shadow-lg animate-float">
+            {/* Main Content */}
+            <div className="flex items-end justify-between relative z-10">
+                {/* Temperature */}
+                <div>
+                    <div className="flex items-start">
+                        <span className="text-6xl font-black neon-cyan">{Math.round(weather.temperature)}</span>
+                        <span className="text-2xl text-zinc-500 font-light ml-1">°C</span>
+                    </div>
+                    <p className="text-zinc-500 text-sm mt-2 flex items-center gap-2">
+                        <span className="text-cyan-400">🍃</span>
+                        <span>Vento: <span className="text-zinc-300 font-medium">{weather.windspeed} km/h</span></span>
+                    </p>
+                </div>
+
+                {/* Animated Weather Icon */}
+                <div className="text-7xl animate-float icon-glow">
                     {getIcon(weather.weathercode)}
                 </div>
             </div>

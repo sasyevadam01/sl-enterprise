@@ -7,7 +7,7 @@ import { useUI } from '../../components/ui/CustomUI';
 const UsersTable = ({ users, roles, onToggleStatus, onEdit, onDelete }) => (
     <>
         {/* --- DESKTOP TABLE --- */}
-        <div className="hidden md:block bg-slate-800 rounded-2xl border border-white/10 overflow-hidden shadow-xl animate-fade-in">
+        <div className="hidden md:block master-card overflow-hidden shadow-xl animate-fade-in">
             <table className="w-full text-left">
                 <thead className="bg-slate-900/50 text-gray-400 uppercase text-xs font-semibold">
                     <tr>
@@ -23,7 +23,7 @@ const UsersTable = ({ users, roles, onToggleStatus, onEdit, onDelete }) => (
                         <tr key={user.id} className="hover:bg-white/5 transition-colors group">
                             <td className="p-4">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center font-bold text-blue-400 group-hover:bg-slate-600 transition">
+                                    <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center font-bold text-emerald-400 group-hover:bg-emerald-500/30 transition">
                                         {user.username.charAt(0).toUpperCase()}
                                     </div>
                                     <div>
@@ -89,11 +89,11 @@ const UsersTable = ({ users, roles, onToggleStatus, onEdit, onDelete }) => (
         {/* --- MOBILE CARDS --- */}
         <div className="md:hidden space-y-4">
             {users.map(user => (
-                <div key={user.id} className="bg-slate-800 rounded-xl p-4 border border-white/10 shadow-lg">
+                <div key={user.id} className="master-card p-4">
                     {/* Header: Avatar, Name, Role */}
                     <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center font-bold text-blue-400">
+                            <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center font-bold text-emerald-400">
                                 {user.username.charAt(0).toUpperCase()}
                             </div>
                             <div>
@@ -624,7 +624,7 @@ export default function UserManagementPage() {
 
             {loading ? (
                 <div className="flex justify-center p-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400"></div>
                 </div>
             ) : (
                 <>

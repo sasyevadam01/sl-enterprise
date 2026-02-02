@@ -1,13 +1,12 @@
 /**
  * SL Enterprise - Main Layout
+ * v2.0 - Cyberpunk Premium Design System
  */
 import { useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import NotificationBell from './NotificationBell';
-// UsageGuide removed per user request
 import { useAuth } from '../../context/AuthContext';
-// UsageGuide removed per user request
 
 // Page titles based on route
 const PAGE_TITLES = {
@@ -48,7 +47,7 @@ export default function MainLayout() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-950">
+        <div className="app-background">
             <Sidebar
                 isOpen={desktopExpanded}
                 onToggle={() => setDesktopExpanded(!desktopExpanded)}
@@ -67,13 +66,13 @@ export default function MainLayout() {
             {/* Main Content */}
             <main className={`transition-all duration-300 ${desktopExpanded ? 'md:ml-64' : 'md:ml-20'} ml-0`}>
                 {/* Top Bar */}
-                <header className="sticky top-0 z-[100] bg-slate-900/80 backdrop-blur-lg border-b border-white/10">
+                <header className="top-bar sticky top-0 z-[100]">
                     <div className="flex items-center justify-between px-6 py-4">
                         <div className="flex items-center gap-4">
                             {/* Hamburger Menu (Mobile Only) */}
                             <button
                                 onClick={() => setMobileOpen(true)}
-                                className="md:hidden p-2 text-gray-300 hover:text-white rounded-lg hover:bg-white/10"
+                                className="md:hidden p-2 text-zinc-400 hover:text-white rounded-lg hover:bg-white/10 transition"
                             >
                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -88,10 +87,10 @@ export default function MainLayout() {
                             {/* User */}
                             <div className="flex items-center gap-3">
                                 <div className="text-right hidden sm:block">
-                                    <p className="text-sm font-medium text-white">{user?.full_name}</p>
-                                    <p className="text-xs text-gray-400 capitalize">{user?.role?.replace('_', ' ')}</p>
+                                    <p className="text-sm font-medium text-zinc-200">{user?.full_name}</p>
+                                    <p className="text-xs text-zinc-500 capitalize">{user?.role?.replace('_', ' ')}</p>
                                 </div>
-                                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center text-white font-semibold">
+                                <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center text-white font-semibold shadow-lg shadow-emerald-500/20">
                                     {user?.full_name?.charAt(0) || 'U'}
                                 </div>
                             </div>
@@ -100,16 +99,10 @@ export default function MainLayout() {
                 </header>
 
                 {/* Page Content */}
-                <div className="p-6">
+                <div className="p-6 pb-24">
                     <Outlet />
                 </div>
             </main>
-
-
-            {/* Live Widget - Moved to Sidebar */}
-
-
         </div>
     );
 }
-

@@ -43,29 +43,67 @@ const getContrastColor = (hexColor) => {
     return yiq >= 128 ? 'black' : 'white';
 };
 
-// Step 2A: Memory Material Grid
-const StepMemoryMaterial = ({ materials, onSelect }) => (
-    <div>
-        <h2 className="text-xl font-bold text-white text-center mb-4">Scegli Memory</h2>
-        <div className="grid grid-cols-1 gap-3">
-            {materials.map(m => {
-                const textColor = getContrastColor(m.value);
-                return (
-                    <button
-                        key={m.id}
-                        onClick={() => onSelect(m)}
-                        className="p-6 rounded-xl font-bold text-lg shadow-lg hover:scale-[1.02] transition-transform border-2 border-white/20 relative overflow-hidden"
-                        style={{ backgroundColor: m.value || '#6B7280', color: textColor }}
-                    >
-                        <span style={{ textShadow: textColor === 'white' ? '0 1px 2px rgba(0,0,0,0.5)' : 'none' }}>
-                            {m.label}
-                        </span>
-                    </button>
-                );
-            })}
+// Step 2A: Memory Material Grid - Enhanced Color Cards
+const StepMemoryMaterial = ({ materials, onSelect }) => {
+    // Generate gradient and glow from base color
+    const getColorStyles = (hexColor) => {
+        if (!hexColor) return {};
+        // Darken color for gradient end
+        const darken = (hex, percent) => {
+            const num = parseInt(hex.replace('#', ''), 16);
+            const amt = Math.round(2.55 * percent);
+            const R = Math.max(0, (num >> 16) - amt);
+            const G = Math.max(0, ((num >> 8) & 0x00FF) - amt);
+            const B = Math.max(0, (num & 0x0000FF) - amt);
+            return `#${(1 << 24 | R << 16 | G << 8 | B).toString(16).slice(1)}`;
+        };
+
+        return {
+            background: `linear-gradient(135deg, ${hexColor} 0%, ${darken(hexColor, 20)} 100%)`,
+            boxShadow: `0 8px 32px ${hexColor}50, 0 4px 16px ${hexColor}30, inset 0 1px 0 rgba(255,255,255,0.2)`,
+        };
+    };
+
+    return (
+        <div>
+            <h2 className="text-xl font-bold text-white text-center mb-4">Scegli Memory</h2>
+            <div className="grid grid-cols-1 gap-4">
+                {materials.map(m => {
+                    const textColor = getContrastColor(m.value);
+                    const colorStyles = getColorStyles(m.value);
+                    return (
+                        <button
+                            key={m.id}
+                            onClick={() => onSelect(m)}
+                            className="p-5 rounded-2xl font-bold text-lg transition-all duration-200 
+                                       border border-white/20 relative overflow-hidden
+                                       active:scale-[0.98] active:brightness-110
+                                       hover:translate-y-[-2px] hover:shadow-2xl"
+                            style={{
+                                ...colorStyles,
+                                color: textColor,
+                                minHeight: '64px'
+                            }}
+                        >
+                            {/* Shine effect overlay */}
+                            <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" />
+                            <span
+                                className="relative z-10 drop-shadow-lg"
+                                style={{
+                                    textShadow: textColor === 'white'
+                                        ? '0 2px 4px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.3)'
+                                        : '0 1px 2px rgba(255,255,255,0.3)'
+                                }}
+                            >
+                                {m.label}
+                            </span>
+                        </button>
+                    );
+                })}
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 // Step 2B: Sponge - Density Selector
 const StepSpongeDensity = ({ densities, onSelect }) => (
@@ -85,29 +123,66 @@ const StepSpongeDensity = ({ densities, onSelect }) => (
     </div>
 );
 
-// Step 2B2: Sponge - Color Selector
-const StepSpongeColor = ({ colors, onSelect }) => (
-    <div>
-        <h2 className="text-xl font-bold text-white text-center mb-4">Colore Spugna</h2>
-        <div className="grid grid-cols-1 gap-3">
-            {colors.map(c => {
-                const textColor = getContrastColor(c.value);
-                return (
-                    <button
-                        key={c.id}
-                        onClick={() => onSelect(c)}
-                        className="p-6 rounded-xl font-bold text-lg shadow-lg hover:scale-[1.02] transition-transform border-2 border-white/30"
-                        style={{ backgroundColor: c.value || '#6B7280', color: textColor }}
-                    >
-                        <span style={{ textShadow: textColor === 'white' ? '0 1px 2px rgba(0,0,0,0.5)' : 'none' }}>
-                            {c.label}
-                        </span>
-                    </button>
-                );
-            })}
+// Step 2B2: Sponge - Color Selector - Enhanced Color Cards
+const StepSpongeColor = ({ colors, onSelect }) => {
+    // Generate gradient and glow from base color
+    const getColorStyles = (hexColor) => {
+        if (!hexColor) return {};
+        const darken = (hex, percent) => {
+            const num = parseInt(hex.replace('#', ''), 16);
+            const amt = Math.round(2.55 * percent);
+            const R = Math.max(0, (num >> 16) - amt);
+            const G = Math.max(0, ((num >> 8) & 0x00FF) - amt);
+            const B = Math.max(0, (num & 0x0000FF) - amt);
+            return `#${(1 << 24 | R << 16 | G << 8 | B).toString(16).slice(1)}`;
+        };
+
+        return {
+            background: `linear-gradient(135deg, ${hexColor} 0%, ${darken(hexColor, 20)} 100%)`,
+            boxShadow: `0 8px 32px ${hexColor}50, 0 4px 16px ${hexColor}30, inset 0 1px 0 rgba(255,255,255,0.2)`,
+        };
+    };
+
+    return (
+        <div>
+            <h2 className="text-xl font-bold text-white text-center mb-4">Colore Spugna</h2>
+            <div className="grid grid-cols-1 gap-4">
+                {colors.map(c => {
+                    const textColor = getContrastColor(c.value);
+                    const colorStyles = getColorStyles(c.value);
+                    return (
+                        <button
+                            key={c.id}
+                            onClick={() => onSelect(c)}
+                            className="p-5 rounded-2xl font-bold text-lg transition-all duration-200 
+                                       border border-white/20 relative overflow-hidden
+                                       active:scale-[0.98] active:brightness-110
+                                       hover:translate-y-[-2px] hover:shadow-2xl"
+                            style={{
+                                ...colorStyles,
+                                color: textColor,
+                                minHeight: '64px'
+                            }}
+                        >
+                            {/* Shine effect overlay */}
+                            <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent pointer-events-none" />
+                            <span
+                                className="relative z-10 drop-shadow-lg"
+                                style={{
+                                    textShadow: textColor === 'white'
+                                        ? '0 2px 4px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.3)'
+                                        : '0 1px 2px rgba(255,255,255,0.3)'
+                                }}
+                            >
+                                {c.label}
+                            </span>
+                        </button>
+                    );
+                })}
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 // Step 3: Dimensions + Trim
 const StepDimensions = ({ formData, setFormData, onNext, dimensions = [] }) => {
@@ -505,7 +580,7 @@ export default function NewOrderPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
+        <div className="min-h-screen carbon-background p-4">
             {/* Header */}
             <div className="flex items-center gap-4 mb-6">
                 <button

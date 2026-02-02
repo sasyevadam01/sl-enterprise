@@ -258,6 +258,7 @@ async def list_block_requests(
             client_ref=req.client_ref,
             notes=req.notes,
             status=req.status,
+            is_urgent=req.is_urgent if hasattr(req, 'is_urgent') else False,
             created_by_id=req.created_by_id,
             created_at=req.created_at,
             processed_by_id=req.processed_by_id,
@@ -385,6 +386,50 @@ async def acknowledge_cancellation(
     
     return {"message": "Cancellazione confermata", "status": "cancelled_acked"}
 
+
+@router.patch("/requests/{req_id}/urgency", summary="Toggle Urgenza Ordine")
+async def toggle_urgency(
+    req_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Marca/deseleziona un ordine come URGENTE.
+    Solo il richiedente originale può farlo.
+    Ordini urgenti vengono visualizzati in rosso e in cima alla lista.
+    """
+    req = db.query(BlockRequest).filter(BlockRequest.id == req_id).first()
+    if not req:
+        raise HTTPException(404, "Richiesta non trovata")
+    
+    # Solo il proprietario può richiedere urgenza
+    if req.created_by_id != current_user.id and current_user.role != "super_admin":
+        raise HTTPException(403, "Solo il richiedente può richiedere urgenza")
+    
+    # Solo ordini pending/processing possono essere urgenti
+    if req.status not in ['pending', 'processing']:
+        raise HTTPException(400, "Impossibile cambiare urgenza per ordini completati/annullati")
+    
+    # Toggle urgency
+    req.is_urgent = not req.is_urgent
+    db.commit()
+    
+    # WebSocket Broadcast
+    try:
+        lm = get_logistics_manager()
+        await lm.broadcast("production_blocks", {
+            "type": "urgency_update", 
+            "block_id": req.id, 
+            "is_urgent": req.is_urgent
+        })
+    except Exception as e:
+        print(f"[WS BROADCAST ERROR] Error broadcasting urgency for block {req_id}: {e}")
+    
+    log_audit(db, current_user.id, "PRODUCTION_ORDER_URGENCY", f"Order {req.id} urgency set to {req.is_urgent}")
+    db.commit()
+    
+    return {"message": "Urgenza aggiornata", "is_urgent": req.is_urgent}
+
 # ============================================================
 # REPORTING & STATS (Excel Export)
 # ============================================================
@@ -461,6 +506,13 @@ async def get_production_reports(
     user_perf = {} # {username: count}
     supply_perf = {} # {username: count}
     
+    # NEW: Memory vs Spugna and Trimmed stats
+    memory_count = 0
+    sponge_count = 0
+    trimmed_count = 0
+    cancelled_count = 0  # NEW: Cancellation tracking
+    urgent_count = 0     # NEW: Urgent blocks tracking
+    
     time_created_processing = [] # minutes
     time_processing_delivered = [] # minutes
 
@@ -469,8 +521,22 @@ async def get_production_reports(
         mat_label = "N/A"
         if req.request_type == 'memory':
             mat_label = f"Memory {req.material.label if req.material else '?'}"
+            memory_count += req.quantity
         else:
             mat_label = f"Spugna {req.density.label if req.density else '?'} {req.color.label if req.color else '?'}"
+            sponge_count += req.quantity
+        
+        # Trimmed count
+        if req.is_trimmed:
+            trimmed_count += req.quantity
+        
+        # NEW: Count cancelled requests
+        if req.status in ['cancelled', 'cancelled_acked']:
+            cancelled_count += req.quantity
+        
+        # NEW: Count urgent requests
+        if hasattr(req, 'is_urgent') and req.is_urgent:
+            urgent_count += req.quantity
             
         # Count Type
         by_type[mat_label] = by_type.get(mat_label, 0) + req.quantity
@@ -527,7 +593,18 @@ async def get_production_reports(
         "user_perf": user_perf,
         "supply_perf": supply_perf,
         "avg_wait_min": round(avg_wait, 1),
-        "avg_work_min": round(avg_work, 1)
+        "avg_work_min": round(avg_work, 1),
+        # NEW: Memory vs Spugna and Trimmed stats
+        "memory_count": memory_count,
+        "sponge_count": sponge_count,
+        "trimmed_count": trimmed_count,
+        "trimmed_percentage": round((trimmed_count / total_blocks * 100) if total_blocks > 0 else 0, 1),
+        # NEW: Cancellation stats
+        "cancelled_count": cancelled_count,
+        "cancelled_percentage": round((cancelled_count / total_blocks * 100) if total_blocks > 0 else 0, 1),
+        # NEW: Urgent stats
+        "urgent_count": urgent_count,
+        "urgent_percentage": round((urgent_count / total_blocks * 100) if total_blocks > 0 else 0, 1)
     }
 
     if format == 'json':
@@ -543,13 +620,30 @@ async def get_production_reports(
         {"Metrica": "Tempo Medio Attesa (min)", "Valore": round(avg_wait, 1)},
         {"Metrica": "Tempo Medio Lavorazione (min)", "Valore": round(avg_work, 1)},
         {"Metrica": "", "Valore": ""}, # Spacer
-        {"Metrica": "--- PER TIPO ---", "Valore": ""}
+        {"Metrica": "--- TIPOLOGIA MATERIALE ---", "Valore": ""},
+        {"Metrica": "Memory", "Valore": memory_count},
+        {"Metrica": "Spugna", "Valore": sponge_count},
+        {"Metrica": "", "Valore": ""}, # Spacer
+        {"Metrica": "--- LAVORAZIONE ---", "Valore": ""},
+        {"Metrica": "Blocchi Rifilati", "Valore": trimmed_count},
+        {"Metrica": "% Rifilati", "Valore": f"{round((trimmed_count / total_blocks * 100) if total_blocks > 0 else 0, 1)}%"},
+        {"Metrica": "", "Valore": ""}, # Spacer
+        {"Metrica": "--- CANCELLAZIONI ---", "Valore": ""},
+        {"Metrica": "Blocchi Cancellati", "Valore": cancelled_count},
+        {"Metrica": "% Cancellati", "Valore": f"{round((cancelled_count / total_blocks * 100) if total_blocks > 0 else 0, 1)}%"},
+        {"Metrica": "", "Valore": ""}, # Spacer
+        {"Metrica": "--- PER TIPO MATERIALE ---", "Valore": ""}
     ]
     for k, v in by_type.items():
         summary_data.append({"Metrica": k, "Valore": v})
         
-    summary_data.extend([{"Metrica": "", "Valore": ""}, {"Metrica": "--- PER UTENTE ---", "Valore": ""}])
+    summary_data.extend([{"Metrica": "", "Valore": ""}, {"Metrica": "--- PER UTENTE RICHIEDENTE ---", "Valore": ""}])
     for k, v in user_perf.items():
+        summary_data.append({"Metrica": k, "Valore": v})
+        
+    # NEW: Add supply performance to Excel
+    summary_data.extend([{"Metrica": "", "Valore": ""}, {"Metrica": "--- PER MAGAZZINIERE ---", "Valore": ""}])
+    for k, v in supply_perf.items():
         summary_data.append({"Metrica": k, "Valore": v})
 
     df_summary = pd.DataFrame(summary_data)

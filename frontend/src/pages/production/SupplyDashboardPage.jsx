@@ -118,8 +118,9 @@ export default function SupplyDashboardPage() {
 
     const formatTime = (date) => {
         if (!date) return '';
-        // Backend sends UTC timestamps, convert to local for display
-        return new Date(date).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+        // Backend sends UTC without 'Z' suffix - append it to force UTC interpretation
+        const dateStr = typeof date === 'string' && !date.endsWith('Z') ? date + 'Z' : date;
+        return new Date(dateStr).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
     };
 
     // Live timer state - updates every second for urgency effect
@@ -132,7 +133,9 @@ export default function SupplyDashboardPage() {
     // Live timer with seconds - creates urgency!
     const getTimeSince = (date) => {
         if (!date) return '';
-        const utcDate = new Date(date);
+        // Backend sends UTC without 'Z' suffix - append it to force UTC interpretation
+        const dateStr = date.endsWith('Z') ? date : date + 'Z';
+        const utcDate = new Date(dateStr);
         const totalSecs = Math.floor((Date.now() - utcDate.getTime()) / 1000);
         const hours = Math.floor(totalSecs / 3600);
         const mins = Math.floor((totalSecs % 3600) / 60);
@@ -228,44 +231,84 @@ export default function SupplyDashboardPage() {
     // ---------------------------------
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
-            {/* Header */}
-            <div className="mb-6 flex justify-between items-start">
-                <div>
-                    <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-                        🚚 Lista Prelievi
-                    </h1>
-                    <p className="text-gray-400 text-sm mt-1">
-                        {pendingOrders.length} in attesa • {processingOrders.length} in lavorazione
-                    </p>
-                </div>
+        <div className="min-h-screen carbon-background p-4 pb-24">
+            {/* Hero Header Card */}
+            <div className="master-card p-5 mb-6 relative overflow-hidden">
+                {/* Decorative gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-purple-500/5 pointer-events-none" />
 
-                {/* Audio Toggle */}
-                <button
-                    onClick={enableAudio}
-                    className={`p-3 rounded-full transition-all ${audioAllowed
-                        ? 'bg-green-500/20 text-green-400 border border-green-500/50'
-                        : 'bg-slate-700 text-gray-400 border border-white/10 animate-pulse'
-                        }`}
-                    title={audioAllowed ? "Sirena Attiva" : "Tocca per attivare Sirena"}
-                >
-                    {audioAllowed ? '🔊' : '🔇'}
-                </button>
+                <div className="relative z-10">
+                    {/* Title row */}
+                    <div className="flex justify-between items-center mb-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h1 className="text-xl font-bold text-white">Lista Prelievi</h1>
+                                <p className="text-xs text-gray-400">Block Supply Dashboard</p>
+                            </div>
+                        </div>
+
+                        {/* Audio Toggle - Premium Style */}
+                        <button
+                            onClick={enableAudio}
+                            className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl transition-all ${audioAllowed
+                                ? 'bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/30'
+                                : 'bg-zinc-800 text-gray-400 border border-white/10'
+                                }`}
+                            title={audioAllowed ? "Sirena Attiva" : "Tocca per attivare Sirena"}
+                        >
+                            {audioAllowed ? (
+                                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
+                                </svg>
+                            ) : (
+                                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z" />
+                                </svg>
+                            )}
+                        </button>
+                    </div>
+
+                    {/* KPI Counters Row */}
+                    <div className="grid grid-cols-3 gap-3">
+                        {/* Pending */}
+                        <div className="bg-zinc-800/50 rounded-xl p-3 text-center border border-white/5">
+                            <div className="text-2xl font-bold neon-orange">{pendingOrders.length}</div>
+                            <div className="text-[10px] text-gray-400 uppercase tracking-wider">In Attesa</div>
+                        </div>
+                        {/* Processing */}
+                        <div className="bg-zinc-800/50 rounded-xl p-3 text-center border border-yellow-500/20">
+                            <div className="text-2xl font-bold text-yellow-400" style={{ textShadow: '0 0 10px rgba(250,204,21,0.4)' }}>{processingOrders.length}</div>
+                            <div className="text-[10px] text-gray-400 uppercase tracking-wider">In Corso</div>
+                        </div>
+                        {/* Cancelled */}
+                        <div className="bg-zinc-800/50 rounded-xl p-3 text-center border border-white/5">
+                            <div className="text-2xl font-bold text-red-400">{cancelledOrders.length}</div>
+                            <div className="text-[10px] text-gray-400 uppercase tracking-wider">Bloccati</div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {/* Loading */}
             {loading && (
                 <div className="flex justify-center py-10">
-                    <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-cyan-500"></div>
+                    <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-emerald-400"></div>
                 </div>
             )}
 
-            {/* Empty State */}
+            {/* Empty State - Premium */}
             {!loading && orders.length === 0 && (
-                <div className="text-center py-16 text-gray-500">
-                    <div className="text-6xl mb-4">☀️</div>
-                    <p className="text-xl">Nessun prelievo in coda!</p>
-                    <p className="text-sm mt-2">Ottimo lavoro, rilassati un attimo</p>
+                <div className="master-card p-8 text-center">
+                    <svg className="w-16 h-16 text-yellow-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p className="text-xl font-bold text-white mb-2">Nessun prelievo in coda!</p>
+                    <p className="text-sm text-gray-400">Ottimo lavoro, rilassati un attimo</p>
                 </div>
             )}
 
@@ -273,52 +316,63 @@ export default function SupplyDashboardPage() {
             {processingOrders.length > 0 && (
                 <div className="mb-6">
                     <h2 className="text-sm font-bold text-yellow-400 uppercase mb-3 flex items-center gap-2">
-                        <span className="animate-pulse">🔄</span> In Lavorazione
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        In Lavorazione
                     </h2>
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                         {processingOrders.map(order => (
                             <div
                                 key={order.id}
-                                className="bg-yellow-900/30 rounded-xl p-4 border-2 border-yellow-500/50"
+                                className="master-card p-4 border-2 border-yellow-500/40 relative overflow-hidden"
                             >
-                                <div className="flex justify-between items-start mb-3">
-                                    <div>
-                                        <span className="text-xl font-bold text-white">
+                                {/* Color indicator strip */}
+                                <div
+                                    className="absolute left-0 top-0 bottom-0 w-2 rounded-l-xl"
+                                    style={{ backgroundColor: order.material_color || order.color_value || '#f59e0b' }}
+                                />
+
+                                {/* Header with material name and timer */}
+                                <div className="flex justify-between items-start mb-3 pl-3">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-lg font-bold text-white">
                                             {order.request_type === 'memory'
                                                 ? order.material_label
                                                 : `${order.density_label} ${order.color_label}`}
                                         </span>
-                                        {/* SECTOR BADGE MINI */}
                                         {order.target_sector && (
-                                            <span className={`ml-2 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase border ${order.target_sector === 'Pantografo'
-                                                ? 'bg-cyan-900/20 text-cyan-400 border-cyan-500/20'
-                                                : 'bg-purple-900/20 text-purple-400 border-purple-500/20'
+                                            <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase border ${order.target_sector === 'Pantografo'
+                                                ? 'bg-cyan-900/30 text-cyan-400 border-cyan-500/30'
+                                                : 'bg-purple-900/30 text-purple-400 border-purple-500/30'
                                                 }`}>
                                                 {order.target_sector.substring(0, 1)}
                                             </span>
                                         )}
-                                        <span className="text-yellow-400 text-sm ml-2">x{order.quantity}</span>
+                                        <span className="text-yellow-400 font-bold">×{order.quantity}</span>
                                     </div>
-                                    <span className="text-xs text-yellow-500 bg-yellow-500/20 px-2 py-1 rounded">
+                                    <span className="text-xs text-yellow-400 bg-yellow-500/20 px-2 py-1 rounded-lg font-mono">
                                         {getTimeSince(order.processed_at)}
                                     </span>
                                 </div>
 
-                                <div className="text-sm text-gray-300 mb-3 space-y-1">
-                                    <p>📐 <strong>{order.dimensions}</strong> {order.custom_height ? `(H: ${order.custom_height}cm)` : ''}</p>
-                                    <p className={order.is_trimmed ? 'text-orange-400' : 'text-gray-400'}>
-                                        {order.is_trimmed ? '🔷 RIFILARE!' : '🔲 Non Rifilato'}
+                                {/* Info grid - single column for mobile */}
+                                <div className="text-sm text-gray-300 mb-4 pl-3 space-y-1">
+                                    <p><strong className="text-white">{order.dimensions}</strong> {order.custom_height ? `(H: ${order.custom_height}cm)` : ''}</p>
+                                    <p className={order.is_trimmed ? 'text-orange-400 font-bold' : 'text-gray-500'}>
+                                        {order.is_trimmed ? 'RIFILARE!' : 'Non Rifilato'}
                                     </p>
-                                    {order.supplier_label && <p className="text-blue-400">🏭 {order.supplier_label}</p>}
-                                    {order.client_ref && <p>👤 {order.client_ref}</p>}
+                                    {order.supplier_label && <p className="text-blue-400">{order.supplier_label}</p>}
+                                    {order.client_ref && <p>{order.client_ref}</p>}
                                     <p className="text-xs text-gray-500">Da: {order.creator_name} • Ore {formatTime(order.created_at)}</p>
                                 </div>
 
+                                {/* Compact action button */}
                                 <button
                                     onClick={() => requestDeliveryConfirmation(order)}
-                                    className="w-full py-4 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl text-white font-bold text-lg shadow-lg"
+                                    className="w-full py-4 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl text-white font-bold text-base shadow-lg shadow-green-500/20 active:scale-[0.98] transition-transform"
                                 >
-                                    ✅ CONSEGNATO
+                                    CONSEGNATO
                                 </button>
                             </div>
                         ))}
@@ -330,7 +384,7 @@ export default function SupplyDashboardPage() {
             {cancelledOrders.length > 0 && (
                 <div className="mb-6">
                     <h2 className="text-sm font-bold text-red-400 uppercase mb-3 flex items-center gap-2">
-                        🚫 ORDINI BLOCCATI - Conferma lettura!
+                        ORDINI BLOCCATI - Conferma lettura!
                     </h2>
                     <div className="space-y-3">
                         {cancelledOrders
@@ -341,7 +395,7 @@ export default function SupplyDashboardPage() {
                                 >
                                     {/* BLOCKED Banner */}
                                     <div className="absolute top-0 left-0 right-0 bg-red-600/80 text-white text-center py-1 font-bold text-sm tracking-widest">
-                                        ⛔ BLOCCATO - NON PRELEVARE ⛔
+                                        BLOCCATO - NON PRELEVARE
                                     </div>
 
                                     <div className="pt-8 relative z-10">
@@ -354,9 +408,9 @@ export default function SupplyDashboardPage() {
                                             <span className="text-gray-300 text-sm">x{order.quantity}</span>
                                         </div>
                                         <div className="text-sm text-gray-300 mb-3 space-y-1">
-                                            <p>📐 <strong>{order.dimensions}</strong></p>
-                                            {order.supplier_label && <p className="text-blue-400">🏭 {order.supplier_label}</p>}
-                                            <p className="text-red-300 font-semibold">❌ Annullato da: {order.creator_name}</p>
+                                            <p><strong>{order.dimensions}</strong></p>
+                                            {order.supplier_label && <p className="text-blue-400">{order.supplier_label}</p>}
+                                            <p className="text-red-300 font-semibold">Annullato da: {order.creator_name}</p>
                                             {order.notes && (
                                                 <div className="mt-2 text-red-100 bg-red-800/50 p-2 rounded-lg text-sm border border-red-500/30">
                                                     <span className="font-bold opacity-70 block text-xs mb-1">MOTIVO ANNULLAMENTO:</span>
@@ -382,60 +436,68 @@ export default function SupplyDashboardPage() {
             {pendingOrders.length > 0 && (
                 <div>
                     <h2 className="text-sm font-bold text-gray-400 uppercase mb-3">
-                        ⏳ In Attesa ({pendingOrders.length})
+                        In Attesa ({pendingOrders.length})
                     </h2>
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                         {pendingOrders.map(order => (
                             <div
                                 key={order.id}
-                                className="bg-slate-800/80 rounded-xl p-4 border border-white/10"
+                                className="master-card p-4 relative overflow-hidden"
                             >
-                                <div className="flex justify-between items-start mb-3">
-                                    <div>
+                                {/* Color indicator strip */}
+                                <div
+                                    className="absolute left-0 top-0 bottom-0 w-2 rounded-l-xl"
+                                    style={{ backgroundColor: order.material_color || order.color_value || '#6b7280' }}
+                                />
+
+                                {/* Header with material name and timer */}
+                                <div className="flex justify-between items-start mb-3 pl-3">
+                                    <div className="flex items-center gap-2 flex-wrap">
                                         <span className="text-lg font-bold text-white">
                                             {order.request_type === 'memory'
                                                 ? order.material_label
                                                 : `${order.density_label} ${order.color_label}`}
                                         </span>
-                                        {/* SECTOR BADGE */}
                                         {order.target_sector && (
-                                            <span className={`ml-2 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${order.target_sector === 'Pantografo'
+                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${order.target_sector === 'Pantografo'
                                                 ? 'bg-cyan-900/30 text-cyan-300 border-cyan-500/30'
                                                 : 'bg-purple-900/30 text-purple-300 border-purple-500/30'
                                                 }`}>
                                                 {order.target_sector}
                                             </span>
                                         )}
-                                        <span className="text-gray-400 text-sm ml-2">x{order.quantity}</span>
+                                        <span className="text-gray-400 font-bold">×{order.quantity}</span>
                                     </div>
-                                    {/* Live SLA Timer with color coding */}
-                                    <span className={`text-sm font-mono font-bold px-2 py-1 rounded-lg ${getSLAColor(order.created_at)}`}>
-                                        ⏱️ {getTimeSince(order.created_at)}
+                                    {/* Live SLA Timer */}
+                                    <span className={`text-sm font-mono font-bold px-2 py-1 rounded-lg whitespace-nowrap ${getSLAColor(order.created_at)}`}>
+                                        {getTimeSince(order.created_at)}
                                     </span>
                                 </div>
 
-                                <div className="text-sm text-gray-400 mb-3 space-y-1">
-                                    <p>📐 <strong className="text-white">{order.dimensions}</strong> {order.custom_height ? `(H: ${order.custom_height}cm)` : ''}</p>
+                                {/* Info grid - single column for mobile */}
+                                <div className="text-sm text-gray-400 mb-4 pl-3 space-y-1">
+                                    <p><strong className="text-white">{order.dimensions}</strong> {order.custom_height ? `(H: ${order.custom_height}cm)` : ''}</p>
                                     <p className={order.is_trimmed ? 'text-orange-400 font-bold' : 'text-gray-500'}>
-                                        {order.is_trimmed ? '🔷 RIFILARE!' : '🔲 Non Rifilato'}
+                                        {order.is_trimmed ? 'RIFILARE!' : 'Non Rifilato'}
                                     </p>
-                                    {order.supplier_label && <p className="text-blue-400">🏭 {order.supplier_label}</p>}
-                                    {order.client_ref && <p>👤 {order.client_ref}</p>}
+                                    {order.supplier_label && <p className="text-blue-400">{order.supplier_label}</p>}
+                                    {order.client_ref && <p>{order.client_ref}</p>}
                                     <p className="text-xs text-gray-500">Da: {order.creator_name}</p>
                                 </div>
 
+                                {/* Action buttons */}
                                 <button
                                     onClick={() => handleTakeCharge(order.id)}
-                                    className="w-full py-3 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl text-white font-bold shadow-lg"
+                                    className="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl text-white font-bold shadow-lg shadow-emerald-500/20 active:scale-[0.98] transition-transform"
                                 >
-                                    🏃 PRENDI IN CARICO
+                                    PRENDI IN CARICO
                                 </button>
 
                                 <button
                                     onClick={() => openRejectModal(order)}
-                                    className="w-full mt-2 py-2 bg-red-500/10 text-red-400 rounded-lg text-sm font-medium hover:bg-red-500/20 transition-colors border border-red-500/20 flex items-center justify-center gap-2"
+                                    className="w-full mt-2 py-2.5 bg-red-500/10 text-red-400 rounded-xl text-sm font-medium hover:bg-red-500/20 transition-colors border border-red-500/20 flex items-center justify-center gap-2 active:scale-[0.98]"
                                 >
-                                    ❌ NON DISPONIBILE
+                                    NON DISPONIBILE
                                 </button>
                             </div>
                         ))}
@@ -448,7 +510,9 @@ export default function SupplyDashboardPage() {
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
                     <div className="bg-[#1e293b] rounded-2xl border border-green-500/30 p-8 max-w-md w-full shadow-2xl text-center">
 
-                        <div className="text-5xl mb-4">📦✅</div>
+                        <svg className="w-16 h-16 text-green-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
                         <h2 className="text-xl font-bold text-white mb-2">CONFERMA CONSEGNA</h2>
                         <p className="text-gray-400 mb-6">
                             Stai completando la consegna di <strong className="text-white">{confirmDeliveryModal.quantity}</strong> Blocco/i
@@ -463,14 +527,14 @@ export default function SupplyDashboardPage() {
                                 onClick={() => setConfirmDeliveryModal(null)}
                                 className="py-4 rounded-xl border-2 border-gray-500/30 bg-gray-700/30 hover:bg-gray-600/40 text-gray-300 font-bold text-lg transition-all"
                             >
-                                ❌ NO
+                                NO
                             </button>
 
                             <button
                                 onClick={confirmDelivery}
                                 className="py-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-bold text-lg shadow-lg shadow-green-500/30 transition-all active:scale-95"
                             >
-                                ✅ SÌ, CONSEGNA
+                                SÌ, CONSEGNA
                             </button>
                         </div>
                     </div>
@@ -516,7 +580,7 @@ export default function SupplyDashboardPage() {
                                     onClick={confirmRejection}
                                     className="py-3 px-4 bg-gradient-to-r from-red-600 to-pink-700 hover:from-red-500 hover:to-pink-600 text-white rounded-xl font-bold shadow-lg"
                                 >
-                                    🚫 RIFIUTA
+                                    RIFIUTA
                                 </button>
                             </div>
                         </div>

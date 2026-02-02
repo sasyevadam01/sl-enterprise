@@ -963,11 +963,13 @@ class BlockRequestCreate(BaseModel):
 class BlockRequestUpdate(BaseModel):
     """Per cambi stato"""
     status: Optional[str] = None  # processing, delivered, cancelled
+    is_urgent: Optional[bool] = None  # NEW: Urgency flag
     notes: Optional[str] = None
 
 class BlockRequestResponse(BlockRequestCreate):
     id: int
     status: str
+    is_urgent: bool = False  # NEW: Urgency flag
     created_by_id: int
     created_at: datetime
     processed_by_id: Optional[int] = None

@@ -67,7 +67,7 @@ export default function EventsApprovalPage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-400"></div>
             </div>
         );
     }
@@ -79,23 +79,23 @@ export default function EventsApprovalPage() {
                     <h1 className="text-2xl font-bold text-white">⚖️ Approvazione Eventi</h1>
                     <p className="text-gray-400 mt-1">Revisiona gli eventi inseriti dai coordinatori prima che influenzino il punteggio</p>
                 </div>
-                <div className="bg-slate-800 px-4 py-2 rounded-lg border border-white/10">
-                    <span className="text-gray-400">In attesa: </span>
-                    <span className="text-white font-bold">{pendingEvents.length}</span>
+                <div className="master-card px-4 py-2">
+                    <span className="text-zinc-500">In attesa: </span>
+                    <span className="neon-orange font-bold">{pendingEvents.length}</span>
                 </div>
             </div>
 
             {pendingEvents.length === 0 ? (
-                <div className="bg-slate-800/50 rounded-2xl border border-white/10 p-12 text-center">
-                    <p className="text-gray-500 text-lg">Tutti gli eventi sono stati elaborati!</p>
-                    <p className="text-gray-600 text-sm mt-2">Non ci sono eventi in attesa di approvazione.</p>
+                <div className="master-card p-12 text-center">
+                    <p className="text-zinc-500 text-lg">Tutti gli eventi sono stati elaborati!</p>
+                    <p className="text-zinc-600 text-sm mt-2">Non ci sono eventi in attesa di approvazione.</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 gap-4">
                     {pendingEvents.map(event => {
                         const isPositive = event.points > 0;
                         return (
-                            <div key={event.id} className="bg-slate-800/50 rounded-2xl border border-white/10 overflow-hidden hover:border-white/20 transition-all">
+                            <div key={event.id} className="master-card overflow-hidden hover:border-emerald-500/20 transition-all">
                                 <div className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
                                     <div className="flex items-start gap-4">
                                         <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl shrink-0 ${isPositive ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
@@ -150,7 +150,7 @@ export default function EventsApprovalPage() {
             {/* Rejection Modal (opzionale, semplificato per ora) */}
             {showRejectionModal && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-slate-800 border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+                    <div className="master-card p-6 w-full max-w-md shadow-2xl">
                         <h3 className="text-xl font-bold text-white mb-4">Rifiuta Evento</h3>
                         <p className="text-gray-400 mb-4 text-sm">Inserisci una motivazione per il rifiuto (opzionale):</p>
                         <textarea

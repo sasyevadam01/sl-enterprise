@@ -90,8 +90,8 @@ export default function StaffingWidget() {
 
     if (data.loading) {
         return (
-            <div className="bg-slate-800/40 backdrop-blur-md rounded-2xl border border-white/10 p-6 h-full flex items-center justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+            <div className="master-card p-6 h-full flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-400"></div>
             </div>
         );
     }
@@ -101,61 +101,64 @@ export default function StaffingWidget() {
         ? Math.round((totalAbsent / data.totalOperativeStaff) * 100)
         : 0;
 
-    // Color logic for absence percentage (inverted - lower is better)
-    const absenceColor = absencePercent <= 5 ? 'text-green-400' : (absencePercent <= 15 ? 'text-orange-400' : 'text-red-400');
+    // Neon color for percentage
+    const absenceNeon = absencePercent <= 5 ? 'neon-emerald' : (absencePercent <= 15 ? 'neon-orange' : 'neon-red');
 
     return (
-        <div className="bg-slate-800/40 backdrop-blur-md rounded-2xl border border-white/10 p-5 h-full flex flex-col relative overflow-hidden shadow-xl">
-            <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4 flex items-center gap-2">
-                📊 Assenze Oggi
+        <div className="master-card p-5 h-full flex flex-col relative overflow-hidden">
+            <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <span className="text-purple-400">📊</span> Assenze Oggi
             </h3>
 
-            {/* Absence Type Breakdown Grid */}
-            <div className="grid grid-cols-5 gap-2 mb-4">
-                <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-2 text-center">
-                    <span className="text-lg font-bold text-blue-400">{data.byType.vacation}</span>
-                    <p className="text-[9px] text-blue-300/70 uppercase">Ferie</p>
+            {/* Absence Type Breakdown - Compact Grid with Neon Numbers */}
+            <div className="grid grid-cols-5 gap-1.5 mb-4">
+                <div className="text-center p-2 rounded-lg border border-white/5 bg-zinc-800/30">
+                    <span className="text-lg font-bold neon-emerald">{data.byType.vacation}</span>
+                    <p className="text-[8px] text-zinc-500 uppercase mt-0.5">Ferie</p>
                 </div>
-                <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-2 text-center">
-                    <span className="text-lg font-bold text-red-400">{data.byType.sick}</span>
-                    <p className="text-[9px] text-red-300/70 uppercase">Malattia</p>
+                <div className="text-center p-2 rounded-lg border border-white/5 bg-zinc-800/30">
+                    <span className="text-lg font-bold neon-red">{data.byType.sick}</span>
+                    <p className="text-[8px] text-zinc-500 uppercase mt-0.5">Malattia</p>
                 </div>
-                <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-2 text-center">
-                    <span className="text-lg font-bold text-purple-400">{data.byType.permit}</span>
-                    <p className="text-[9px] text-purple-300/70 uppercase">Permesso</p>
+                <div className="text-center p-2 rounded-lg border border-white/5 bg-zinc-800/30">
+                    <span className="text-lg font-bold neon-purple">{data.byType.permit}</span>
+                    <p className="text-[8px] text-zinc-500 uppercase mt-0.5">Permesso</p>
                 </div>
-                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-2 text-center">
-                    <span className="text-lg font-bold text-yellow-400">{data.byType.sudden_permit}</span>
-                    <p className="text-[9px] text-yellow-300/70 uppercase">Improv.</p>
+                <div className="text-center p-2 rounded-lg border border-white/5 bg-zinc-800/30">
+                    <span className="text-lg font-bold neon-orange">{data.byType.sudden_permit}</span>
+                    <p className="text-[8px] text-zinc-500 uppercase mt-0.5">Improv.</p>
                 </div>
-                <div className="bg-white/10 border border-white/20 rounded-lg p-2 text-center">
+                <div className="text-center p-2 rounded-lg border border-white/5 bg-zinc-800/30">
                     <span className="text-lg font-bold text-white">{totalAbsent}</span>
-                    <p className="text-[9px] text-gray-400 uppercase">Totale</p>
+                    <p className="text-[8px] text-zinc-500 uppercase mt-0.5">Totale</p>
                 </div>
             </div>
 
             {/* Absence Percentage */}
-            <div className="flex items-center justify-between mb-4 py-2 px-3 bg-slate-900/50 rounded-lg border border-white/5">
-                <span className="text-xs text-gray-400">% Assenza su {data.totalOperativeStaff} operativi</span>
-                <span className={`text-xl font-bold ${absenceColor}`}>{absencePercent}%</span>
+            <div className="flex items-center justify-between mb-4 py-2.5 px-3 rounded-xl border border-white/5 bg-zinc-800/30">
+                <span className="text-xs text-zinc-500">% Assenza su {data.totalOperativeStaff} operativi</span>
+                <span className={`text-xl font-bold ${absenceNeon}`}>{absencePercent}%</span>
             </div>
 
-            {/* Absentee List - Simplified */}
-            <h4 className="text-[10px] font-bold text-gray-500 mb-2 uppercase tracking-widest">Lista Assenti</h4>
+            {/* Absentee List */}
+            <h4 className="text-[10px] font-bold text-zinc-600 mb-2 uppercase tracking-widest">Lista Assenti</h4>
             <div className="space-y-1.5 flex-1 overflow-y-auto custom-scrollbar pr-1">
                 {data.absentees.length === 0 ? (
-                    <p className="text-xs text-green-400 text-center py-2">Tutti Presenti! 🎉</p>
+                    <p className="text-xs neon-emerald text-center py-2">Tutti Presenti! 🎉</p>
                 ) : (
                     data.absentees.map((leave, i) => (
                         <Link
                             key={i}
                             to={`/hr/employees/${leave.employee_id}?tab=absences`}
-                            className="flex items-center gap-2 p-2 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 transition cursor-pointer group"
+                            className="flex items-center gap-2 p-2 rounded-lg border border-white/5 
+                                       hover:border-emerald-500/20 bg-zinc-800/30 hover:bg-zinc-800/50 
+                                       transition-all cursor-pointer group"
                         >
-                            <div className="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center text-[10px] text-gray-300 font-bold border border-white/10">
+                            <div className="w-6 h-6 rounded-full bg-zinc-700 flex items-center justify-center 
+                                            text-[10px] text-zinc-300 font-bold border border-white/10">
                                 {leave.employee_name?.substring(0, 2)?.toUpperCase()}
                             </div>
-                            <p className="text-sm font-medium text-gray-200 group-hover:text-blue-300 transition">
+                            <p className="text-sm font-medium text-zinc-300 group-hover:text-emerald-400 transition">
                                 {leave.employee_name}
                             </p>
                         </Link>

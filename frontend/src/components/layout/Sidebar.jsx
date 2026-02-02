@@ -1,11 +1,55 @@
 /**
  * SL Enterprise - Sidebar Layout
+ * v3.0 Premium Minimalist Design
  */
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { hrStatsApi, chatApi, pickingApi, logisticsApi } from '../../api/client';
 import OnlineUsersWidget from '../ui/OnlineUsersWidget';
+import {
+    LayoutDashboard, Users, CheckCircle, Shield, Calendar, HardHat,
+    Plus, ClipboardList, CalendarDays, Megaphone, MessageSquare,
+    Factory, Wrench, Calculator, Settings, Radio, Package, Truck,
+    FileText, BarChart3, ClipboardCheck, History, UserCog, FileSearch,
+    LogOut, ChevronDown, ChevronRight
+} from 'lucide-react';
+
+// Icon mapping for menu items
+const iconMap = {
+    '📊': LayoutDashboard,
+    '👥': Users,
+    '✅': CheckCircle,
+    '🛡️': Shield,
+    '📅': Calendar,
+    '🦺': HardHat,
+    '➕': Plus,
+    '📋': ClipboardList,
+    '🗓️': CalendarDays,
+    '📢': Megaphone,
+    '💬': MessageSquare,
+    '🏭': Factory,
+    '🔧': Wrench,
+    '💰': Calculator,
+    '⚙️': Settings,
+    '🔴': Radio,
+    '📦': Package,
+    '🚚': Truck,
+    '🚛': Truck,
+    '📊': BarChart3,
+    '🚜': ClipboardCheck,
+    '📜': History,
+    '👤': UserCog,
+    '🎯': LayoutDashboard,
+    '⚡': Radio,
+    '🚪': LogOut,
+};
+
+// Helper to get icon component
+const getIcon = (emoji, className = "w-5 h-5") => {
+    const IconComponent = iconMap[emoji] || LayoutDashboard;
+    return <IconComponent className={className} />;
+};
 
 // Menu items builder function - now uses hasPermission function
 const getMenuItems = (hasPermission) => {
@@ -54,16 +98,16 @@ const getMenuItems = (hasPermission) => {
         isAnimated: isAnimated,
         // No parent permission - visibility determined by children's permissions
         children: [
-            { title: '👥 Dipendenti', path: '/hr/employees', permission: 'manage_employees' },
-            { title: '✅ Centro Approvazioni', path: '/hr/approvals', permission: 'view_approvals' },
-            { title: '🛡️ Gestione HR', path: '/hr/management', permission: 'view_hr_management' },
-            { title: '📅 Calendario', path: '/hr/calendar', permission: 'view_hr_calendar' },
-            { title: '🦺 Sicurezza RSPP', path: '/hr/security', permission: 'manage_employees' },
-            { title: '➕ Nuova Richiesta', path: '/hr/events/new', permission: 'request_events' },
-            { title: '📋 Task Board', path: '/hr/tasks', permission: 'manage_tasks' },
-            { title: '🗓️ Gestione Turni', path: '/hr/planner', permission: 'manage_shifts' },
-            { title: '📢 Bacheca Annunci', path: '/hr/announcements', permission: 'view_announcements' },
-            { title: '💬 Chat', path: '/chat', permission: null },  // Visibile a tutti
+            { title: 'Dipendenti', path: '/hr/employees', permission: 'manage_employees', icon: '👥' },
+            { title: 'Centro Approvazioni', path: '/hr/approvals', permission: 'view_approvals', icon: '✅' },
+            { title: 'Gestione HR', path: '/hr/management', permission: 'view_hr_management', icon: '🛡️' },
+            { title: 'Calendario', path: '/hr/calendar', permission: 'view_hr_calendar', icon: '📅' },
+            { title: 'Sicurezza RSPP', path: '/hr/security', permission: 'manage_employees', icon: '🦺' },
+            { title: 'Nuova Richiesta', path: '/hr/events/new', permission: 'request_events', icon: '➕' },
+            { title: 'Task Board', path: '/hr/tasks', permission: 'manage_tasks', icon: '📋' },
+            { title: 'Gestione Turni', path: '/hr/planner', permission: 'manage_shifts', icon: '🗓️' },
+            { title: 'Bacheca Annunci', path: '/hr/announcements', permission: 'view_announcements', icon: '📢' },
+            { title: 'Chat', path: '/chat', permission: null, icon: '💬' },  // Visibile a tutti
         ],
     });
 
@@ -73,11 +117,11 @@ const getMenuItems = (hasPermission) => {
         icon: '🏭',
         permission: 'access_factory',
         children: [
-            { title: '📊 Dashboard Produzione', path: '/factory/dashboard', permission: 'access_factory' },
-            { title: '🔧 Manutenzioni', path: '/factory/maintenance', permission: 'access_factory' },
-            { title: '💰 Calcolo Costi', path: '/factory/costs', permission: 'manage_kpi' },
-            { title: '⚙️ Inserimento Dati KPI', path: '/factory/kpi', permission: 'access_factory' },
-            { title: '📋 Configurazione KPI', path: '/factory/kpi/setup', permission: 'manage_kpi' },
+            { title: 'Dashboard Produzione', path: '/factory/dashboard', permission: 'access_factory', icon: '📊' },
+            { title: 'Manutenzioni', path: '/factory/maintenance', permission: 'access_factory', icon: '🔧' },
+            { title: 'Calcolo Costi', path: '/factory/costs', permission: 'manage_kpi', icon: '💰' },
+            { title: 'Inserimento Dati KPI', path: '/factory/kpi', permission: 'access_factory', icon: '⚙️' },
+            { title: 'Configurazione KPI', path: '/factory/kpi/setup', permission: 'manage_kpi', icon: '📋' },
         ],
     });
 
@@ -88,30 +132,20 @@ const getMenuItems = (hasPermission) => {
         permission: null, // Will be checked per-child
         children: [
             { type: 'divider', label: 'Logistica Taglio' },
-            { title: '📦 Richiesta Blocchi', path: '/production/orders', permission: 'create_production_orders' },
-            { title: '🚚 Lista Prelievi', path: '/production/blocks', permission: 'manage_production_supply' },
-            { title: '⚙️ Config. Blocchi', path: '/admin/production/config', permission: 'manage_production_config' },
-            { title: '📊 Report Forniture Blocchi', path: '/admin/production/reports', permission: 'view_production_reports' },
+            { title: 'Richiesta Blocchi', path: '/production/orders', permission: 'create_production_orders', icon: '📦' },
+            { title: 'Lista Prelievi', path: '/production/blocks', permission: 'manage_production_supply', icon: '🚚' },
+            { title: 'Config. Blocchi', path: '/admin/production/config', permission: 'manage_production_config', icon: '⚙️' },
+            { title: 'Report Forniture Blocchi', path: '/admin/production/reports', permission: 'view_production_reports', icon: '📊' },
             { type: 'divider', label: 'Logistica Materiali' }, // Visual separator
-            { title: '📋 Richiesta Materiali', path: '/logistics/request', permission: 'request_logistics' },
-            { title: '🚛 Gestione Richieste', path: '/logistics/pool', permission: 'manage_logistics_pool' },
-            { title: '📊 Mappa Richieste', path: '/logistics/dashboard', permission: 'supervise_logistics' },
-            { title: '📦 Config. Logistica', path: '/admin/logistics', permission: 'manage_logistics_config' },
+            { title: 'Richiesta Materiali', path: '/logistics/request', permission: 'request_logistics', icon: '📋' },
+            { title: 'Gestione Richieste', path: '/logistics/pool', permission: 'manage_logistics_pool', icon: '🚛' },
+            { title: 'Mappa Richieste', path: '/logistics/dashboard', permission: 'supervise_logistics', icon: '📊' },
+            { title: 'Config. Logistica', path: '/admin/logistics', permission: 'manage_logistics_config', icon: '📦' },
             { type: 'divider', label: 'Check List Obbligatorie' },
-            { title: '🚜 Check List Carrelli', path: '/production/checklist', permission: 'perform_checklists' },
-            { title: '📜 Storico Check Carrelli', path: '/production/checklist/history', permission: 'view_checklist_history' },
+            { title: 'Check List Carrelli', path: '/production/checklist', permission: 'perform_checklists', icon: '🚜' },
+            { title: 'Storico Check Carrelli', path: '/production/checklist/history', permission: 'view_checklist_history', icon: '📜' },
         ],
     });
-
-    // Logistics
-    // items.push({
-    //     title: 'Logistica',
-    //     icon: '📦',
-    //     permission: 'access_logistics',
-    //     children: [
-    //         { title: '↩️ Gestione Resi', path: '/ops/returns', permission: 'access_logistics' },
-    //     ],
-    // });
 
     // Admin - Based on permission
     if (showAdmin) {
@@ -120,9 +154,9 @@ const getMenuItems = (hasPermission) => {
             icon: '⚙️',
             permission: 'admin_users',
             children: [
-                { title: '👤 Gestione Utenti', path: '/admin/users', permission: 'admin_users' },
-                { title: '🛠️ Configurazioni', path: '/admin/config', permission: 'admin_users' },
-                { title: '📜 Audit Log', path: '/admin/audit', permission: 'admin_audit' },
+                { title: 'Gestione Utenti', path: '/admin/users', permission: 'admin_users', icon: '👤' },
+                { title: 'Configurazioni', path: '/admin/config', permission: 'admin_users', icon: '⚙️' },
+                { title: 'Audit Log', path: '/admin/audit', permission: 'admin_audit', icon: '📜' },
             ],
         });
     }
@@ -141,49 +175,50 @@ function SidebarItem({ item, isOpen, pendingCounts, onItemClick, onResetBadge })
             <div>
                 <button
                     onClick={() => setExpanded(!expanded)}
-                    className={`w-full flex items-center justify-between px-4 py-3 text-gray-300 hover:bg-white/10 rounded-lg transition ${expanded ? 'bg-white/5' : ''}`}
+                    className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl transition-all duration-200 group
+                        ${expanded ? 'bg-white/[0.03]' : 'hover:bg-white/[0.03]'}`}
                 >
                     <span className="flex items-center gap-3">
-                        <span className={`text-xl relative ${item.isAnimated ? 'animate-pulse' : ''}`}>
+                        <span className={`relative text-zinc-400 group-hover:text-zinc-200 transition-colors ${item.isAnimated ? 'text-emerald-400' : ''}`}>
                             {item.isAnimated && (
-                                <span className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 opacity-50 blur-md animate-spin-slow" style={{ animationDuration: '3s' }} />
+                                <span className="absolute inset-0 rounded-full bg-emerald-500/20 blur-md animate-pulse" />
                             )}
-                            <span className="relative">{item.icon}</span>
+                            <span className="relative">
+                                {getIcon(item.icon)}
+                            </span>
                             {(item.title === 'HR Suite' || item.title === 'Coordinator Suite') && (pendingCounts.events + pendingCounts.leaves) > 0 && (
-                                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-slate-900" />
+                                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-zinc-950" />
                             )}
                             {(item.title === 'Live Production') && (pendingCounts.productionSupply + (pendingCounts.logisticsPending || 0)) > 0 && (
-                                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-slate-900" />
+                                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-zinc-950" />
                             )}
                         </span>
                         {isOpen && (
-                            <span className={item.isAnimated ? 'bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400 font-semibold' : ''}>
+                            <span className={`text-sm font-medium transition-colors
+                                ${item.isAnimated ? 'text-emerald-400' : 'text-zinc-300 group-hover:text-white'}`}>
                                 {item.title}
                             </span>
                         )}
                     </span>
                     {isOpen && (
-                        <svg className={`w-4 h-4 transition-transform ${expanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
+                        <ChevronDown className={`w-4 h-4 text-zinc-500 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} />
                     )}
                 </button>
                 {expanded && isOpen && (
-                    <div className="ml-8 mt-1 space-y-1">
+                    <div className="ml-4 mt-1 pl-4 border-l border-zinc-800 space-y-0.5">
                         {item.children.map((child, idx) => {
                             // Handle divider items
                             if (child.type === 'divider') {
                                 return (
-                                    <div key={`divider-${idx}`} className="py-2">
-                                        <div className="flex items-center gap-2">
-                                            <div className="flex-1 h-px bg-white/20"></div>
-                                            <span className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">{child.label}</span>
-                                            <div className="flex-1 h-px bg-white/20"></div>
-                                        </div>
+                                    <div key={`divider-${idx}`} className="py-3">
+                                        <span className="text-[9px] uppercase tracking-[0.15em] text-zinc-600 font-medium">
+                                            {child.label}
+                                        </span>
                                     </div>
                                 );
                             }
                             // Normal menu item
+                            const isChildActive = location.pathname === child.path;
                             return (
                                 <Link
                                     key={child.path}
@@ -192,14 +227,18 @@ function SidebarItem({ item, isOpen, pendingCounts, onItemClick, onResetBadge })
                                         if (onItemClick) onItemClick();
                                         if (child.path === '/production/blocks' && onResetBadge) onResetBadge();
                                     }}
-                                    className={`block px-4 py-2 text-sm rounded-lg transition ${location.pathname === child.path
-                                        ? 'bg-blue-600 text-white'
-                                        : 'text-gray-400 hover:bg-white/10 hover:text-white'
+                                    className={`flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-200
+                                        ${isChildActive
+                                            ? 'bg-emerald-500/10 text-emerald-400 border-l-2 border-emerald-500 -ml-[2px] pl-[14px]'
+                                            : 'text-zinc-400 hover:bg-white/[0.03] hover:text-zinc-200'
                                         }`}
                                 >
-                                    {child.title}
+                                    <span className={`${isChildActive ? 'text-emerald-400' : 'text-zinc-500'}`}>
+                                        {getIcon(child.icon, "w-4 h-4")}
+                                    </span>
+                                    <span className="flex-1">{child.title}</span>
                                     {child.path === '/hr/approvals' && (pendingCounts.leaves + pendingCounts.events) > 0 && (
-                                        <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                                        <span className="bg-red-500/20 text-red-400 text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
                                             {pendingCounts.leaves + pendingCounts.events}
                                         </span>
                                     )}
@@ -208,14 +247,14 @@ function SidebarItem({ item, isOpen, pendingCounts, onItemClick, onResetBadge })
                                         (() => {
                                             const count = Math.max(0, (pendingCounts.productionSupply || 0) - (pendingCounts.acknowledgedSupply || 0));
                                             return count > 0 ? (
-                                                <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                                                <span className="bg-red-500/20 text-red-400 text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
                                                     {count}
                                                 </span>
                                             ) : null;
                                         })()
                                     )}
                                     {child.path === '/logistics/pool' && pendingCounts.logisticsPending > 0 && (
-                                        <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                                        <span className="bg-red-500/20 text-red-400 text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
                                             {pendingCounts.logisticsPending}
                                         </span>
                                     )}
@@ -238,36 +277,37 @@ function SidebarItem({ item, isOpen, pendingCounts, onItemClick, onResetBadge })
         <Link
             to={item.path}
             onClick={onItemClick}
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${isActive
-                ? 'bg-blue-600 text-white'
-                : 'text-gray-300 hover:bg-white/10'
+            className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200
+                ${isActive
+                    ? 'bg-emerald-500/10 text-emerald-400 border-l-2 border-emerald-500'
+                    : 'text-zinc-400 hover:bg-white/[0.03] hover:text-zinc-200 border-l-2 border-transparent'
                 }`}
         >
-            <span className="text-xl relative">
-                {item.icon}
+            <span className={`relative ${isActive ? 'text-emerald-400' : 'text-zinc-400'}`}>
+                {getIcon(item.icon)}
                 {item.path === '/dashboard' && (pendingCounts.events + pendingCounts.leaves) > 0 && !isOpen && (
-                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-slate-900" />
+                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-zinc-950" />
                 )}
                 {item.path === '/chat' && pendingCounts.chat > 0 && !isOpen && (
-                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-slate-900" />
+                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-zinc-950" />
                 )}
                 {item.path === '/production/blocks' && badgeCount > 0 && !isOpen && (
-                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-slate-900" />
+                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-zinc-950" />
                 )}
             </span>
-            {isOpen && <span>{item.title}</span>}
+            {isOpen && <span className="text-sm font-medium">{item.title}</span>}
             {isOpen && item.path === '/chat' && pendingCounts.chat > 0 && (
-                <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                <span className="ml-auto bg-red-500/20 text-red-400 text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
                     {pendingCounts.chat}
                 </span>
             )}
             {isOpen && item.path === '/production/blocks' && badgeCount > 0 && (
-                <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                <span className="ml-auto bg-red-500/20 text-red-400 text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
                     {badgeCount}
                 </span>
             )}
             {isOpen && item.path === '/logistics/pool' && pendingCounts.logisticsPending > 0 && (
-                <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                <span className="ml-auto bg-red-500/20 text-red-400 text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
                     {pendingCounts.logisticsPending}
                 </span>
             )}
@@ -282,7 +322,7 @@ function RealTimeClock() {
         return () => clearInterval(timer);
     }, []);
     return (
-        <span className="text-xs text-blue-400 font-mono">
+        <span className="text-[10px] text-zinc-600 font-mono tracking-wider">
             {time.toLocaleTimeString('it-IT')}
         </span>
     );
@@ -294,7 +334,7 @@ export default function Sidebar({ isOpen, onToggle, mobileOpen, setMobileOpen })
     const [pendingCounts, setPendingCounts] = useState({ events: 0, leaves: 0, chat: 0 });
 
     useEffect(() => {
-        console.log("🚀 SL ENTERPRISE SIDEBAR v2.0 LOADED - Notifiche attive");
+        console.log("🚀 SL ENTERPRISE SIDEBAR v3.0 LOADED - Premium Minimal");
     }, []);
 
     // Get menu items based on permissions (not hardcoded roles)
@@ -363,36 +403,39 @@ export default function Sidebar({ isOpen, onToggle, mobileOpen, setMobileOpen })
     if (!user) return null;
 
     return (
-        <aside className={`fixed left-0 top-0 h-screen bg-slate-900 border-r border-white/10 transition-all duration-300 z-50 flex flex-col
+        <aside className={`fixed left-0 top-0 h-screen bg-zinc-950 border-r border-white/5 transition-all duration-300 z-50 flex flex-col
             ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
             ${isOpen ? 'md:w-64' : 'md:w-20'} 
             w-64`}>
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-white/10">
-                {isOpen && (
-                    <div className="flex flex-col">
-                        <h1 className="text-xl font-bold text-white">SL Enterprise</h1>
-                        <RealTimeClock />
+            <div className="flex items-center justify-between p-5 border-b border-white/5">
+                <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                        <span className="text-white font-bold text-sm">SL</span>
                     </div>
-                )}
+                    {isOpen && (
+                        <div className="flex flex-col">
+                            <span className="text-base font-semibold text-white tracking-tight">Enterprise</span>
+                            <RealTimeClock />
+                        </div>
+                    )}
+                </div>
 
                 {/* Desktop Toggle */}
-                <button onClick={onToggle} className="hidden md:block p-2 text-gray-400 hover:text-white transition">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={isOpen ? "M11 19l-7-7 7-7m8 14l-7-7 7-7" : "M13 5l7 7-7 7M5 5l7 7-7 7"} />
-                    </svg>
+                <button onClick={onToggle} className="hidden md:flex p-2 text-zinc-500 hover:text-zinc-300 rounded-lg hover:bg-white/5 transition-all duration-200">
+                    <ChevronRight className={`w-5 h-5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 {/* Mobile Close Button */}
-                <button onClick={() => setMobileOpen(false)} className="md:hidden p-2 text-gray-400 hover:text-white transition">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button onClick={() => setMobileOpen(false)} className="md:hidden p-2 text-zinc-500 hover:text-zinc-300 transition-all duration-200">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
             </div>
 
             {/* Menu */}
-            <nav className="p-4 space-y-2 flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar">
+            <nav className="p-3 space-y-1 flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar">
                 {menuItems.map((item) => {
                     // Filter Parent by permission
                     if (item.permission && !hasPermission(item.permission)) return null;
@@ -446,22 +489,32 @@ export default function Sidebar({ isOpen, onToggle, mobileOpen, setMobileOpen })
                 })}
             </nav>
 
-            {/* User & Logout */}
-            <div className={`p-4 border-t border-white/10 md:pb-4 pb-24 bg-slate-900 flex-none`}>
+            {/* User Footer */}
+            <div className={`p-4 border-t border-white/5 md:pb-4 pb-24 bg-zinc-950 flex-none`}>
                 {(isOpen || mobileOpen) && user && (
-                    <div className="mb-3 px-4 py-2 bg-white/5 rounded-lg">
-                        <p className="text-white font-medium truncate">{user.full_name}</p>
-                        <p className="text-xs text-blue-400">{user.role_label || user.role}</p>
+                    <div className="flex items-center gap-3 mb-3">
+                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-zinc-700 to-zinc-800 flex items-center justify-center shadow-inner">
+                            <span className="text-sm font-medium text-zinc-300">
+                                {user.full_name?.charAt(0)?.toUpperCase()}
+                            </span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-zinc-200 truncate">{user.full_name}</p>
+                            <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider">{user.role_label || user.role}</p>
+                        </div>
+                        <button className="p-2 text-zinc-500 hover:text-zinc-300 rounded-lg hover:bg-white/5 transition-all duration-200">
+                            <Settings className="w-4 h-4" />
+                        </button>
                     </div>
                 )}
                 <div className={`flex items-center gap-2 ${!isOpen && !mobileOpen ? 'flex-col' : 'flex-row'}`}>
                     <button
                         onClick={handleLogout}
-                        className="flex-1 w-full flex items-center justify-center gap-3 px-4 py-3 text-red-400 hover:bg-red-500/10 rounded-lg transition"
+                        className="flex-1 w-full flex items-center justify-center gap-3 px-4 py-3 text-red-400 hover:bg-red-500/10 rounded-xl transition-all duration-200"
                         title="Esci"
                     >
-                        <span>🚪</span>
-                        {(isOpen || mobileOpen) && <span>Esci</span>}
+                        <LogOut className="w-5 h-5" />
+                        {(isOpen || mobileOpen) && <span className="text-sm font-medium">Esci</span>}
                     </button>
 
                     {/* Online Users Widget - Sidebar Variant */}

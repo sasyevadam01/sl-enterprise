@@ -50,41 +50,56 @@ export default function RecentEventsWidget() {
 
     if (loading) {
         return (
-            <div className="bg-slate-800/40 backdrop-blur-md rounded-2xl border border-white/10 p-6 h-full flex items-center justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+            <div className="master-card p-6 h-full flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-400"></div>
             </div>
         );
     }
 
     return (
-        <div className="bg-slate-800/40 backdrop-blur-md rounded-2xl border border-white/10 p-5 h-full flex flex-col shadow-xl">
+        <div className="master-card p-5 h-full flex flex-col">
             <div className="flex justify-between items-center mb-4">
-                <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider flex items-center gap-2">
-                    📝 Ultimi Eventi
+                <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider flex items-center gap-2">
+                    <span className="text-purple-400">📝</span> Ultimi Eventi
                 </h3>
-                <Link to="/hr/events" className="text-[10px] text-blue-400 hover:underline">Vedi Tutti</Link>
+                <Link to="/hr/events" className="text-[10px] text-emerald-400 hover:text-emerald-300 transition">
+                    Vedi Tutti →
+                </Link>
             </div>
 
-            <div className="space-y-3 flex-1 overflow-y-auto custom-scrollbar">
+            <div className="space-y-2 flex-1 overflow-y-auto custom-scrollbar">
                 {events.length === 0 ? (
-                    <p className="text-xs text-gray-500 text-center py-4">Nessun evento recente</p>
+                    <p className="text-xs text-zinc-500 text-center py-4">Nessun evento recente</p>
                 ) : (
                     events.map(ev => (
-                        <div key={ev.id} className="p-3 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 transition group">
+                        <div key={ev.id} className="p-3 rounded-xl border border-white/5 bg-zinc-800/30 
+                                                    hover:border-purple-500/20 hover:bg-zinc-800/50 transition-all group">
                             <div className="flex justify-between items-start">
-                                <div>
-                                    <p className="text-sm font-bold text-white">{ev.employee_name}</p>
-                                    <p className="text-[10px] text-gray-400">
-                                        <span className={`${ev.points >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{ev.event_label}</span>
-                                        <span className="ml-2 font-mono">{ev.points > 0 ? '+' : ''}{ev.points} pt</span>
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-sm font-medium text-zinc-200 truncate">{ev.employee_name}</p>
+                                    <p className="text-[10px] text-zinc-500 mt-0.5 flex items-center gap-2">
+                                        <span className={ev.points >= 0 ? 'neon-emerald' : 'neon-red'}>{ev.event_label}</span>
+                                        <span className={`font-mono font-bold ${ev.points >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                            {ev.points > 0 ? '+' : ''}{ev.points} pt
+                                        </span>
                                     </p>
-                                    <p className="text-[10px] text-gray-500 mt-1">
-                                        Creato da: <span className="text-purple-300">{ev.creator_name}</span>
-                                        {ev.created_at && ` • ${format(parseISO(ev.created_at), 'dd/MM HH:mm')}`}
+                                    <p className="text-[10px] text-zinc-600 mt-1">
+                                        Creato da: <span className="text-purple-400/70">{ev.creator_name}</span>
+                                        {ev.created_at && (
+                                            <span className="ml-2 font-mono text-zinc-600">
+                                                {format(parseISO(ev.created_at), 'dd/MM HH:mm')}
+                                            </span>
+                                        )}
                                     </p>
                                 </div>
-                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition">
-                                    <button onClick={() => handleDelete(ev.id)} className="w-7 h-7 rounded bg-red-500/20 text-red-400 flex items-center justify-center text-xs hover:bg-red-500/40" title="Elimina">🗑️</button>
+                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition shrink-0 ml-2">
+                                    <button
+                                        onClick={() => handleDelete(ev.id)}
+                                        className="w-7 h-7 rounded-lg bg-red-500/10 border border-red-500/20 
+                                                   text-red-400 flex items-center justify-center text-xs 
+                                                   hover:bg-red-500/20 transition"
+                                        title="Elimina"
+                                    >🗑️</button>
                                 </div>
                             </div>
                         </div>
