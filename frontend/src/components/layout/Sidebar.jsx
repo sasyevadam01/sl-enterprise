@@ -58,10 +58,17 @@ const getMenuItems = (hasPermission) => {
     // Determine view mode with 3 tiers:
     // 1. HR Suite: Admin/HR users with manage_employees or admin_users
     // 2. Coordinator Suite: Users with view_coordinator_suite OR manage_shifts/manage_tasks
-    // 3. Operativity Suite: Users with view_operativity_suite OR production permissions
+    // 3. Operativity Suite: Users with view_operativity_suite OR any production/logistics permissions
     const isHRView = hasPermission('admin_users') || hasPermission('manage_employees');
     const isCoordinatorView = !isHRView && (hasPermission('view_coordinator_suite') || hasPermission('manage_shifts') || hasPermission('manage_tasks'));
-    const isOperativityView = !isHRView && !isCoordinatorView && (hasPermission('view_operativity_suite') || hasPermission('create_production_orders') || hasPermission('manage_production_supply'));
+    const isOperativityView = !isHRView && !isCoordinatorView && (
+        hasPermission('view_operativity_suite') ||
+        hasPermission('create_production_orders') ||   // Richiesta Blocchi
+        hasPermission('manage_production_supply') ||   // Prelievo Blocchi
+        hasPermission('perform_checklists') ||         // Checklist Carrelli
+        hasPermission('manage_logistics_pool') ||      // Gestione Richieste Materiali
+        hasPermission('request_logistics')             // Richiesta Materiali
+    );
 
     const showDashboard = hasPermission('view_dashboard');
     const showAdmin = hasPermission('admin_users');

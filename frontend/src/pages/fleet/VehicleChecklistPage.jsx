@@ -357,11 +357,15 @@ export default function VehicleChecklistPage() {
                 tabletStatus,
                 issuePhotos
             });
-            await loadData();
+
+            // FIX: Show success immediately, then refresh data in background
+            // This prevents white screen if loadData() fails
             setStep(3);
             toast.success("Checklist inviata correttamente!");
-            // Reset Wizard
             window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // Refresh data in background (non-blocking)
+            loadData().catch(err => console.warn("Background refresh failed:", err));
         } catch (err) {
             console.error(err);
             const errorMsg = err.response?.data?.detail || "Errore invio checklist";
