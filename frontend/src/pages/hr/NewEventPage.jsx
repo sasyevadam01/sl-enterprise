@@ -211,7 +211,7 @@ export default function NewEventPage() {
                             </select>
                         </div>
 
-                        {/* Event Tyle */}
+                        {/* Event Type - Premium Design */}
                         <div>
                             <label className="block text-sm font-medium text-gray-400 mb-3">
                                 📋 Tipo Evento *
@@ -226,18 +226,55 @@ export default function NewEventPage() {
                                             key={type.value}
                                             type="button"
                                             onClick={() => setEventForm(prev => ({ ...prev, event_type: type.value }))}
-                                            className={`p-3 rounded-xl border-2 text-left transition-all ${isSelected
+                                            className={`group relative p-4 rounded-xl border-2 text-left transition-all duration-200 overflow-hidden ${isSelected
                                                 ? isPositive
-                                                    ? 'border-green-500 bg-green-500/20'
-                                                    : 'border-red-500 bg-red-500/20'
-                                                : 'border-white/10 bg-slate-700/50 hover:border-white/30'
+                                                    ? 'border-emerald-500 bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 shadow-lg shadow-emerald-500/20'
+                                                    : 'border-red-500 bg-gradient-to-br from-red-500/20 to-red-600/10 shadow-lg shadow-red-500/20'
+                                                : 'border-white/10 bg-slate-800/60 hover:border-white/30 hover:bg-slate-700/60'
                                                 }`}
                                         >
-                                            <div className="flex items-center justify-between">
-                                                <span className="font-medium text-white">{type.label}</span>
-                                                <span className={`font-bold ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
-                                                    {type.points > 0 ? '+' : ''}{type.points}
-                                                </span>
+                                            {/* Glow effect on selected */}
+                                            {isSelected && (
+                                                <div className={`absolute inset-0 opacity-20 ${isPositive ? 'bg-emerald-400' : 'bg-red-400'}`}
+                                                    style={{ filter: 'blur(20px)' }} />
+                                            )}
+
+                                            <div className="relative flex items-center gap-3">
+                                                {/* Type indicator icon */}
+                                                <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${isPositive
+                                                        ? 'bg-emerald-500/20 text-emerald-400'
+                                                        : 'bg-red-500/20 text-red-400'
+                                                    }`}>
+                                                    {isPositive ? (
+                                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                        </svg>
+                                                    ) : (
+                                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                                        </svg>
+                                                    )}
+                                                </div>
+
+                                                {/* Label */}
+                                                <div className="flex-grow min-w-0">
+                                                    <span className="font-semibold text-white block truncate">
+                                                        {type.label}
+                                                    </span>
+                                                    <span className={`text-xs ${isPositive ? 'text-emerald-400/70' : 'text-red-400/70'}`}>
+                                                        {isPositive ? 'Evento Positivo' : 'Evento Negativo'}
+                                                    </span>
+                                                </div>
+
+                                                {/* Selection indicator */}
+                                                {isSelected && (
+                                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center ${isPositive ? 'bg-emerald-500' : 'bg-red-500'
+                                                        }`}>
+                                                        <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                        </svg>
+                                                    </div>
+                                                )}
                                             </div>
                                         </button>
                                     );
