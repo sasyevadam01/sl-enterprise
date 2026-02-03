@@ -54,6 +54,7 @@ class PositiveEventResponse(BaseModel):
     event_date: str
     created_by_name: str
     already_has_bonus: bool
+    notes: Optional[str] = None  # Event description/notes
 
 
 # --- ENDPOINTS ---
@@ -157,7 +158,8 @@ async def get_positive_events(
             points=ev.points,
             event_date=ev.event_date.strftime("%d/%m/%Y") if ev.event_date else "",
             created_by_name=creator_name,
-            already_has_bonus=ev.id in bonused_event_ids
+            already_has_bonus=ev.id in bonused_event_ids,
+            notes=ev.description  # Include event notes/description
         ))
     
     return results
@@ -326,7 +328,7 @@ async def export_bonuses_pdf(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Genera PDF del riepilogo bonus mensile."""
+    """Genera PDF del riepilogo bonus mensile con supporto multi-pagina."""
     
     if current_user.role != 'super_admin':
         raise HTTPException(status_code=403, detail="Accesso non autorizzato")
@@ -334,9 +336,9 @@ async def export_bonuses_pdf(
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.units import mm
-    from reportlab.pdfgen import canvas
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.platypus import Table, TableStyle, Paragraph
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, KeepTogether
+    from reportlab.lib.enums import TA_CENTER, TA_RIGHT
     
     # Get bonuses for the month
     bonuses = db.query(Bonus).options(
@@ -351,139 +353,250 @@ async def export_bonuses_pdf(
     # Calculate total
     total_amount = sum(b.amount for b in bonuses)
     
-    # Create PDF
-    buffer = io.BytesIO()
-    c = canvas.Canvas(buffer, pagesize=A4)
-    width, height = A4
-    
-    # Styles for wrapping text
-    styles = getSampleStyleSheet()
-    style_normal = styles["BodyText"]
-    style_normal.fontSize = 8
-    style_normal.leading = 10
-    
-    style_bold = ParagraphStyle(
-        'BoldStyle',
-        parent=style_normal,
-        fontName='Helvetica-Bold',
-        fontSize=9
-    )
-    
-    style_notes = ParagraphStyle(
-        'NotesStyle',
-        parent=style_normal,
-        fontSize=7,
-        leftIndent=2*mm,
-        textColor=colors.grey
-    )
-    
     # Month names in Italian
-    months = ["", "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
+    months_names = ["", "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
               "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"]
     
-    # Header
-    c.setFillColor(colors.Color(15/255, 23/255, 42/255))  # Slate 900
-    c.rect(0, height - 25*mm, width, 25*mm, fill=1, stroke=0)
+    # Create PDF with SimpleDocTemplate for automatic pagination
+    buffer = io.BytesIO()
+    width, height = A4
     
-    c.setFillColor(colors.white)
-    c.setFont("Helvetica-Bold", 18)
-    c.drawString(15*mm, height - 17*mm, "REGISTRO BONUS MENSILE")
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        topMargin=55*mm,  # Leave space for header
+        bottomMargin=20*mm,  # Leave space for footer
+        leftMargin=15*mm,
+        rightMargin=15*mm
+    )
     
-    c.setFont("Helvetica", 12)
-    c.drawRightString(width - 15*mm, height - 17*mm, f"{months[month]} {year}")
+    # Styles
+    styles = getSampleStyleSheet()
+    style_normal = ParagraphStyle(
+        'CustomNormal',
+        parent=styles["BodyText"],
+        fontSize=8,
+        leading=10
+    )
     
-    # Summary Box
-    c.setFillColor(colors.Color(234/255, 179/255, 8/255))  # Yellow 500
-    c.roundRect(15*mm, height - 50*mm, width - 30*mm, 18*mm, 3*mm, fill=1, stroke=0)
+    style_header = ParagraphStyle(
+        'HeaderStyle',
+        parent=styles["Heading1"],
+        fontSize=18,
+        textColor=colors.white,
+        alignment=TA_CENTER
+    )
     
-    c.setFillColor(colors.black)
-    c.setFont("Helvetica-Bold", 14)
-    c.drawString(20*mm, height - 40*mm, f"TOTALE BONUS: € {total_amount:,.2f}")
-    c.setFont("Helvetica", 11)
-    c.drawRightString(width - 20*mm, height - 40*mm, f"{len(bonuses)} dipendenti premiati")
+    style_summary = ParagraphStyle(
+        'SummaryStyle',
+        parent=styles["BodyText"],
+        fontSize=14,
+        fontName='Helvetica-Bold',
+        alignment=TA_CENTER
+    )
     
-    # Table
+    # Build story (content list)
+    story = []
+    
+    # Summary section (will appear on first page after header)
+    summary_data = [[
+        Paragraph(f"<b>TOTALE BONUS: € {total_amount:,.2f}</b>", style_summary),
+        Paragraph(f"{len(bonuses)} dipendenti premiati", style_normal)
+    ]]
+    summary_table = Table(summary_data, colWidths=[(width-30*mm)/2, (width-30*mm)/2])
+    summary_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), colors.Color(234/255, 179/255, 8/255)),
+        ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+        ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('TOPPADDING', (0, 0), (-1, -1), 8),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ('LEFTPADDING', (0, 0), (-1, -1), 10),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+        ('BOX', (0, 0), (-1, -1), 0, colors.transparent),
+    ]))
+    story.append(summary_table)
+    story.append(Spacer(1, 10*mm))
+    
+    # Main table
     if bonuses:
         data = [["V", "Dipendente", "Evento/Motivo", "Richiesto Da", "Data", "Importo €"]]
         
+        # Group bonuses by employee for better organization
+        from collections import defaultdict
+        employee_bonuses = defaultdict(list)
         for b in bonuses:
             emp_name = f"{b.employee.last_name} {b.employee.first_name}" if b.employee else "N/D"
-            
-            # Complex description logic
-            primary_desc = b.description or "-"
-            notes_desc = ""
-            
-            if b.event:
-                primary_desc = b.event.event_label or b.event.event_type or primary_desc
-                notes_desc = b.event.description or ""
-            
-            # Check if b.description is different and worth showing
-            extra_msg = ""
-            if b.description and b.event and b.description != (b.event.event_label or b.event.event_type):
-                extra_msg = f"<br/><font color='orange' size='7'>Note Bonus: {b.description}</font>"
-            
-            # Formatting as a list of Paragraph objects for the cell
-            desc_para = Paragraph(
-                f"<b>{primary_desc}</b>" + 
-                (f"<br/><i>{notes_desc}</i>" if notes_desc else "") +
-                extra_msg,
-                style_normal
-            )
-            
-            event_req = "-"
-            event_date = "-"
-            if b.event:
-                event_req = b.event.creator.full_name if b.event.creator else "N/D"
-                event_date = b.event.event_date.strftime("%d/%m") if b.event.event_date else "-"
-            
-            data.append([
-                "[  ]", # Checkbox
-                emp_name,
-                desc_para,
-                event_req,
-                event_date,
-                f"€ {b.amount:,.2f}"
-            ])
+            employee_bonuses[emp_name].append(b)
         
-        # Col widths: Check(8), Name(38), Desc(70), Req(25), Date(17), Amount(22) = 180mm
-        col_widths = [8*mm, 38*mm, 70*mm, 25*mm, 17*mm, 22*mm]
+        # Sort employees alphabetically
+        sorted_employees = sorted(employee_bonuses.keys())
         
-        t = Table(data, colWidths=col_widths, repeatRows=1)
-        t.setStyle(TableStyle([
+        # Track row indices for subtotal styling
+        subtotal_rows = []
+        row_idx = 1  # Start after header
+        
+        for emp_name in sorted_employees:
+            emp_bonus_list = employee_bonuses[emp_name]
+            emp_total = sum(b.amount for b in emp_bonus_list)
+            
+            for i, b in enumerate(emp_bonus_list):
+                # Complex description logic
+                primary_desc = b.description or "-"
+                notes_desc = ""
+                
+                if b.event:
+                    primary_desc = b.event.event_label or b.event.event_type or primary_desc
+                    notes_desc = b.event.description or ""
+                
+                # Check if b.description is different and worth showing
+                extra_msg = ""
+                if b.description and b.event and b.description != (b.event.event_label or b.event.event_type):
+                    extra_msg = f"<br/><font color='orange' size='7'>Note Bonus: {b.description}</font>"
+                
+                # Formatting as Paragraph for text wrapping
+                desc_para = Paragraph(
+                    f"<b>{primary_desc}</b>" + 
+                    (f"<br/><i>{notes_desc}</i>" if notes_desc else "") +
+                    extra_msg,
+                    style_normal
+                )
+                
+                event_req = "-"
+                event_date = "-"
+                if b.event:
+                    event_req = b.event.creator.full_name if b.event.creator else "N/D"
+                    event_date = b.event.event_date.strftime("%d/%m") if b.event.event_date else "-"
+                
+                # Show employee name only on first row of group
+                display_name = emp_name if i == 0 else ""
+                
+                data.append([
+                    "[  ]",  # Checkbox
+                    display_name,
+                    desc_para,
+                    event_req,
+                    event_date,
+                    f"€ {b.amount:,.2f}"
+                ])
+                row_idx += 1
+            
+            # Add subtotal row if employee has multiple bonuses
+            if len(emp_bonus_list) > 1:
+                data.append([
+                    "",
+                    "",
+                    Paragraph(f"<b>Subtotale {emp_name.split()[0]}:</b>", style_normal),
+                    "",
+                    "",
+                    f"€ {emp_total:,.2f}"
+                ])
+                subtotal_rows.append(row_idx)
+                row_idx += 1
+        
+        # Col widths optimized for A4 landscape: total ~180mm available
+        # Check(6), Name(40), Desc(65), Req(28), Date(16), Amount(25) = 180mm
+        col_widths = [6*mm, 40*mm, 65*mm, 28*mm, 16*mm, 25*mm]
+        
+        t = Table(data, colWidths=col_widths, repeatRows=1)  # repeatRows=1 repeats header on each page
+        
+        # Base table style
+        table_style = [
+            # Header styling
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 8),
+            ('FONTSIZE', (0, 0), (-1, 0), 9),
+            ('FONTSIZE', (0, 1), (-1, -1), 8),
             ('BACKGROUND', (0, 0), (-1, 0), colors.Color(30/255, 41/255, 59/255)),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-            ('ALIGN', (0, 0), (0, -1), 'CENTER'), # Center checkbox
-            ('ALIGN', (1, 0), (-2, -1), 'LEFT'),
-            ('ALIGN', (-1, 0), (-1, -1), 'RIGHT'),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.Color(241/255, 245/255, 249/255)]),
-            ('TOPPADDING', (0, 0), (-1, -1), 3),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+            # Alignment
+            ('ALIGN', (0, 0), (0, -1), 'CENTER'),   # Checkbox centered
+            ('ALIGN', (1, 0), (1, -1), 'LEFT'),     # Name left
+            ('ALIGN', (2, 0), (2, -1), 'LEFT'),     # Description left
+            ('ALIGN', (3, 0), (3, -1), 'LEFT'),     # Requester left
+            ('ALIGN', (4, 0), (4, -1), 'CENTER'),   # Date centered
+            ('ALIGN', (5, 0), (5, -1), 'RIGHT'),    # Amount right
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),    # Top align for multi-line cells
+            # Borders and spacing
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.Color(200/255, 200/255, 200/255)),
+            ('LINEBELOW', (0, 0), (-1, 0), 1.5, colors.Color(30/255, 41/255, 59/255)),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.Color(248/255, 250/255, 252/255)]),
+            ('TOPPADDING', (0, 0), (-1, 0), 6),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
+            ('TOPPADDING', (0, 1), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 1), (-1, -1), 4),
+            ('LEFTPADDING', (0, 0), (-1, -1), 3),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 3),
+        ]
+        
+        # Add special styling for subtotal rows (light yellow background)
+        for row_num in subtotal_rows:
+            table_style.append(('BACKGROUND', (0, row_num), (-1, row_num), colors.Color(254/255, 249/255, 195/255)))
+            table_style.append(('FONTNAME', (2, row_num), (5, row_num), 'Helvetica-Bold'))
+            table_style.append(('LINEABOVE', (0, row_num), (-1, row_num), 0.5, colors.Color(234/255, 179/255, 8/255)))
+        
+        t.setStyle(TableStyle(table_style))
+        
+        story.append(t)
+        
+        # Footer totals row (separate table after main table)
+        story.append(Spacer(1, 3*mm))
+        totals_data = [[
+            "",
+            "",
+            "",
+            "",
+            Paragraph("<b>TOTALE:</b>", style_normal),
+            Paragraph(f"<b>€ {total_amount:,.2f}</b>", style_normal)
+        ]]
+        totals_table = Table(totals_data, colWidths=col_widths)
+        totals_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.Color(234/255, 179/255, 8/255, 0.3)),
+            ('ALIGN', (-2, 0), (-1, 0), 'RIGHT'),
+            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('TOPPADDING', (0, 0), (-1, -1), 5),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
         ]))
-        
-        # Wrapping logic for multiple pages if needed is handled by platypus.Frame usually
-        # but here we follow the existing pattern using drawOn if it fits.
-        # However, many bonuses might overflow.
-        
-        w, h = t.wrap(width - 30*mm, height)
-        t.drawOn(c, 15*mm, height - 60*mm - h)
+        story.append(totals_table)
     else:
-        c.setFillColor(colors.grey)
-        c.setFont("Helvetica", 12)
-        c.drawCentredString(width/2, height - 80*mm, "Nessun bonus registrato per questo mese.")
+        no_data_style = ParagraphStyle(
+            'NoData',
+            parent=styles["BodyText"],
+            fontSize=12,
+            textColor=colors.grey,
+            alignment=TA_CENTER
+        )
+        story.append(Spacer(1, 20*mm))
+        story.append(Paragraph("Nessun bonus registrato per questo mese.", no_data_style))
     
-    # Footer
-    c.setFont("Helvetica-Oblique", 8)
-    c.setFillColor(colors.grey)
-    c.drawCentredString(width/2, 10*mm, f"Generato il {datetime.now().strftime('%d/%m/%Y %H:%M')} - SL Enterprise")
+    # Custom header/footer drawer
+    def draw_header_footer(canvas, doc):
+        canvas.saveState()
+        
+        # Header background
+        canvas.setFillColor(colors.Color(15/255, 23/255, 42/255))  # Slate 900
+        canvas.rect(0, height - 25*mm, width, 25*mm, fill=1, stroke=0)
+        
+        # Header text
+        canvas.setFillColor(colors.white)
+        canvas.setFont("Helvetica-Bold", 18)
+        canvas.drawString(15*mm, height - 17*mm, "REGISTRO BONUS MENSILE")
+        
+        canvas.setFont("Helvetica", 12)
+        canvas.drawRightString(width - 15*mm, height - 17*mm, f"{months_names[month]} {year}")
+        
+        # Footer
+        canvas.setFont("Helvetica-Oblique", 8)
+        canvas.setFillColor(colors.grey)
+        canvas.drawCentredString(width/2, 10*mm, f"Generato il {datetime.now().strftime('%d/%m/%Y %H:%M')} - SL Enterprise - Pag. {doc.page}")
+        
+        canvas.restoreState()
     
-    c.save()
+    # Build PDF with automatic pagination
+    doc.build(story, onFirstPage=draw_header_footer, onLaterPages=draw_header_footer)
+    
     buffer.seek(0)
-    
-    filename = f"Bonus_{months[month]}_{year}.pdf"
+    filename = f"Bonus_{months_names[month]}_{year}.pdf"
     
     return StreamingResponse(
         buffer,

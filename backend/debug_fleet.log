@@ -179,3 +179,8 @@ Checklist Data: {"vehicle_id":9,"checklist_data":{"plastiche_integre":true,"lamp
 Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryOYW3dzs4hOIiFrnE
 Form Keys: ['checklist_data', 'notes', 'tablet_status', 'photo', 'issue_photo_lampeggiante']
 Checklist Data: {"vehicle_id":7,"checklist_data":{"lampeggiante":{"status":false,"note":"i zozozozo","photo_temp_id":"b116d0b0-7813-48e7-b7cb-1ff299dc6fbe"},"plastiche_integre":true,"blue_spot":true,"specchietto":true,"cabina_pulita":true,"clacson":true,"sterzo":true,"freni":true,"leve_idrauliche":true,"catene":true,"tubazioni":true,"perdite":true,"batteria_fissaggio":true,"batteria_carica":true,"pulizia_carro":true,"pulizia_ruote":true}}
+
+--- NEW REQUEST 2026-02-03 00:28:58.870902 ---
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary6RlPBPPibDYHd6mu
+Form Keys: ['checklist_data', 'notes', 'tablet_status', 'photo']
+Checklist Data: {"vehicle_id":21,"checklist_data":{"plastiche_integre":true,"lampeggiante":{"status":false,"note":"ciaone","photo_temp_id":null},"blue_spot":true,"specchietto":true,"cabina_pulita":true,"clacson":true,"sterzo":true,"freni":true,"leve_idrauliche":true,"catene":true,"tubazioni":true,"perdite":true,"batteria_fissaggio":true,"batteria_carica":true,"pulizia_carro":true,"pulizia_ruote":true}}
