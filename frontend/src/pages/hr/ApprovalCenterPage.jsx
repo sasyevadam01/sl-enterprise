@@ -49,33 +49,46 @@ export default function ApprovalCenterPage() {
                 </div>
             </div>
 
-            {/* Custom Tabs */}
-            <div className="flex p-1 bg-slate-900/50 backdrop-blur-md rounded-2xl border border-white/10 w-full md:w-fit overflow-x-auto no-scrollbar">
-                {tabs.map((tab) => (
-                    <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
-                        className={`
-                            relative px-4 md:px-6 py-3 rounded-xl text-sm font-bold transition-all duration-300 flex items-center gap-2 whitespace-nowrap flex-1 md:flex-none justify-center
-                            ${activeTab === tab.id ? 'text-white' : 'text-slate-400 hover:text-white'}
-                        `}
-                    >
-                        {activeTab === tab.id && (
-                            <motion.div
-                                layoutId="activeTab"
-                                className={`absolute inset-0 bg-gradient-to-r ${tab.color} rounded-xl shadow-lg opacity-20`}
-                                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                            />
-                        )}
-                        <span className="relative z-10 text-xl">{tab.icon}</span>
-                        <span className="relative z-10">{tab.label}</span>
-                        {tab.count > 0 && (
-                            <span className="relative z-10 ml-1 px-2 py-0.5 bg-red-500 text-white text-[10px] rounded-full shadow-lg animate-pulse">
-                                {tab.count}
+            {/* Premium Tab Selector */}
+            <div className="flex gap-3 p-2 bg-slate-900/70 backdrop-blur-xl rounded-2xl border border-white/10 w-fit shadow-xl">
+                {tabs.map((tab) => {
+                    const isActive = activeTab === tab.id;
+                    return (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`relative px-6 py-3 rounded-xl text-sm font-bold transition-all duration-300 flex items-center gap-3 overflow-hidden ${isActive ? 'text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-white/5'
+                                }`}
+                        >
+                            {/* Active background with gradient */}
+                            {isActive && (
+                                <motion.div
+                                    layoutId="activeTabBg"
+                                    className={`absolute inset-0 bg-gradient-to-r ${tab.color} opacity-90 rounded-xl`}
+                                    transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
+                                />
+                            )}
+
+                            {/* Icon container */}
+                            <span className={`relative z-10 text-xl ${isActive ? 'drop-shadow-lg' : ''}`}>
+                                {tab.icon}
                             </span>
-                        )}
-                    </button>
-                ))}
+
+                            {/* Label */}
+                            <span className="relative z-10 hidden sm:inline">{tab.label}</span>
+
+                            {/* Badge for pending count */}
+                            {tab.count > 0 && (
+                                <span className={`relative z-10 px-2 py-0.5 rounded-full text-[10px] font-bold ${isActive
+                                        ? 'bg-white/30 text-white'
+                                        : 'bg-red-500 text-white animate-pulse'
+                                    }`}>
+                                    {tab.count}
+                                </span>
+                            )}
+                        </button>
+                    );
+                })}
             </div>
 
             {/* Content Area */}
