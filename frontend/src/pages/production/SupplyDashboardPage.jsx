@@ -303,8 +303,8 @@ export default function SupplyDashboardPage() {
                         <button
                             onClick={() => setSectorFilter('all')}
                             className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 ${sectorFilter === 'all'
-                                    ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/30'
-                                    : 'bg-zinc-800 text-gray-400 border border-white/10'
+                                ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/30'
+                                : 'bg-zinc-800 text-gray-400 border border-white/10'
                                 }`}
                         >
                             Tutti ({allPendingOrders.length})
@@ -312,20 +312,20 @@ export default function SupplyDashboardPage() {
                         <button
                             onClick={() => setSectorFilter('Pantografo')}
                             className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 ${sectorFilter === 'Pantografo'
-                                    ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/30'
-                                    : 'bg-zinc-800 text-gray-400 border border-white/10'
+                                ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/30'
+                                : 'bg-zinc-800 text-gray-400 border border-white/10'
                                 }`}
                         >
-                            🔷 P
+                            Pantografo
                         </button>
                         <button
                             onClick={() => setSectorFilter('Giostra')}
                             className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 ${sectorFilter === 'Giostra'
-                                    ? 'bg-gradient-to-r from-purple-500 to-pink-600 text-white shadow-lg shadow-purple-500/30'
-                                    : 'bg-zinc-800 text-gray-400 border border-white/10'
+                                ? 'bg-gradient-to-r from-purple-500 to-pink-600 text-white shadow-lg shadow-purple-500/30'
+                                : 'bg-zinc-800 text-gray-400 border border-white/10'
                                 }`}
                         >
-                            🔮 G
+                            Giostra
                         </button>
                     </div>
                 </div>
