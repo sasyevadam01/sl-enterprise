@@ -43,12 +43,21 @@ export default function LeavesManager() {
 
     const isHR = user?.role === 'hr_manager' || user?.role === 'super_admin';
 
-    const fetchData = async () => {
+    const fetchData = async (statusFilter = filter) => {
+        setLoading(true);
         try {
-            const [leavesData, employeesData] = await Promise.all([
-                leavesApi.getLeaves({}),
-                employeesApi.getEmployees()
-            ]);
+            let leavesData;
+
+            // Use dedicated /pending endpoint for pending filter (faster and more reliable)
+            if (statusFilter === 'pending') {
+                leavesData = await leavesApi.getPending();
+            } else {
+                // For other filters, use the general endpoint with status_filter param
+                const params = statusFilter !== 'all' ? { status_filter: statusFilter } : {};
+                leavesData = await leavesApi.getLeaves(params);
+            }
+
+            const employeesData = await employeesApi.getEmployees();
             setLeaves(leavesData);
             setEmployees(employeesData);
         } catch (error) {
@@ -58,9 +67,11 @@ export default function LeavesManager() {
         }
     };
 
+
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [filter]);  // Re-fetch when filter changes
+
 
     const handleSubmit = async (e) => {
         e.preventDefault();
