@@ -40,6 +40,9 @@ export default function BonusManagementPanel() {
     const [summary, setSummary] = useState({ bonus_count: 0, total_amount: 0 });
     const [loading, setLoading] = useState(false);
 
+    // Bonus Table Filter
+    const [bonusSearchQuery, setBonusSearchQuery] = useState('');
+
     // Form State
     const [showManualForm, setShowManualForm] = useState(false);
     const [manualForm, setManualForm] = useState({ employee_id: '', amount: '', description: '' });
@@ -158,6 +161,18 @@ export default function BonusManagementPanel() {
 
         return filtered;
     }, [employees, selectedDepartment, departments]);
+
+    // Filtered bonuses for table display
+    const filteredBonuses = useMemo(() => {
+        if (!bonusSearchQuery.trim()) return bonuses;
+
+        const query = bonusSearchQuery.toLowerCase().trim();
+        return bonuses.filter(b =>
+            b.employee_name?.toLowerCase().includes(query) ||
+            b.description?.toLowerCase().includes(query) ||
+            b.event_description?.toLowerCase().includes(query)
+        );
+    }, [bonuses, bonusSearchQuery]);
 
     // Open modal for event bonus assignment
     const handleAssignFromEvent = (event) => {
@@ -508,15 +523,35 @@ export default function BonusManagementPanel() {
 
             {/* BONUSES TABLE */}
             <div className="bg-slate-900/80 border border-yellow-500/20 rounded-xl overflow-hidden">
-                <div className="p-4 border-b border-yellow-500/10">
+                <div className="p-4 border-b border-yellow-500/10 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                     <h3 className="text-lg font-bold text-yellow-400">💰 Bonus Assegnati - {MONTHS[month]} {year}</h3>
+
+                    {/* Search Filter */}
+                    <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">🔍</span>
+                        <input
+                            type="text"
+                            value={bonusSearchQuery}
+                            onChange={e => setBonusSearchQuery(e.target.value)}
+                            placeholder="Cerca dipendente..."
+                            className="w-full md:w-64 bg-slate-800 border border-yellow-500/30 rounded-lg pl-10 pr-4 py-2 text-white placeholder:text-gray-500 focus:border-yellow-500/50 focus:outline-none transition"
+                        />
+                        {bonusSearchQuery && (
+                            <button
+                                onClick={() => setBonusSearchQuery('')}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition"
+                            >
+                                ✕
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {loading ? (
                     <div className="p-10 text-center text-gray-400">Caricamento...</div>
-                ) : bonuses.length === 0 ? (
+                ) : filteredBonuses.length === 0 ? (
                     <div className="p-10 text-center text-gray-500">
-                        Nessun bonus assegnato per questo mese.
+                        {bonusSearchQuery ? `Nessun bonus trovato per "${bonusSearchQuery}".` : 'Nessun bonus assegnato per questo mese.'}
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
@@ -532,7 +567,7 @@ export default function BonusManagementPanel() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-yellow-500/10">
-                                {bonuses.map(b => (
+                                {filteredBonuses.map(b => (
                                     <tr key={b.id} className="hover:bg-yellow-500/5">
                                         <td className="p-3 font-medium text-white">{b.employee_name}</td>
                                         <td className="p-3 text-gray-300">
