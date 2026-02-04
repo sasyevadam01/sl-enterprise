@@ -171,6 +171,39 @@ export default function HRManagementPage() {
         };
     }, [events, employees]);
 
+    // Event Registry Filters
+    const [eventEmployeeFilter, setEventEmployeeFilter] = useState('');
+    const [eventRequesterFilter, setEventRequesterFilter] = useState('');
+
+    // 3. FILTERED EVENTS FOR TABLE (with limit 5)
+    const filteredEvents = useMemo(() => {
+        let filtered = [...events];
+
+        // Filter by employee name
+        if (eventEmployeeFilter.trim()) {
+            const query = eventEmployeeFilter.toLowerCase().trim();
+            filtered = filtered.filter(ev => {
+                const emp = employees.find(e => e.id === ev.employee_id);
+                const empName = emp ? `${emp.last_name} ${emp.first_name}`.toLowerCase() : '';
+                return empName.includes(query);
+            });
+        }
+
+        // Filter by requester name
+        if (eventRequesterFilter.trim()) {
+            const query = eventRequesterFilter.toLowerCase().trim();
+            filtered = filtered.filter(ev => {
+                const creatorName = ev.creator?.full_name?.toLowerCase() || '';
+                return creatorName.includes(query);
+            });
+        }
+
+        // Sort by created_at descending (newest first) and limit to 5
+        return filtered
+            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+            .slice(0, 5);
+    }, [events, employees, eventEmployeeFilter, eventRequesterFilter]);
+
 
     // PIN PAD Logic
     const handleDigit = (digit) => {
@@ -281,7 +314,7 @@ export default function HRManagementPage() {
     if (!isUnlocked) {
         return (
             <div className="fixed inset-0 z-50 bg-black flex items-center justify-center p-4 overflow-hidden">
-                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+                <div className="absolute inset-0 bg-gradient-to-br from-slate-900/50 to-transparent opacity-20"></div>
                 {/* Bank Vault Background Effect for Lock Screen */}
                 <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-black to-slate-950"></div>
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(16,185,129,0.1),transparent_70%)]"></div>
@@ -324,7 +357,7 @@ export default function HRManagementPage() {
     return (
         <div className="min-h-screen relative overflow-hidden bg-slate-950">
             {/* --- BANK STYLE BACKGROUND --- */}
-            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 pointer-events-none"></div>
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-800/30 to-transparent opacity-10 pointer-events-none"></div>
             <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-[#0a0f1c] to-black pointer-events-none"></div>
             <div className="absolute top-0 left-0 right-0 h-[500px] bg-[radial-gradient(circle_at_50%_0%,rgba(16,185,129,0.05),transparent_70%)] pointer-events-none"></div>
 
@@ -579,12 +612,45 @@ export default function HRManagementPage() {
 
                                 {/* Events Register ESTESA */}
                                 <div className="bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
-                                    <div className="p-4 border-b border-white/5 bg-white/5 flex justify-between items-center">
-                                        <h3 className="font-bold text-white flex items-center gap-2">
-                                            <span className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_10px_blue]"></span>
-                                            Registro Eventi & Punteggi
-                                        </h3>
-                                        <span className="text-xs font-mono text-gray-400">DATABASE: CONNECTED</span>
+                                    <div className="p-4 border-b border-white/5 bg-white/5">
+                                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                                            <h3 className="font-bold text-white flex items-center gap-2">
+                                                <span className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_10px_blue]"></span>
+                                                Registro Eventi & Punteggi
+                                                <span className="text-xs text-gray-500 font-normal ml-2">(Ultimi 5)</span>
+                                            </h3>
+                                            <div className="flex flex-wrap gap-3 items-center">
+                                                {/* Filter by Employee */}
+                                                <div className="relative">
+                                                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-xs">👤</span>
+                                                    <input
+                                                        type="text"
+                                                        value={eventEmployeeFilter}
+                                                        onChange={e => setEventEmployeeFilter(e.target.value)}
+                                                        placeholder="Filtra dipendente..."
+                                                        className="w-40 bg-slate-800 border border-white/10 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder:text-gray-500 focus:border-blue-500/50 focus:outline-none transition"
+                                                    />
+                                                    {eventEmployeeFilter && (
+                                                        <button onClick={() => setEventEmployeeFilter('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white text-xs">✕</button>
+                                                    )}
+                                                </div>
+                                                {/* Filter by Requester */}
+                                                <div className="relative">
+                                                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-xs">📝</span>
+                                                    <input
+                                                        type="text"
+                                                        value={eventRequesterFilter}
+                                                        onChange={e => setEventRequesterFilter(e.target.value)}
+                                                        placeholder="Filtra richiedente..."
+                                                        className="w-40 bg-slate-800 border border-white/10 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder:text-gray-500 focus:border-blue-500/50 focus:outline-none transition"
+                                                    />
+                                                    {eventRequesterFilter && (
+                                                        <button onClick={() => setEventRequesterFilter('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white text-xs">✕</button>
+                                                    )}
+                                                </div>
+                                                <span className="text-xs font-mono text-gray-400">DATABASE: CONNECTED</span>
+                                            </div>
+                                        </div>
                                     </div>
                                     <div className="overflow-x-auto max-h-[600px]">
                                         <table className="w-full text-left text-sm text-gray-400">
@@ -599,7 +665,11 @@ export default function HRManagementPage() {
                                                     <th className="px-6 py-3 text-right">Azioni</th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="divide-y divide-white/5 font-mono text-xs">{events.map((ev) => {
+                                            <tbody className="divide-y divide-white/5 font-mono text-xs">{filteredEvents.length === 0 ? (
+                                                <tr><td colSpan="7" className="px-6 py-8 text-center text-gray-500">
+                                                    {eventEmployeeFilter || eventRequesterFilter ? 'Nessun evento trovato con i filtri applicati.' : 'Nessun evento registrato.'}
+                                                </td></tr>
+                                            ) : filteredEvents.map((ev) => {
                                                 const emp = employees.find(e => e.id === ev.employee_id);
                                                 const empName = emp ? `${emp.last_name} ${emp.first_name}` : 'Unknown';
 

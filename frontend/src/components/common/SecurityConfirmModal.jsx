@@ -16,7 +16,7 @@ export default function SecurityConfirmModal({ isOpen, onClose, onConfirm, title
                         className="absolute inset-0 bg-slate-950/90 backdrop-blur-xl"
                         onClick={onClose}
                     >
-                        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
+                        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/50 to-transparent opacity-20 mix-blend-overlay"></div>
                     </motion.div>
 
                     {/* Modal Card */}
