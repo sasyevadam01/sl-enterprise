@@ -207,12 +207,14 @@ async def create_block_request(
 @router.get("/requests", response_model=List[BlockRequestResponse], summary="Lista Richieste")
 async def list_block_requests(
     status: Optional[str] = None, # pending, processing, delivered, history (delivered/completed)
+    material_type: Optional[str] = None,  # memory, sponge - filtro tipo materiale
     limit: int = 50,
+    offset: int = 0,  # Paginazione
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
-    Lista richieste.
+    Lista richieste con paginazione e filtri.
     """
     query = db.query(BlockRequest).options(
         joinedload(BlockRequest.material),
@@ -226,20 +228,25 @@ async def list_block_requests(
     is_supply = current_user.has_permission("manage_production_supply") or current_user.role == "super_admin"
     is_order = current_user.has_permission("create_production_orders")
     
+    # Filtro per tipo materiale
+    if material_type:
+        query = query.filter(BlockRequest.request_type == material_type)
+    
     if status == 'active':
         query = query.filter(BlockRequest.status.in_(['pending', 'processing']))
     elif status == 'history':
         query = query.filter(BlockRequest.status.in_(['delivered', 'completed', 'cancelled']))
-        query = query.order_by(BlockRequest.created_at.desc())
     elif status:
         query = query.filter(BlockRequest.status == status)
 
     if is_order and not is_supply:
         query = query.filter(BlockRequest.created_by_id == current_user.id)
-        
-    query = query.order_by(BlockRequest.created_at.desc())
     
-    results = query.limit(limit).all()
+    # Ordinamento: Urgenti prima, poi per data decrescente
+    from sqlalchemy import desc
+    query = query.order_by(desc(BlockRequest.is_urgent), BlockRequest.created_at.desc())
+    
+    results = query.offset(offset).limit(limit).all()
     
     response_list = []
     for req in results:
@@ -429,6 +436,90 @@ async def toggle_urgency(
     db.commit()
     
     return {"message": "Urgenza aggiornata", "is_urgent": req.is_urgent}
+
+
+@router.patch("/requests/batch", summary="Aggiornamento Batch Stati")
+async def batch_update_status(
+    request_ids: List[int],
+    new_status: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Aggiorna lo stato di più richieste contemporaneamente.
+    Utile per operazioni bulk da parte del magazziniere.
+    """
+    if not (current_user.has_permission("manage_production_supply") or current_user.role == "super_admin"):
+        raise HTTPException(403, "Solo Block Supply può fare aggiornamenti batch")
+    
+    if new_status not in ['processing', 'delivered', 'cancelled']:
+        raise HTTPException(400, "Stato non valido per batch update")
+    
+    updated = db.query(BlockRequest).filter(
+        BlockRequest.id.in_(request_ids)
+    ).update({
+        BlockRequest.status: new_status,
+        BlockRequest.processed_by_id: current_user.id,
+        BlockRequest.processed_at: datetime.utcnow() if new_status == 'processing' else BlockRequest.processed_at,
+        BlockRequest.delivered_at: datetime.utcnow() if new_status == 'delivered' else BlockRequest.delivered_at
+    }, synchronize_session=False)
+    
+    db.commit()
+    
+    log_audit(db, current_user.id, "PRODUCTION_BATCH_UPDATE", f"Batch update {len(request_ids)} orders to {new_status}")
+    db.commit()
+    
+    return {"message": f"Aggiornati {updated} ordini", "count": updated}
+
+
+@router.get("/requests/stats", summary="Statistiche KPI Real-Time")
+async def get_realtime_stats(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Statistiche live: ordini pending, tempo medio attesa, throughput giornaliero.
+    """
+    from sqlalchemy import func, extract
+    
+    # Conteggi per stato
+    pending_count = db.query(BlockRequest).filter(BlockRequest.status == 'pending').count()
+    processing_count = db.query(BlockRequest).filter(BlockRequest.status == 'processing').count()
+    
+    # Ordini completati oggi
+    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    today_completed = db.query(BlockRequest).filter(
+        BlockRequest.status.in_(['delivered', 'completed']),
+        BlockRequest.delivered_at >= today_start
+    ).count()
+    
+    # Tempo medio presa in carico (ultimi 7 giorni)
+    week_ago = datetime.utcnow() - timedelta(days=7)
+    avg_wait_result = db.query(
+        func.avg(
+            extract('epoch', BlockRequest.processed_at) - extract('epoch', BlockRequest.created_at)
+        )
+    ).filter(
+        BlockRequest.processed_at.isnot(None),
+        BlockRequest.created_at >= week_ago
+    ).scalar()
+    
+    avg_wait_seconds = round(avg_wait_result or 0, 0)
+    
+    # Ordini urgenti attivi
+    urgent_count = db.query(BlockRequest).filter(
+        BlockRequest.is_urgent == True,
+        BlockRequest.status.in_(['pending', 'processing'])
+    ).count()
+    
+    return {
+        "pending_count": pending_count,
+        "processing_count": processing_count,
+        "today_completed": today_completed,
+        "avg_wait_seconds": avg_wait_seconds,
+        "avg_wait_minutes": round(avg_wait_seconds / 60, 1) if avg_wait_seconds else 0,
+        "urgent_count": urgent_count
+    }
 
 # ============================================================
 # REPORTING & STATS (Excel Export)

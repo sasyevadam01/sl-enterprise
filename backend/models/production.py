@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Text, Float, JSON
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Text, Float, JSON, Index
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from .base import Base
@@ -244,6 +244,11 @@ class BlockRequest(Base):
     Richiesta di prelievo blocco (Picking List).
     """
     __tablename__ = "block_requests"
+    __table_args__ = (
+        Index('idx_block_status_created', 'status', 'created_at'),
+        Index('idx_block_created_by', 'created_by_id'),
+        Index('idx_block_urgent_status', 'is_urgent', 'status'),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     

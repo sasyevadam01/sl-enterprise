@@ -156,8 +156,14 @@ export default function SupplyDashboardPage() {
         return 'text-red-400 bg-red-500/20 animate-pulse';
     };
 
+    // --- SECTOR FILTER (Touch-friendly) ---
+    const [sectorFilter, setSectorFilter] = useState('all'); // all, Pantografo, Giostra
+
     // Separate pending, processing, and cancelled
-    const pendingOrders = orders.filter(o => o.status === 'pending');
+    const allPendingOrders = orders.filter(o => o.status === 'pending');
+    const pendingOrders = sectorFilter === 'all'
+        ? allPendingOrders
+        : allPendingOrders.filter(o => o.target_sector === sectorFilter);
     const processingOrders = orders.filter(o => o.status === 'processing');
     // "Cancelled" orders displayed here are ONLY those cancelled by the USER (processed_by_id is null)
     // If *I* rejected them (processed_by_id is me), I don't need to see them as "Blocked"
@@ -290,6 +296,37 @@ export default function SupplyDashboardPage() {
                             <div className="text-2xl font-bold text-red-400">{cancelledOrders.length}</div>
                             <div className="text-[10px] text-gray-400 uppercase tracking-wider">Bloccati</div>
                         </div>
+                    </div>
+
+                    {/* Sector Filter - Touch Friendly Pills */}
+                    <div className="flex gap-2 mt-4">
+                        <button
+                            onClick={() => setSectorFilter('all')}
+                            className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 ${sectorFilter === 'all'
+                                    ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/30'
+                                    : 'bg-zinc-800 text-gray-400 border border-white/10'
+                                }`}
+                        >
+                            Tutti ({allPendingOrders.length})
+                        </button>
+                        <button
+                            onClick={() => setSectorFilter('Pantografo')}
+                            className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 ${sectorFilter === 'Pantografo'
+                                    ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/30'
+                                    : 'bg-zinc-800 text-gray-400 border border-white/10'
+                                }`}
+                        >
+                            🔷 P
+                        </button>
+                        <button
+                            onClick={() => setSectorFilter('Giostra')}
+                            className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 ${sectorFilter === 'Giostra'
+                                    ? 'bg-gradient-to-r from-purple-500 to-pink-600 text-white shadow-lg shadow-purple-500/30'
+                                    : 'bg-zinc-800 text-gray-400 border border-white/10'
+                                }`}
+                        >
+                            🔮 G
+                        </button>
                     </div>
                 </div>
             </div>
