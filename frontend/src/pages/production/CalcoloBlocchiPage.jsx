@@ -3,11 +3,14 @@
  * Calculator for block cutting optimization
  * Mobile-first, touch-friendly interface
  */
-import { useState, useEffect, useCallback } from 'react';
-import { Calculator, Package, ArrowLeft, Layers, Info, Printer, Plus, Trash2, ChevronRight, Check, RefreshCw, AlertCircle } from 'lucide-react';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import { Calculator, Package, ArrowLeft, Layers, Info, Printer, Plus, Trash2, ChevronRight, Check, RefreshCw, AlertCircle, Box } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUI } from '../../components/ui/CustomUI';
 import { blockCalculatorApi, pickingApi } from '../../api/client';
+
+// Lazy load 3D viewer for better performance
+const Block3DViewer = lazy(() => import('../../components/production/Block3DViewer'));
 
 export default function CalcoloBlocchiPage() {
     const navigate = useNavigate();
@@ -45,6 +48,7 @@ export default function CalcoloBlocchiPage() {
     const [loading, setLoading] = useState(false);
     const [aiSuggestion, setAiSuggestion] = useState(null);
     const [loadingAi, setLoadingAi] = useState(false);
+    const [show3D, setShow3D] = useState(false);
 
     // Load initial data and seed recoveries if needed
     useEffect(() => {
@@ -765,6 +769,18 @@ export default function CalcoloBlocchiPage() {
                                 </div>
                             )}
 
+                            {/* 3D Visualization Button */}
+                            <button
+                                onClick={() => setShow3D(true)}
+                                className="w-full py-4 rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 
+                                    text-white font-bold text-lg hover:from-indigo-700 hover:via-violet-700 hover:to-purple-700 
+                                    transition-all flex items-center justify-center gap-3 shadow-lg shadow-violet-500/25
+                                    print:hidden"
+                            >
+                                <Box className="w-6 h-6" />
+                                🎬 MOSTRA 3D
+                            </button>
+
                             {/* Actions */}
                             <div className="flex gap-3 print:hidden">
                                 <button
@@ -798,6 +814,32 @@ export default function CalcoloBlocchiPage() {
                     <h2 className="text-xl font-semibold text-white mb-2">Funzionalità in Arrivo</h2>
                     <p className="text-zinc-400">Questa sezione sarà disponibile prossimamente.</p>
                 </div>
+            )}
+
+            {/* 3D Viewer Modal */}
+            {show3D && result && (
+                <Suspense fallback={
+                    <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
+                        <div className="text-center">
+                            <div className="w-16 h-16 border-4 border-violet-500/30 border-t-violet-500 rounded-full animate-spin mx-auto mb-4" />
+                            <p className="text-white text-lg">Caricamento Vista 3D...</p>
+                        </div>
+                    </div>
+                }>
+                    <Block3DViewer
+                        isOpen={show3D}
+                        onClose={() => setShow3D(false)}
+                        blockHeight={parseFloat(blockHeight)}
+                        sheetThickness={parseFloat(sheetThickness)}
+                        totalSheets={result.total_sheets}
+                        remainder={result.remainder_per_block}
+                        materialName={
+                            materialType === 'sponge'
+                                ? `${selectedMaterial?.label || ''} ${selectedColor?.label || ''}`.trim()
+                                : selectedMaterial?.label || 'Memory'
+                        }
+                    />
+                </Suspense>
             )}
         </div>
     );
