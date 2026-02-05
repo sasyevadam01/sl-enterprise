@@ -315,3 +315,69 @@ class BlockRequest(Base):
     @property
     def processor_name(self):
         return self.processed_by.full_name if self.processed_by else None
+
+
+# ============================================================
+# BLOCK CALCULATOR MODELS
+# ============================================================
+
+class BlockHeight(Base):
+    """
+    Altezze tipiche dei blocchi per materiale.
+    Popolate dagli operatori per quick-select nel calcolatore.
+    """
+    __tablename__ = "block_heights"
+
+    id = Column(Integer, primary_key=True, index=True)
+    material_category = Column(String(50), nullable=False)  # 'sponge' o 'memory'
+    
+    # Reference to density (for sponge) or memory type
+    material_id = Column(Integer, ForeignKey("production_materials.id"), nullable=True)
+    
+    height_cm = Column(Float, nullable=False)  # Altezza lavorabile tipica
+    usage_count = Column(Integer, default=1)   # Quante volte usata (per ordinamento)
+    
+    created_by_id = Column(Integer, ForeignKey("users.id"))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    material = relationship("ProductionMaterial", foreign_keys=[material_id])
+    created_by = relationship("User", foreign_keys=[created_by_id])
+
+    @property
+    def material_label(self):
+        return self.material.label if self.material else None
+
+
+class RecoveryRule(Base):
+    """
+    Regole di recupero per le rimanenze.
+    Configurabili e visibili agli operatori.
+    """
+    __tablename__ = "recovery_rules"
+
+    id = Column(Integer, primary_key=True, index=True)
+    material_category = Column(String(50), nullable=False)  # 'sponge' o 'memory'
+    
+    # Reference to density (for sponge) or memory type
+    material_id = Column(Integer, ForeignKey("production_materials.id"), nullable=True)
+    material_label = Column(String(100), nullable=True)  # Es: "D30 Rosa", "Viscoflex Blu NEM40"
+    
+    thickness_cm = Column(Float, nullable=False)  # Spessore recuperabile (es: 4.5)
+    product_type = Column(String(100), nullable=False)  # Es: "Materasso", "Ondina 7 zone"
+    notes = Column(String(255), nullable=True)  # Es: "Spaccare 7.4"
+    
+    is_active = Column(Boolean, default=True)
+    display_order = Column(Integer, default=0)
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    material = relationship("ProductionMaterial", foreign_keys=[material_id])
+
+    def get_material_display(self):
+        """Returns the material label for display."""
+        if self.material_label:
+            return self.material_label
+        return self.material.label if self.material else None
+

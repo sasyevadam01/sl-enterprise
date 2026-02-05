@@ -599,5 +599,48 @@ export const logisticsApi = {
   updateConfig: (key, value) => client.put(`/logistics/config/${key}`, null, { params: { value } }),
 };
 
+// ============================================================
+// BLOCK CALCULATOR (Calcolo Blocchi)
+// ============================================================
+export const blockCalculatorApi = {
+  // Materials (from picking config)
+  getMaterials: (category) => client.get("/calculator/materials", { params: { category } }),
+
+  // Block Heights (quick select)
+  getHeights: (category, materialId) => client.get("/calculator/heights", { params: { category, material_id: materialId } }),
+  saveHeight: (data) => client.post("/calculator/heights", data),
+  deleteHeight: (id) => client.delete(`/calculator/heights/${id}`),
+
+  // Recovery Rules
+  getRecoveries: (category, materialId) => client.get("/calculator/recoveries", { params: { category, material_id: materialId } }),
+  createRecovery: (data) => client.post("/calculator/recoveries", data),
+  updateRecovery: (id, data) => client.patch(`/calculator/recoveries/${id}`, data),
+  deleteRecovery: (id) => client.delete(`/calculator/recoveries/${id}`),
+
+  // Pure Calculation
+  calculate: (materialCategory, sheetThickness, quantity, blockHeight) =>
+    client.post("/calculator/calculate", null, {
+      params: {
+        material_category: materialCategory,
+        sheet_thickness: sheetThickness,
+        quantity,
+        block_height: blockHeight
+      }
+    }),
+
+  // Seed recovery rules (admin only)
+  seedRecoveries: () => client.post("/calculator/seed-recoveries"),
+
+  // AI-powered suggestion
+  getAiSuggestion: (materialType, materialName, remainderCm) =>
+    client.post("/calculator/ai-suggest", null, {
+      params: {
+        material_type: materialType,
+        material_name: materialName,
+        remainder_cm: remainderCm
+      }
+    }),
+};
+
 export default client;
 

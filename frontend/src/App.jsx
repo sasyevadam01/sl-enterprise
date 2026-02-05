@@ -33,6 +33,7 @@ import OperatorDashboard from './pages/mobile/OperatorDashboard';
 import OrderDashboardPage from './pages/production/OrderDashboardPage';
 import NewOrderPage from './pages/production/NewOrderPage';
 import SupplyDashboardPage from './pages/production/SupplyDashboardPage';
+import CalcoloBlocchiPage from './pages/production/CalcoloBlocchiPage';
 import ChatPage from './pages/ChatPage';
 import ComingSoonPage from './pages/ComingSoonPage';
 import MaterialRequestPage from './pages/logistics/MaterialRequestPage';
@@ -192,6 +193,11 @@ function App() {
               <Route path="production/blocks" element={
                 <PermissionRoute permission="manage_production_supply">
                   <SupplyDashboardPage />
+                </PermissionRoute>
+              } />
+              <Route path="production/calcolo" element={
+                <PermissionRoute permission="access_block_calculator">
+                  <CalcoloBlocchiPage />
                 </PermissionRoute>
               } />
               <Route path="production/checklist" element={

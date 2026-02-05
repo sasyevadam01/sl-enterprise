@@ -12,7 +12,8 @@ from database import create_tables
 from routers import (
     auth, users, employees, leaves, disciplinary, notifications, expiries, fleet, returns,
     tasks, events, audit, hr_stats, shifts, announcements, facility, factory, kpi, roles,
-    admin_settings, mobile, maintenance, reports, bonuses, chat, production, logistics
+    admin_settings, mobile, maintenance, reports, bonuses, chat, production, logistics,
+    block_calculator
 )
 
 
@@ -238,6 +239,9 @@ app.include_router(chat.router)
 
 # Logistics (Richiesta Materiale)
 app.include_router(logistics.router)
+
+# Block Calculator
+app.include_router(block_calculator.router)
 
 # ============================================================
 # LOGISTICS & PRODUCTION WEBSOCKETS

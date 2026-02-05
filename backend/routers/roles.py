@@ -150,6 +150,7 @@ async def get_permission_definitions(current_user: User = Depends(get_current_us
         {"code": "manage_kpi", "label": "Gestione KPI Avanzata", "category": "Factory", "description": "Permette configurare i parametri KPI e accedere al Calcolo Costi."},
         {"code": "create_production_orders", "label": "Richiedere Blocchi", "category": "Production", "description": "Permette di creare richieste di prelievo blocchi (Order User)."},
         {"code": "manage_production_supply", "label": "Gestire Prelievi", "category": "Production", "description": "Permette di prendere in carico e consegnare i blocchi (Block Supply)."},
+        {"code": "access_block_calculator", "label": "Calcolo Blocchi", "category": "Production", "description": "Accesso allo strumento di calcolo e ottimizzazione blocchi."},
         {"code": "request_logistics", "label": "Richiedere Materiale", "category": "Production", "description": "Accesso alla pagina richiedente per ordinare materiali."},
         {"code": "manage_logistics_pool", "label": "Magazziniere Logistica", "category": "Production", "description": "Accesso alla Dashboard Magazziniere per prendere in carico le richieste."},
         {"code": "supervise_logistics", "label": "Supervisione Logistica", "category": "Production", "description": "Dashboard Statistiche Logistica per Capi Reparto."},
