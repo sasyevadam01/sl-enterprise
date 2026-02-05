@@ -831,7 +831,7 @@ export default function CalcoloBlocchiPage() {
                         onClose={() => setShow3D(false)}
                         blockHeight={parseFloat(blockHeight)}
                         sheetThickness={parseFloat(sheetThickness)}
-                        totalSheets={result.total_sheets}
+                        totalSheets={result.sheets_per_block}
                         remainder={result.remainder_per_block}
                         materialName={
                             materialType === 'sponge'
