@@ -591,7 +591,7 @@ async def get_production_reports(
     data_rows = []
     
     # KPIs
-    total_blocks = len(filtered_requests)
+    total_blocks = sum(req.quantity for req in filtered_requests)
     by_type = {}
     by_dims = {}
     user_perf = {} # {username: count}
