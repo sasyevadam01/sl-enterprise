@@ -83,7 +83,7 @@ DEFAULT_ROLES = [
         "label": "Sicurezza",
         "description": "Responsabile Sicurezza e Controlli",
         "is_static": False,
-        "permissions": ["view_dashboard", "view_announcements", "view_checklist_history", "manage_tasks", "perform_checklists", "access_factory"],
+        "permissions": ["view_dashboard", "view_announcements", "view_checklist_history", "manage_tasks", "perform_checklists", "access_factory", "manage_shifts"],
         "default_home": "/dashboard"
     },
 ]

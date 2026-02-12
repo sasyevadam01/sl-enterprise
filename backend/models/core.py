@@ -89,7 +89,8 @@ class User(Base):
             'factory_controller': ['access_factory', 'manage_kpi', 'view_dashboard'],
             'record_user': [],
             'order_user': ['create_production_orders'],
-            'block_supply': ['manage_production_supply']
+            'block_supply': ['manage_production_supply'],
+            'security': ['view_dashboard', 'view_announcements', 'view_checklist_history', 'manage_tasks', 'perform_checklists', 'access_factory', 'manage_shifts']
         }
         return PERMISSIONS_MAP.get(self.role, [])
 
