@@ -65,8 +65,8 @@ async def get_my_team(
     - Coordinatore -> Dipendenti del proprio reparto + Dipendenti assegnati direttamente (reports)
     """
     
-    # 1. Admin / HR Manager -> Tutti
-    if current_user.role in ['super_admin', 'hr_manager']:
+    # 1. Admin / HR Manager / Utenti con permesso manage_shifts -> Tutti
+    if current_user.role in ['super_admin', 'hr_manager'] or current_user.has_permission('manage_shifts'):
         employees = db.query(Employee).options(
             joinedload(Employee.department),
             joinedload(Employee.manager),
