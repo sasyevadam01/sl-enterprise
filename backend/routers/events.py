@@ -192,7 +192,7 @@ async def review_event(
             notif_type="info",
             title=f"Richiesta Evento {status_text}",
             message=f"{event.event_label} - Revisionato da {current_user.full_name}{notes_text}",
-            link_url="/hr/tasks"  # Link to tasks for coordinator
+            link_url="/hr/approvals"  # Link to approvals center
         )
         db.add(notification)
     

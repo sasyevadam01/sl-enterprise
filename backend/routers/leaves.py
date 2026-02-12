@@ -51,7 +51,7 @@ async def list_leave_requests(
     requests = query.options(
         joinedload(LeaveRequest.requester),
         joinedload(LeaveRequest.reviewer)
-    ).order_by(LeaveRequest.start_date.asc()).offset(skip).limit(limit).all()
+    ).order_by(LeaveRequest.start_date.desc()).offset(skip).limit(limit).all()
     return requests
 
 
@@ -133,7 +133,7 @@ async def review_leave_request(
             notif_type="info",
             title=f"Richiesta Permesso {status_text}",
             message=f"{leave_req.leave_type} - Revisionato da {current_user.full_name}{notes_text}",
-            link_url="/hr/tasks"  # Link to tasks for coordinator
+            link_url="/hr/approvals"  # Link to approvals center for HR/Requester
         )
         db.add(notification)
     

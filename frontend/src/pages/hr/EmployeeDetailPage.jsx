@@ -855,10 +855,8 @@ const AbsenceTab = ({ employeeId, employeeName }) => {
 
     const loadAbsences = useCallback(async () => {
         try {
-            // Fetch leaves and filter by employee client-side
-            const allLeaves = await leavesApi.getLeaves({});
-            // Filter strictly for this employee (show ALL statuses for dossier history)
-            const empLeaves = allLeaves.filter(l => l.employee_id === parseInt(employeeId));
+            // Fetch leaves with server-side filtering by employee
+            const empLeaves = await leavesApi.getLeaves({ employee_id: employeeId });
             // Sort by start date desc
             empLeaves.sort((a, b) => new Date(b.start_date) - new Date(a.start_date));
             setAbsences(empLeaves);
