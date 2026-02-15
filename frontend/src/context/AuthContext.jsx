@@ -18,14 +18,15 @@ export function AuthProvider({ children }) {
     useEffect(() => {
         const token = localStorage.getItem('token');
         const savedUser = localStorage.getItem('user');
-        const savedPinVerified = localStorage.getItem('pinVerified');
 
         if (token && savedUser) {
             try {
                 const parsed = JSON.parse(savedUser);
                 setUser(parsed);
-                // Se il PIN era già verificato nella sessione corrente
-                if (savedPinVerified === 'true') {
+                // PIN verificato SOLO nella sessione corrente del browser (sessionStorage)
+                // e legato all'utente specifico
+                const userPinKey = `pinVerified_${parsed.id}`;
+                if (sessionStorage.getItem(userPinKey) === 'true') {
                     setPinVerified(true);
                 }
                 // Carica stato PIN dal profilo utente salvato
@@ -53,7 +54,10 @@ export function AuthProvider({ children }) {
             };
             setPinStatus(pinInfo);
             setPinVerified(false);
-            localStorage.removeItem('pinVerified');
+            // Pulisci tutti i pinVerified precedenti da sessionStorage
+            Object.keys(sessionStorage).forEach(key => {
+                if (key.startsWith('pinVerified_')) sessionStorage.removeItem(key);
+            });
 
             // Ottieni dati utente
             const userData = await authApi.getMe();
@@ -76,7 +80,11 @@ export function AuthProvider({ children }) {
 
     const confirmPinVerified = () => {
         setPinVerified(true);
-        localStorage.setItem('pinVerified', 'true');
+        // Salva in sessionStorage legato all'utente corrente
+        const userId = user?.id || JSON.parse(localStorage.getItem('user') || '{}').id;
+        if (userId) {
+            sessionStorage.setItem(`pinVerified_${userId}`, 'true');
+        }
         // Aggiorna anche has_pin nel pinStatus (dopo setup)
         setPinStatus(prev => {
             const updated = { ...prev, has_pin: true };
@@ -91,9 +99,12 @@ export function AuthProvider({ children }) {
     };
 
     const logout = () => {
+        // Pulisci pinVerified da sessionStorage per l'utente corrente
+        if (user?.id) {
+            sessionStorage.removeItem(`pinVerified_${user.id}`);
+        }
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        localStorage.removeItem('pinVerified');
         setUser(null);
         setPinVerified(false);
         setPinStatus(null);
