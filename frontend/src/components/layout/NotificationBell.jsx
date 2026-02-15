@@ -256,7 +256,7 @@ export default function NotificationBell() {
             {/* Bell Button */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="relative p-2 text-gray-400 hover:text-white transition rounded-lg hover:bg-white/5"
+                className="relative p-2 text-slate-500 hover:text-slate-800 transition rounded-lg hover:bg-slate-100 cursor-pointer"
             >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -272,14 +272,14 @@ export default function NotificationBell() {
 
             {/* Dropdown */}
             {isOpen && (
-                <div className="absolute right-0 mt-2 w-96 bg-slate-800 border border-white/10 rounded-xl shadow-2xl z-[110] overflow-hidden">
+                <div className="absolute right-0 mt-2 w-96 bg-white border border-slate-200 rounded-xl shadow-xl z-[110] overflow-hidden">
                     {/* Header */}
-                    <div className="flex items-center justify-between px-4 py-3 bg-slate-700/50 border-b border-white/10">
-                        <h3 className="font-semibold text-white">Notifiche</h3>
+                    <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-200">
+                        <h3 className="font-semibold text-slate-800">Notifiche</h3>
                         {unreadCount > 0 && (
                             <button
                                 onClick={handleMarkAllAsRead}
-                                className="text-xs text-blue-400 hover:text-blue-300"
+                                className="text-xs text-emerald-600 hover:text-emerald-700 cursor-pointer font-medium"
                             >
                                 Segna tutte lette
                             </button>
@@ -290,12 +290,14 @@ export default function NotificationBell() {
                     <div className="max-h-96 overflow-y-auto">
                         {loading ? (
                             <div className="flex items-center justify-center py-8">
-                                <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
+                                <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-emerald-500"></div>
                             </div>
                         ) : notifications.length === 0 ? (
-                            <div className="py-8 text-center text-gray-400">
-                                <span className="text-3xl block mb-2">🔔</span>
-                                Nessuna notifica
+                            <div className="py-8 text-center text-slate-400">
+                                <svg className="w-8 h-8 mx-auto mb-2 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                                </svg>
+                                <span className="text-sm">Nessuna notifica</span>
                             </div>
                         ) : (
                             notifications.map(notif => (
@@ -306,31 +308,31 @@ export default function NotificationBell() {
                                         if (!notif.is_read && !notif.is_chat) handleMarkAsRead(notif.id);
                                         setIsOpen(false);
                                     }}
-                                    className={`block px-4 py-3 border-b border-white/5 hover:bg-white/5 cursor-pointer transition ${notif.notif_type === 'priority' ? 'bg-red-500/10 border-l-4 border-l-red-500' :
-                                        notif.notif_type === 'critical' ? 'bg-red-900/20 border-l-4 border-l-red-600 animate-pulse' :
-                                            notif.notif_type === 'urgent' ? 'bg-orange-500/10 border-l-4 border-l-orange-500' :
-                                                notif.notif_type === 'chat' ? 'bg-blue-600/10 border-l-4 border-l-blue-500' :
-                                                    (!notif.is_read ? 'bg-blue-500/5' : '')
+                                    className={`block px-4 py-3 border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition ${notif.notif_type === 'priority' ? 'bg-red-50 border-l-4 border-l-red-500' :
+                                        notif.notif_type === 'critical' ? 'bg-red-50 border-l-4 border-l-red-600 animate-pulse' :
+                                            notif.notif_type === 'urgent' ? 'bg-orange-50 border-l-4 border-l-orange-500' :
+                                                notif.notif_type === 'chat' ? 'bg-blue-50 border-l-4 border-l-blue-500' :
+                                                    (!notif.is_read ? 'bg-emerald-50/50' : '')
                                         }`}
                                 >
                                     <div className="flex items-start gap-3">
                                         <span className="text-xl">{getNotifIcon(notif.notif_type)}</span>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-start justify-between gap-2">
-                                                <p className={`text-sm font-medium break-words ${!notif.is_read ? 'text-white' : 'text-gray-300'
+                                                <p className={`text-sm font-medium break-words ${!notif.is_read ? 'text-slate-800' : 'text-slate-500'
                                                     }`}>
                                                     {notif.title}
                                                 </p>
-                                                <span className="text-xs text-gray-500 whitespace-nowrap pt-0.5">
+                                                <span className="text-xs text-slate-400 whitespace-nowrap pt-0.5">
                                                     {formatTime(notif.created_at)}
                                                 </span>
                                             </div>
-                                            <p className="text-xs text-gray-400 break-words whitespace-pre-wrap mt-1">
+                                            <p className="text-xs text-slate-500 break-words whitespace-pre-wrap mt-1">
                                                 {notif.message}
                                             </p>
                                         </div>
                                         {!notif.is_read && (
-                                            <span className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-2"></span>
+                                            <span className="w-2 h-2 bg-emerald-500 rounded-full flex-shrink-0 mt-2"></span>
                                         )}
                                     </div>
                                 </Link>
@@ -340,10 +342,10 @@ export default function NotificationBell() {
 
                     {/* Footer */}
                     {notifications.length > 0 && (
-                        <div className="px-4 py-2 bg-slate-700/50 border-t border-white/10 flex items-center justify-between">
+                        <div className="px-4 py-2 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
                             <Link
                                 to={viewAllLink}
-                                className="text-sm text-blue-400 hover:text-blue-300"
+                                className="text-sm text-emerald-600 hover:text-emerald-700 font-medium cursor-pointer"
                                 onClick={() => setIsOpen(false)}
                             >
                                 Vedi tutte →
@@ -370,17 +372,19 @@ export default function NotificationBell() {
                                                 }
                                             }
                                         }}
-                                        className="text-xs text-red-500 hover:text-red-400 flex items-center gap-1 font-semibold"
+                                        className="text-xs text-red-500 hover:text-red-600 flex items-center gap-1 font-semibold cursor-pointer"
                                     >
-                                        🗑️ Elimina Tutto
+                                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                        Elimina Tutto
                                     </button>
                                 )}
                                 {notifications.some(n => n.is_read) && (
                                     <button
                                         onClick={handleClearRead}
-                                        className="text-xs text-orange-400 hover:text-orange-300 flex items-center gap-1"
+                                        className="text-xs text-orange-500 hover:text-orange-600 flex items-center gap-1 cursor-pointer"
                                     >
-                                        🧹 Pulisci Lette
+                                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" /></svg>
+                                        Pulisci Lette
                                     </button>
                                 )}
                             </div>
