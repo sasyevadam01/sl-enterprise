@@ -1,6 +1,7 @@
 /**
  * SL Enterprise - Shift Planner V2 (Refactored)
  * Gestione visiva dei turni con logica API ottimizzata.
+ * Premium Enterprise Light Mode
  */
 import { useState, useEffect, useMemo } from 'react';
 import { shiftsApi, factoryApi, leavesApi, employeesApi } from '../../api/client';
@@ -9,6 +10,7 @@ import { format, startOfWeek, endOfWeek, addDays, subDays, isSameDay, isSunday, 
 import { it } from 'date-fns/locale';
 import { useUI } from '../../components/ui/CustomUI';
 import TodayAbsencesPanel from '../../components/hr/TodayAbsencesPanel';
+import { Calendar, ChevronLeft, ChevronRight, Search, Copy, FileText, Palmtree, Sun, Moon, Sunset, Wrench, BedDouble, X } from 'lucide-react';
 
 // --- HOLIDAY LOGIC (PRESERVED) ---
 const getItalianHolidays = (year) => {
@@ -165,14 +167,14 @@ export default function PlannerPage() {
     };
 
     const getShiftStyle = (shift) => {
-        if (!shift) return 'bg-slate-800/30 hover:bg-slate-700/50 border-transparent';
+        if (!shift) return 'bg-slate-50/50 hover:bg-slate-100 border-dashed border-slate-300 text-slate-400';
         switch (shift.shift_type) {
-            case 'morning': return 'bg-blue-500/20 border-blue-500 text-blue-300';
-            case 'afternoon': return 'bg-orange-500/20 border-orange-500 text-orange-300';
-            case 'night': return 'bg-purple-500/20 border-purple-500 text-purple-300';
-            case 'manual': return 'bg-emerald-500/20 border-emerald-500 text-emerald-300';
-            case 'off': return 'bg-slate-600/30 border-slate-500 text-slate-400';
-            default: return 'bg-slate-800/30 hover:bg-slate-700/50 border-transparent';
+            case 'morning': return 'bg-blue-100 border-blue-300 text-blue-800 shadow-sm shadow-blue-200/50';
+            case 'afternoon': return 'bg-amber-100 border-amber-300 text-amber-800 shadow-sm shadow-amber-200/50';
+            case 'night': return 'bg-violet-100 border-violet-300 text-violet-800 shadow-sm shadow-violet-200/50';
+            case 'manual': return 'bg-emerald-100 border-emerald-300 text-emerald-800 shadow-sm shadow-emerald-200/50';
+            case 'off': return 'bg-slate-100 border-slate-300 text-slate-600';
+            default: return 'bg-slate-50/50 hover:bg-slate-100 border-dashed border-slate-300 text-slate-400';
         }
     };
 
@@ -296,50 +298,63 @@ export default function PlannerPage() {
             <TodayAbsencesPanel />
 
             {/* --- HEADER CONTROLS --- */}
-            <div className="bg-slate-800 p-4 rounded-xl border border-white/10 shadow-lg flex flex-col md:flex-row gap-4 justify-between items-center sticky top-0 z-20 md:static backdrop-blur-md md:backdrop-blur-none bg-slate-800/90 md:bg-slate-800">
+            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-card flex flex-col md:flex-row gap-4 justify-between items-center sticky top-0 z-20 md:static">
 
                 {/* Title & Navigation */}
                 <div className="flex items-center justify-between w-full md:w-auto gap-4">
-                    <h1 className="text-xl md:text-2xl font-bold text-white hidden md:block">📅 Gestione Turni</h1>
+                    <div className="hidden md:flex items-center gap-2.5">
+                        <Calendar className="w-5 h-5 text-brand-green" />
+                        <h1 className="text-xl font-bold text-slate-800">Gestione Turni</h1>
+                    </div>
 
                     {/* MOBILE NAVIGATOR (< Day >) */}
-                    <div className="flex md:hidden items-center justify-between w-full bg-slate-700/50 rounded-lg p-1 border border-white/5">
-                        <button onClick={handlePrevDay} className="p-3 hover:bg-white/10 rounded-lg text-white transition">◀</button>
+                    <div className="flex md:hidden items-center justify-between w-full bg-slate-50 rounded-lg p-1 border border-slate-200">
+                        <button onClick={handlePrevDay} className="p-3 hover:bg-slate-100 rounded-lg text-slate-600 transition">
+                            <ChevronLeft className="w-4 h-4" />
+                        </button>
                         <div className="flex flex-col items-center">
-                            <span className="text-white font-bold text-lg capitalize">
+                            <span className="text-slate-800 font-bold text-lg capitalize">
                                 {format(currentDate, 'EEEE d MMM', { locale: it })}
                             </span>
-                            {mobileHoliday && <span className="text-[10px] text-red-400 font-bold uppercase tracking-wider">{mobileHoliday}</span>}
+                            {mobileHoliday && <span className="text-[10px] text-red-500 font-bold uppercase tracking-wider">{mobileHoliday}</span>}
                         </div>
-                        <button onClick={handleNextDay} className="p-3 hover:bg-white/10 rounded-lg text-white transition">▶</button>
+                        <button onClick={handleNextDay} className="p-3 hover:bg-slate-100 rounded-lg text-slate-600 transition">
+                            <ChevronRight className="w-4 h-4" />
+                        </button>
                     </div>
 
                     {/* DESKTOP NAVIGATOR (< Week >) */}
-                    <div className="hidden md:flex bg-slate-700 rounded-lg p-1">
-                        <button onClick={() => setCurrentDate(subDays(currentDate, 7))} className="p-2 hover:bg-slate-600 rounded text-white px-3">◀</button>
-                        <span className="px-4 py-2 text-white font-mono font-bold text-sm bg-slate-800/50 mx-1 rounded border border-white/5 flex items-center">
+                    <div className="hidden md:flex bg-slate-50 rounded-lg p-1 border border-slate-200">
+                        <button onClick={() => setCurrentDate(subDays(currentDate, 7))} className="p-2 hover:bg-slate-100 rounded text-slate-600 px-3 transition">
+                            <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        <span className="px-4 py-2 text-slate-800 font-mono font-bold text-sm bg-white mx-1 rounded border border-slate-200 flex items-center">
                             {format(weekStart, 'd MMM', { locale: it })} - {format(weekEnd, 'd MMM yyyy', { locale: it })}
                         </span>
-                        <button onClick={handleNextWeek} className={`p-2 hover:bg-slate-600 rounded text-white px-3 ${!canNavigateNext ? 'opacity-50 cursor-not-allowed' : ''}`}>▶</button>
+                        <button onClick={handleNextWeek} className={`p-2 hover:bg-slate-100 rounded text-slate-600 px-3 transition ${!canNavigateNext ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                            <ChevronRight className="w-4 h-4" />
+                        </button>
                     </div>
                 </div>
 
                 {/* Filters & Actions */}
                 <div className="flex gap-2 items-center flex-wrap justify-center w-full md:w-auto">
-                    <input
-                        type="text"
-                        value={nameFilter}
-                        onChange={e => setNameFilter(e.target.value)}
-                        placeholder="🔍 Cerca..."
-                        className="bg-slate-700 text-white border border-white/10 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none w-full md:w-44"
-                    />
+                    <div className="relative w-full md:w-44">
+                        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                            type="text"
+                            value={nameFilter}
+                            onChange={e => setNameFilter(e.target.value)}
+                            placeholder="Cerca..."
+                            className="bg-white text-slate-800 border border-slate-300 rounded-lg pl-9 pr-3 py-2 text-sm focus:ring-2 focus:ring-brand-green/20 focus:border-brand-green outline-none w-full placeholder:text-slate-400"
+                        />
+                    </div>
 
                     <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
-                        {/* Mobile: Hide Dept, Show Coord. Desktop: Show Both */}
                         <select
                             value={departmentFilter}
                             onChange={e => setDepartmentFilter(e.target.value)}
-                            className="hidden md:block bg-slate-700 text-white border border-white/10 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none md:flex-none"
+                            className="hidden md:block bg-white text-slate-700 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-green/20 focus:border-brand-green outline-none"
                         >
                             <option value="all">Reparti</option>
                             {departments.map(d => <option key={d} value={d}>{d}</option>)}
@@ -348,28 +363,28 @@ export default function PlannerPage() {
                         <select
                             value={coordinatorFilter}
                             onChange={e => setCoordinatorFilter(e.target.value)}
-                            className="bg-slate-700 text-white border border-white/10 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none flex-1 md:flex-none"
+                            className="bg-white text-slate-700 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-green/20 focus:border-brand-green outline-none flex-1 md:flex-none"
                         >
                             <option value="all">Coordinatori</option>
                             {coordinators.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
 
                         {/* Mobile Actions */}
-                        <button onClick={handleCopyWeek} className="md:hidden bg-slate-700 text-white px-3 py-2 rounded-lg text-sm border border-white/10">
-                            📋
+                        <button onClick={handleCopyWeek} className="md:hidden bg-white text-slate-600 px-3 py-2 rounded-lg text-sm border border-slate-300 hover:bg-slate-50 transition">
+                            <Copy className="w-4 h-4" />
                         </button>
-                        <button onClick={handleExportPdf} className="md:hidden bg-red-700 text-white px-3 py-2 rounded-lg text-sm border border-white/10">
-                            📄
+                        <button onClick={handleExportPdf} className="md:hidden bg-white text-red-600 px-3 py-2 rounded-lg text-sm border border-slate-300 hover:bg-red-50 transition">
+                            <FileText className="w-4 h-4" />
                         </button>
                     </div>
 
                     <div className="hidden md:flex gap-2">
-                        <button onClick={handleCopyWeek} className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg text-sm transition font-medium border border-white/10">
-                            📋 Copia Sett.
+                        <button onClick={handleCopyWeek} className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg text-sm transition font-medium border border-slate-300 flex items-center gap-2">
+                            <Copy className="w-4 h-4" /> Copia Sett.
                         </button>
 
-                        <button onClick={handleExportPdf} className="bg-red-700 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm transition font-medium flex items-center gap-2">
-                            📄 PDF
+                        <button onClick={handleExportPdf} className="bg-white hover:bg-red-50 text-red-600 px-4 py-2 rounded-lg text-sm transition font-medium flex items-center gap-2 border border-slate-300">
+                            <FileText className="w-4 h-4" /> PDF
                         </button>
                     </div>
                 </div>
@@ -377,29 +392,29 @@ export default function PlannerPage() {
 
             {/* Error Banner */}
             {error && (
-                <div className="bg-red-500/20 border border-red-500/50 text-red-200 p-4 rounded-xl">
+                <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl">
                     {error}
                 </div>
             )}
 
             {/* --- DESKTOP VIEW (TABLE) --- */}
-            <div className="hidden md:block bg-slate-800 rounded-xl border border-white/10 overflow-hidden shadow-2xl">
+            <div className="hidden md:block bg-white rounded-xl border border-slate-300 overflow-hidden shadow-card">
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm border-collapse">
                         <thead>
-                            <tr className="bg-slate-900 text-gray-400 border-b border-white/10">
-                                <th className="p-4 text-left font-bold sticky left-0 bg-slate-900 z-10 w-48 border-r border-white/10 shadow-[2px_0_5px_rgba(0,0,0,0.3)]">
+                            <tr className="bg-gradient-to-r from-slate-700 to-slate-800 text-white border-b-2 border-brand-green">
+                                <th className="p-4 text-left font-bold sticky left-0 bg-slate-700 z-10 w-48 border-r border-slate-600 shadow-[2px_0_5px_rgba(0,0,0,0.15)]">
                                     DIPENDENTE
                                 </th>
                                 {weekDays.map(day => {
                                     const isHoliday = isHolidayOrSunday(day, holidays);
                                     const isToday = isSameDay(day, new Date());
                                     return (
-                                        <th key={day.toISOString()} className={`p-3 text-center min-w-[110px] border-r border-white/5 ${isToday ? 'bg-blue-900/20' : ''} ${isHoliday ? 'bg-red-900/10' : ''}`}>
-                                            <div className={`text-xs font-bold uppercase ${isHoliday ? 'text-red-400' : 'text-gray-400'}`}>
+                                        <th key={day.toISOString()} className={`p-3 text-center min-w-[110px] border-r border-slate-600 ${isToday ? 'bg-brand-green/20' : ''} ${isHoliday ? 'bg-red-500/20' : ''}`}>
+                                            <div className={`text-xs font-bold uppercase ${isHoliday ? 'text-red-300' : 'text-slate-300'}`}>
                                                 {format(day, 'EEE', { locale: it })}
                                             </div>
-                                            <div className={`text-lg ${isHoliday ? 'text-red-400' : 'text-white'}`}>
+                                            <div className={`text-lg font-semibold ${isHoliday ? 'text-red-300' : 'text-white'}`}>
                                                 {format(day, 'd')}
                                             </div>
                                         </th>
@@ -407,19 +422,19 @@ export default function PlannerPage() {
                                 })}
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/5">
+                        <tbody className="divide-y divide-slate-200">
                             {loading ? (
-                                <tr><td colSpan={8} className="p-12 text-center text-gray-500 animate-pulse">Caricamento...</td></tr>
+                                <tr><td colSpan={8} className="p-12 text-center text-slate-400 animate-pulse">Caricamento...</td></tr>
                             ) : filteredTeam.length === 0 ? (
-                                <tr><td colSpan={8} className="p-12 text-center text-gray-500">Nessun dipendente trovato.</td></tr>
+                                <tr><td colSpan={8} className="p-12 text-center text-slate-400">Nessun dipendente trovato.</td></tr>
                             ) : (
-                                filteredTeam.map(emp => (
-                                    <tr key={emp.id} className="group hover:bg-white/5 transition-colors">
-                                        <td className="p-3 sticky left-0 bg-slate-800 group-hover:bg-slate-700/80 transition-colors z-10 border-r border-white/10 shadow-[2px_0_5px_rgba(0,0,0,0.3)]">
-                                            <div className="font-bold text-white truncate">{emp.last_name}</div>
-                                            <div className="text-gray-500 text-xs truncate">{emp.first_name}</div>
+                                filteredTeam.map((emp, idx) => (
+                                    <tr key={emp.id} className={`group hover:bg-blue-50/60 transition-colors ${idx % 2 === 1 ? 'bg-slate-50' : 'bg-white'}`}>
+                                        <td className={`p-3 sticky left-0 z-10 border-r-2 border-slate-200 shadow-[2px_0_5px_rgba(0,0,0,0.06)] transition-colors border-l-4 border-l-brand-green ${idx % 2 === 1 ? 'bg-slate-50 group-hover:bg-blue-50/60' : 'bg-white group-hover:bg-blue-50/60'}`}>
+                                            <div className="font-bold text-slate-800 truncate">{emp.last_name}</div>
+                                            <div className="text-slate-400 text-xs truncate">{emp.first_name}</div>
                                             {emp.department_name !== 'N/D' && (
-                                                <div className="text-[10px] text-blue-400 mt-0.5 truncate">{emp.department_name}</div>
+                                                <div className="text-[10px] text-brand-green mt-0.5 truncate">{emp.department_name}</div>
                                             )}
                                         </td>
                                         {weekDays.map(day => {
@@ -429,8 +444,8 @@ export default function PlannerPage() {
                                             const holidayName = holidays[dayKey];
                                             if (holidayName) {
                                                 return (
-                                                    <td key={dayKey} className="p-2 border border-slate-700 bg-red-900/10 relative h-16 pointer-events-none">
-                                                        <div className="flex items-center justify-center h-full text-red-400 font-bold text-xs uppercase tracking-wider">
+                                                    <td key={dayKey} className="p-2 border-r border-slate-200 bg-red-50 relative h-16 pointer-events-none">
+                                                        <div className="flex items-center justify-center h-full text-red-500 font-bold text-xs uppercase tracking-wider">
                                                             {holidayName}
                                                         </div>
                                                     </td>
@@ -444,27 +459,27 @@ export default function PlannerPage() {
                                             const isSunday = day.getDay() === 0;
 
                                             return (
-                                                <td key={dayKey} className={`p-1 border-r border-white/5 relative ${isSunday ? 'bg-red-900/5' : ''}`}>
+                                                <td key={dayKey} className={`p-1.5 border-r border-slate-200 relative ${isSunday ? 'bg-red-50/30' : ''}`}>
 
                                                     {/* Leave Indicator */}
                                                     {leave && (
                                                         <div
-                                                            className="absolute top-0 right-0 z-10"
+                                                            className="absolute top-0.5 right-0.5 z-10"
                                                             title={`${leave.leave_type}: ${leave.employee_name || ''}`}
                                                         >
-                                                            <span className="bg-blue-500 text-white text-[8px] px-1 py-0.5 rounded-bl-md font-bold">
-                                                                🏖️
+                                                            <span className="bg-sky-100 text-sky-600 text-[8px] px-1 py-0.5 rounded font-bold flex items-center">
+                                                                <Palmtree className="w-2.5 h-2.5" />
                                                             </span>
                                                         </div>
                                                     )}
 
                                                     <button
                                                         onClick={() => setSelectedSlot({ employee: emp, date: day, currentShift: shift, weekDays })}
-                                                        className={`w-full h-14 rounded-lg border flex flex-col items-center justify-center transition-all ${leave ? 'bg-blue-500/20 border-blue-500/50 text-blue-300' : getShiftStyle(shift)} relative z-0`}
+                                                        className={`w-full h-14 rounded-lg border-2 flex flex-col items-center justify-center transition-all hover:scale-[1.03] ${leave ? 'bg-sky-100 border-sky-300 text-sky-700 shadow-sm shadow-sky-200/50' : getShiftStyle(shift)} relative z-0`}
                                                     >
                                                         {leave ? (
                                                             <>
-                                                                <span className="font-bold text-sm">🏖️</span>
+                                                                <Palmtree className="w-4 h-4" />
                                                                 <span className="text-[10px] opacity-70 truncate max-w-full px-1">
                                                                     {leave.leave_type === 'vacation' ? 'Ferie' :
                                                                         leave.leave_type === 'sick' ? 'Malattia' :
@@ -482,15 +497,15 @@ export default function PlannerPage() {
                                                                     {shift.shift_type === 'manual' && 'C'}
                                                                     {shift.shift_type === 'off' && '—'}
                                                                 </span>
-                                                                <span className="text-[10px] opacity-70 leading-none">{getShiftLabel(shift)}</span>
+                                                                <span className="text-[10px] opacity-60 leading-none">{getShiftLabel(shift)}</span>
                                                                 {shift.banchina_code && (
-                                                                    <span className="text-[9px] font-mono text-cyan-200/90 leading-none mt-0.5 border border-cyan-500/30 px-1 rounded bg-cyan-900/40">
+                                                                    <span className="text-[9px] font-mono text-cyan-700 leading-none mt-0.5 border border-cyan-200 px-1 rounded bg-cyan-50">
                                                                         {shift.banchina_code}
                                                                     </span>
                                                                 )}
                                                             </>
                                                         ) : (
-                                                            <span className="text-xl opacity-0 group-hover:opacity-30 hover:!opacity-60 transition">+</span>
+                                                            <span className="text-xl opacity-0 group-hover:opacity-30 hover:!opacity-60 transition text-slate-400">+</span>
                                                         )}
                                                     </button>
                                                 </td>
@@ -507,9 +522,9 @@ export default function PlannerPage() {
             {/* --- MOBILE VIEW (LIST) --- */}
             <div className="md:hidden space-y-3">
                 {loading ? (
-                    <div className="text-center py-10 text-gray-500 animate-pulse">Caricamento...</div>
+                    <div className="text-center py-10 text-slate-400 animate-pulse">Caricamento...</div>
                 ) : filteredTeam.length === 0 ? (
-                    <div className="text-center py-10 text-gray-500">Nessuno trovato.</div>
+                    <div className="text-center py-10 text-slate-400">Nessuno trovato.</div>
                 ) : (
                     filteredTeam.map(emp => {
                         const shift = getShift(emp.id, currentDate);
@@ -519,22 +534,22 @@ export default function PlannerPage() {
                             <div
                                 key={emp.id}
                                 onClick={() => setSelectedSlot({ employee: emp, date: currentDate, currentShift: shift, weekDays })}
-                                className="bg-slate-800 rounded-xl p-4 border border-white/10 shadow-lg active:scale-95 transition-transform flex items-center justify-between gap-4"
+                                className="bg-white rounded-xl p-4 border border-slate-200 shadow-card active:scale-[0.98] transition-transform flex items-center justify-between gap-4 cursor-pointer"
                             >
                                 {/* User Info */}
                                 <div className="min-w-0">
-                                    <h3 className="text-white font-bold text-lg truncate pr-2">
+                                    <h3 className="text-slate-800 font-bold text-lg truncate pr-2">
                                         {emp.last_name} {emp.first_name}
                                     </h3>
-                                    <p className="text-blue-400 text-xs truncate">{emp.department_name || 'N/D'}</p>
+                                    <p className="text-brand-green text-xs truncate">{emp.department_name || 'N/D'}</p>
                                 </div>
 
                                 {/* Status Indicator */}
-                                <div className={`shrink-0 px-4 py-2 rounded-lg border min-w-[90px] text-center flex flex-col items-center justify-center ${leave ? 'bg-blue-500/20 border-blue-500 text-blue-300' : getShiftStyle(shift)
+                                <div className={`shrink-0 px-4 py-2 rounded-lg border min-w-[90px] text-center flex flex-col items-center justify-center ${leave ? 'bg-sky-50 border-sky-200 text-sky-700' : getShiftStyle(shift)
                                     }`}>
                                     {leave ? (
                                         <>
-                                            <span className="text-lg">🏖️</span>
+                                            <Palmtree className="w-5 h-5" />
                                             <span className="text-[10px] font-bold uppercase">{leave.leave_type === 'vacation' ? 'Ferie' : 'Assenza'}</span>
                                         </>
                                     ) : shift ? (
@@ -548,13 +563,13 @@ export default function PlannerPage() {
                                             </span>
                                             {shift.shift_type === 'manual' && <span className="text-[10px]">{getShiftLabel(shift)}</span>}
                                             {shift.banchina_code && (
-                                                <span className="text-[9px] font-mono font-bold text-cyan-200 mt-1 block">
+                                                <span className="text-[9px] font-mono font-bold text-cyan-700 mt-1 block">
                                                     {shift.banchina_code}
                                                 </span>
                                             )}
                                         </>
                                     ) : (
-                                        <span className="text-gray-500 font-bold text-sm">+ Assegna</span>
+                                        <span className="text-slate-400 font-bold text-sm">+ Assegna</span>
                                     )}
                                 </div>
                             </div>
@@ -817,154 +832,174 @@ function AssignShiftModal({ slot, team, leaves = [], onClose, onSuccess }) {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
-            <div className="bg-slate-800 p-6 rounded-2xl w-full max-w-md border border-white/10 shadow-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-                <div className="flex justify-between items-start mb-4">
-                    <div>
-                        <h3 className="text-xl font-bold text-white">
-                            {slot.employee.first_name} {slot.employee.last_name}
-                        </h3>
-                        {/* EXTRA INFO */}
-                        <div className="text-xs text-gray-400 mt-1 space-y-0.5">
-                            <p><span className="text-gray-500">Reparto:</span> <span className="text-blue-300">{slot.employee.department_name || 'N/D'}</span></p>
-                            <p>
-                                <span className="text-gray-500">Coord:</span>
-                                <span className="text-orange-300 ml-1">
-                                    {coordinator ? `${coordinator.last_name} ${coordinator.first_name}` : 'Nessuno'}
-                                </span>
-                            </p>
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
+            <div className="bg-slate-50 rounded-2xl w-full max-w-md shadow-2xl shadow-slate-900/20 max-h-[90vh] overflow-y-auto border border-slate-300" onClick={e => e.stopPropagation()}>
+
+                {/* ── Dark Header Strip ── */}
+                <div className="bg-gradient-to-r from-slate-700 to-slate-800 p-5 rounded-t-2xl">
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <h3 className="text-xl font-bold text-white">
+                                {slot.employee.first_name} {slot.employee.last_name}
+                            </h3>
+                            <div className="text-xs mt-1.5 space-y-0.5">
+                                <p><span className="text-slate-400">Reparto:</span> <span className="text-emerald-300 font-medium">{slot.employee.department_name || 'N/D'}</span></p>
+                                <p>
+                                    <span className="text-slate-400">Coord:</span>
+                                    <span className="text-amber-300 ml-1 font-medium">
+                                        {coordinator ? `${coordinator.last_name} ${coordinator.first_name}` : 'Nessuno'}
+                                    </span>
+                                </p>
+                            </div>
+                            <p className="text-emerald-300 text-sm capitalize mt-2 border-t border-white/10 pt-2 font-medium">{format(slot.date, 'EEEE d MMMM', { locale: it })}</p>
                         </div>
-                        <p className="text-blue-400 text-sm capitalize mt-2 border-t border-white/5 pt-2">{format(slot.date, 'EEEE d MMMM', { locale: it })}</p>
-                    </div>
-                    <button onClick={onClose} className="text-gray-400 hover:text-white">✕</button>
-                </div>
-
-                {/* All Week Toggle */}
-                <div className="mb-6 bg-slate-700/30 p-3 rounded-xl border border-white/5">
-                    <label className="flex items-center gap-3 cursor-pointer">
-                        <input type="checkbox" checked={allWeek} onChange={e => setAllWeek(e.target.checked)} className="w-5 h-5 accent-blue-500 rounded" />
-                        <span className="text-sm font-medium text-gray-200">Applica a tutta la settimana</span>
-                    </label>
-                    <p className="text-xs text-gray-500 mt-1 ml-8">Esclude automaticamente <b>Sabato</b> e <b>Domenica</b>.</p>
-                </div>
-
-                {/* Shift Type Grid */}
-                <div className="grid grid-cols-3 gap-2 mb-4">
-                    {[
-                        { id: 'morning', label: 'Mattina', sub: '06-14', color: 'blue' },
-                        { id: 'afternoon', label: 'Pom', sub: '14-22', color: 'orange' },
-                        { id: 'night', label: 'Notte', sub: '22-06', color: 'purple' },
-                    ].map(opt => (
-                        <button
-                            key={opt.id}
-                            onClick={() => setType(opt.id)}
-                            className={`p-3 rounded-xl border-2 transition text-left ${type === opt.id
-                                ? `bg-${opt.color}-500/20 border-${opt.color}-500 text-white`
-                                : 'bg-slate-700/50 border-transparent text-gray-400 hover:bg-slate-700'}`}
-                        >
-                            <div className="font-bold text-sm">{opt.label}</div>
-                            <div className="text-[10px] opacity-70">{opt.sub}</div>
+                        <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10">
+                            <X className="w-5 h-5" />
                         </button>
-                    ))}
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 mb-4">
-                    <button
-                        onClick={() => setType('manual')}
-                        className={`p-2 rounded-xl border-2 transition flex items-center justify-center gap-2 ${type === 'manual'
-                            ? 'bg-teal-500/20 border-teal-500 text-white'
-                            : 'bg-slate-700/50 border-transparent text-gray-400 hover:bg-slate-700'}`}
-                    >
-                        <span className="font-bold text-sm">🔧 Custom</span>
-                    </button>
-                    <button
-                        onClick={() => setType('off')}
-                        className={`p-2 rounded-xl border-2 transition flex items-center justify-center gap-2 ${type === 'off'
-                            ? 'bg-gray-600/50 border-gray-500 text-white'
-                            : 'bg-slate-700/50 border-transparent text-gray-400 hover:bg-slate-700'}`}
-                    >
-                        <span className="font-bold text-sm">🛌 Riposo</span>
-                    </button>
-                </div>
-
-                {/* SATURDAY PRESET (New) */}
-                <button
-                    onClick={() => { setType('manual'); setStart('07:30'); setEnd('12:00'); }}
-                    className="w-full mb-4 p-2 rounded-xl border border-orange-500/30 bg-orange-500/10 text-orange-300 hover:bg-orange-500/20 transition flex items-center justify-center gap-2"
-                >
-                    <span className="font-bold text-sm">☀️ Sabato (07:30 - 12:00)</span>
-                </button>
-
-                {/* Manual Time Inputs */}
-                {type === 'manual' && (
-                    <div className="flex gap-4 mb-4 bg-teal-900/10 p-3 rounded-xl border border-teal-500/20">
-                        <div className="flex-1">
-                            <label className="text-xs text-teal-300 block mb-1">Inizio</label>
-                            <input type="time" value={start} onChange={e => setStart(e.target.value)} className="w-full bg-slate-900 border border-white/10 rounded p-2 text-white text-sm" />
-                        </div>
-                        <div className="flex-1">
-                            <label className="text-xs text-teal-300 block mb-1">Fine</label>
-                            <input type="time" value={end} onChange={e => setEnd(e.target.value)} className="w-full bg-slate-900 border border-white/10 rounded p-2 text-white text-sm" />
-                        </div>
                     </div>
-                )}
+                </div>
 
-                {/* Banchina Select (NEW) */}
-                <div className="mb-4">
-                    <label className="text-xs text-gray-400 block mb-1 ml-1">Banchina <span className="text-red-400">*</span></label>
-                    <select
-                        value={String(selectedBanchinaId)}
-                        onChange={e => {
-                            setSelectedBanchinaId(e.target.value);
-                            setRequirementId(''); // Reset requirement on banchina change
-                        }}
-                        className="w-full bg-slate-700 border border-white/10 rounded-xl p-3 text-white text-sm outline-none focus:border-blue-500"
+                {/* ── Body ── */}
+                <div className="p-5 space-y-4">
+
+                    {/* All Week Toggle */}
+                    <div className="bg-blue-50 p-3 rounded-xl border border-blue-200">
+                        <label className="flex items-center gap-3 cursor-pointer">
+                            <input type="checkbox" checked={allWeek} onChange={e => setAllWeek(e.target.checked)} className="w-5 h-5 accent-brand-green rounded" />
+                            <span className="text-sm font-semibold text-blue-800">Applica a tutta la settimana</span>
+                        </label>
+                        <p className="text-xs text-blue-600 mt-1 ml-8">Esclude automaticamente <b>Sabato</b> e <b>Domenica</b>.</p>
+                    </div>
+
+                    {/* Shift Type Grid — Radio Cards */}
+                    <div className="grid grid-cols-3 gap-2">
+                        {[
+                            { id: 'morning', label: 'Mattina', sub: '06-14', icon: Sun, activeBg: 'bg-blue-100', activeBorder: 'border-blue-500', activeText: 'text-blue-800' },
+                            { id: 'afternoon', label: 'Pomeriggio', sub: '14-22', icon: Sunset, activeBg: 'bg-amber-100', activeBorder: 'border-amber-500', activeText: 'text-amber-800' },
+                            { id: 'night', label: 'Notte', sub: '22-06', icon: Moon, activeBg: 'bg-violet-100', activeBorder: 'border-violet-500', activeText: 'text-violet-800' },
+                        ].map(opt => {
+                            const Icon = opt.icon;
+                            const isActive = type === opt.id;
+                            return (
+                                <button
+                                    key={opt.id}
+                                    onClick={() => setType(opt.id)}
+                                    className={`p-3 rounded-xl border-2 transition-all text-left ${isActive
+                                        ? `${opt.activeBg} ${opt.activeBorder} ${opt.activeText} shadow-md`
+                                        : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-100 hover:border-slate-300'}`}
+                                >
+                                    <Icon className={`w-4 h-4 mb-1 ${isActive ? '' : 'text-slate-400'}`} />
+                                    <div className="font-bold text-sm">{opt.label}</div>
+                                    <div className="text-[10px] opacity-60">{opt.sub}</div>
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                        <button
+                            onClick={() => setType('manual')}
+                            className={`p-2.5 rounded-xl border-2 transition-all flex items-center justify-center gap-2 ${type === 'manual'
+                                ? 'bg-emerald-100 border-emerald-500 text-emerald-800 shadow-md'
+                                : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-100 hover:border-slate-300'}`}
+                        >
+                            <Wrench className="w-4 h-4" />
+                            <span className="font-bold text-sm">Custom</span>
+                        </button>
+                        <button
+                            onClick={() => setType('off')}
+                            className={`p-2.5 rounded-xl border-2 transition-all flex items-center justify-center gap-2 ${type === 'off'
+                                ? 'bg-slate-200 border-slate-500 text-slate-800 shadow-md'
+                                : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-100 hover:border-slate-300'}`}
+                        >
+                            <BedDouble className="w-4 h-4" />
+                            <span className="font-bold text-sm">Riposo</span>
+                        </button>
+                    </div>
+
+                    {/* SATURDAY PRESET */}
+                    <button
+                        onClick={() => { setType('manual'); setStart('07:30'); setEnd('12:00'); }}
+                        className="w-full p-2.5 rounded-xl border-2 border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 transition-all flex items-center justify-center gap-2 font-bold text-sm"
                     >
-                        <option value="">-- Seleziona Banchina --</option>
-                        {banchine.map(b => (
-                            <option key={b.id} value={String(b.id)}>Banchina {b.code}</option>
-                        ))}
-                    </select>
+                        <Sun className="w-4 h-4" />
+                        Sabato (07:30 - 12:00)
+                    </button>
+
+                    {/* Manual Time Inputs */}
+                    {type === 'manual' && (
+                        <div className="flex gap-4 bg-emerald-50 p-3 rounded-xl border border-emerald-200">
+                            <div className="flex-1">
+                                <label className="text-xs text-emerald-700 block mb-1 font-medium">Inizio</label>
+                                <input type="time" value={start} onChange={e => setStart(e.target.value)} className="w-full bg-white border-2 border-emerald-200 rounded-lg p-2 text-slate-800 text-sm font-medium focus:ring-2 focus:ring-emerald-300 focus:border-emerald-400 outline-none" />
+                            </div>
+                            <div className="flex-1">
+                                <label className="text-xs text-emerald-700 block mb-1 font-medium">Fine</label>
+                                <input type="time" value={end} onChange={e => setEnd(e.target.value)} className="w-full bg-white border-2 border-emerald-200 rounded-lg p-2 text-slate-800 text-sm font-medium focus:ring-2 focus:ring-emerald-300 focus:border-emerald-400 outline-none" />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Banchina Select */}
+                    <div>
+                        <label className="text-xs text-slate-600 block mb-1.5 ml-1 font-semibold uppercase tracking-wider">Banchina <span className="text-red-500">*</span></label>
+                        <select
+                            value={String(selectedBanchinaId)}
+                            onChange={e => {
+                                setSelectedBanchinaId(e.target.value);
+                                setRequirementId('');
+                            }}
+                            className="w-full bg-white border-2 border-slate-300 rounded-xl p-3 text-slate-800 text-sm font-medium outline-none focus:ring-2 focus:ring-brand-green/30 focus:border-brand-green"
+                        >
+                            <option value="">-- Seleziona Banchina --</option>
+                            {banchine.map(b => (
+                                <option key={b.id} value={String(b.id)}>Banchina {b.code}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Machine/Role Select (Filtered) */}
+                    <div>
+                        <label className="text-xs text-slate-600 block mb-1.5 ml-1 font-semibold uppercase tracking-wider">Macchina / Ruolo <span className="text-red-500">*</span></label>
+                        <select
+                            value={requirementId}
+                            onChange={e => setRequirementId(e.target.value)}
+                            disabled={!selectedBanchinaId}
+                            className="w-full bg-white border-2 border-slate-300 rounded-xl p-3 text-slate-800 text-sm font-medium outline-none focus:ring-2 focus:ring-brand-green/30 focus:border-brand-green disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-slate-100"
+                        >
+                            <option value="">-- Seleziona Ruolo --</option>
+                            {filteredRequirements.map(r => (
+                                <option key={r.id} value={r.id}>{r.role_name}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Notes */}
+                    <div>
+                        <label className="text-xs text-slate-600 block mb-1.5 ml-1 font-semibold uppercase tracking-wider">Note</label>
+                        <textarea
+                            value={notes}
+                            onChange={e => setNotes(e.target.value)}
+                            placeholder="Note opzionali..."
+                            className="w-full bg-white border-2 border-slate-300 rounded-xl p-3 text-slate-800 text-sm h-20 resize-none outline-none focus:ring-2 focus:ring-brand-green/30 focus:border-brand-green placeholder:text-slate-400"
+                        />
+                    </div>
                 </div>
 
-                {/* Machine/Role Select (Filtered) */}
-                <div className="mb-4">
-                    <label className="text-xs text-gray-400 block mb-1 ml-1">Macchina / Ruolo <span className="text-red-400">*</span></label>
-                    <select
-                        value={requirementId}
-                        onChange={e => setRequirementId(e.target.value)}
-                        disabled={!selectedBanchinaId}
-                        className="w-full bg-slate-700 border border-white/10 rounded-xl p-3 text-white text-sm outline-none focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <option value="">-- Seleziona Ruolo --</option>
-                        {filteredRequirements.map(r => (
-                            <option key={r.id} value={r.id}>{r.role_name}</option>
-                        ))}
-                    </select>
-                </div>
-
-                {/* Notes */}
-                <div className="mb-6">
-                    <label className="text-xs text-gray-400 block mb-1 ml-1">Note</label>
-                    <textarea
-                        value={notes}
-                        onChange={e => setNotes(e.target.value)}
-                        placeholder="Note opzionali..."
-                        className="w-full bg-slate-700 border border-white/10 rounded-xl p-3 text-white text-sm h-20 resize-none outline-none focus:border-blue-500"
-                    />
-                </div>
-
-                {/* Footer Buttons */}
-                <div className="flex gap-3">
-                    <button onClick={onClose} className="flex-1 py-3 rounded-xl text-gray-400 hover:bg-white/5 transition">
+                {/* ── Footer — Dark Bar ── */}
+                <div className="bg-slate-800 rounded-b-2xl p-4 flex gap-3">
+                    <button onClick={onClose} className="flex-1 py-3.5 rounded-xl border-2 border-slate-500 text-slate-300 hover:bg-slate-700 hover:text-white hover:border-slate-400 transition font-semibold text-sm">
                         Annulla
                     </button>
                     <button
                         onClick={handleSubmit}
                         disabled={loading || !isValid}
-                        className="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg shadow-blue-900/20 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        className={`flex-1 py-3.5 rounded-xl font-bold text-base uppercase tracking-wide transition-all ${isValid && !loading
+                            ? 'text-white shadow-lg shadow-green-900/40 hover:brightness-110'
+                            : 'bg-slate-600 text-slate-400 cursor-not-allowed'}`}
+                        style={isValid && !loading ? { backgroundColor: '#16a34a' } : {}}
                     >
-                        {loading ? '...' : (isValid ? 'Salva Turno' : 'Compila campi')}
+                        {loading ? '...' : (isValid ? '✓ Salva Turno' : 'Compila campi')}
                     </button>
                 </div>
             </div>

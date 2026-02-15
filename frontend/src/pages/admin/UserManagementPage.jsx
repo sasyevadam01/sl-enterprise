@@ -4,12 +4,12 @@ import { useUI } from '../../components/ui/CustomUI';
 
 // --- COMPONENTS ---
 
-const UsersTable = ({ users, roles, onToggleStatus, onEdit, onDelete }) => (
+const UsersTable = ({ users, roles, onToggleStatus, onEdit, onDelete, onResetPin }) => (
     <>
         {/* --- DESKTOP TABLE --- */}
         <div className="hidden md:block master-card overflow-hidden shadow-xl animate-fade-in">
             <table className="w-full text-left">
-                <thead className="bg-slate-900/50 text-gray-400 uppercase text-xs font-semibold">
+                <thead className="bg-gray-50 text-gray-500 uppercase text-xs font-semibold">
                     <tr>
                         <th className="p-4">Utente</th>
                         <th className="p-4">Ruolo</th>
@@ -18,43 +18,43 @@ const UsersTable = ({ users, roles, onToggleStatus, onEdit, onDelete }) => (
                         <th className="p-4 text-right">Azioni</th>
                     </tr>
                 </thead>
-                <tbody className="divide-y divide-white/5">
+                <tbody className="divide-y divide-gray-100">
                     {users.map(user => (
-                        <tr key={user.id} className="hover:bg-white/5 transition-colors group">
+                        <tr key={user.id} className="hover:bg-gray-50 transition-colors group">
                             <td className="p-4">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center font-bold text-emerald-400 group-hover:bg-emerald-500/30 transition">
+                                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center font-bold text-green-700 group-hover:bg-green-200 transition">
                                         {user.username.charAt(0).toUpperCase()}
                                     </div>
                                     <div>
-                                        <div className="font-medium text-white">{user.full_name}</div>
+                                        <div className="font-medium text-gray-900">{user.full_name}</div>
                                         <div className="text-sm text-gray-500">@{user.username}</div>
                                     </div>
                                 </div>
                             </td>
                             <td className="p-4">
-                                <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-slate-700 text-gray-300">
+                                <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-gray-100 text-gray-700 border border-gray-200">
                                     {user.role_label || user.role}
                                 </span>
                             </td>
                             <td className="p-4">
                                 <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-medium border
                                     ${user.is_active
-                                        ? 'bg-green-500/10 text-green-400 border-green-500/20'
-                                        : 'bg-red-500/10 text-red-400 border-red-500/20'}
+                                        ? 'bg-green-50 text-green-700 border-green-200'
+                                        : 'bg-red-50 text-red-600 border-red-200'}
                                 `}>
                                     <span className={`w-1.5 h-1.5 rounded-full ${user.is_active ? 'bg-green-500' : 'bg-red-500'}`}></span>
                                     {user.is_active ? 'Attivo' : 'Disabilitato'}
                                 </span>
                             </td>
-                            <td className="p-4 text-sm text-gray-400 font-mono">
+                            <td className="p-4 text-sm text-gray-500 font-mono">
                                 {user.last_seen ? new Date(user.last_seen + 'Z').toLocaleString('it-IT') : '-'}
                             </td>
                             <td className="p-4 text-right">
                                 <div className="flex justify-end gap-2">
                                     <button
                                         onClick={() => onEdit(user)}
-                                        className="px-3 py-1.5 rounded text-xs font-medium border border-blue-500/30 text-blue-400 hover:bg-blue-500/10 transition-colors"
+                                        className="px-3 py-1.5 rounded text-xs font-medium border border-blue-200 text-blue-600 hover:bg-blue-50 transition-colors"
                                     >
                                         ✏️ Modifica
                                     </button>
@@ -64,17 +64,24 @@ const UsersTable = ({ users, roles, onToggleStatus, onEdit, onDelete }) => (
                                                 onClick={() => onToggleStatus(user)}
                                                 className={`px-3 py-1.5 rounded text-xs font-medium border transition-colors
                                                     ${user.is_active
-                                                        ? 'border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/10'
-                                                        : 'border-green-500/30 text-green-400 hover:bg-green-500/10'}
+                                                        ? 'border-amber-200 text-amber-600 hover:bg-amber-50'
+                                                        : 'border-green-200 text-green-600 hover:bg-green-50'}
                                                 `}
                                             >
                                                 {user.is_active ? 'Disabilita' : 'Attiva'}
                                             </button>
                                             <button
                                                 onClick={() => onDelete(user)}
-                                                className="px-3 py-1.5 rounded text-xs font-medium border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors"
+                                                className="px-3 py-1.5 rounded text-xs font-medium border border-red-200 text-red-600 hover:bg-red-50 transition-colors"
                                             >
                                                 🗑️ Elimina
+                                            </button>
+                                            <button
+                                                onClick={() => onResetPin(user)}
+                                                className="px-3 py-1.5 rounded text-xs font-medium border border-amber-200 text-amber-600 hover:bg-amber-50 transition-colors"
+                                                title="Resetta il PIN dell'utente"
+                                            >
+                                                🔑 Reset PIN
                                             </button>
                                         </>
                                     )}
@@ -93,12 +100,12 @@ const UsersTable = ({ users, roles, onToggleStatus, onEdit, onDelete }) => (
                     {/* Header: Avatar, Name, Role */}
                     <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center font-bold text-emerald-400">
+                            <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center font-bold text-green-700">
                                 {user.username.charAt(0).toUpperCase()}
                             </div>
                             <div>
-                                <div className="font-bold text-white text-lg">{user.full_name}</div>
-                                <div className="text-xs text-blue-300 bg-blue-500/10 px-2 py-0.5 rounded inline-block mt-0.5 border border-blue-500/20">
+                                <div className="font-bold text-gray-900 text-lg">{user.full_name}</div>
+                                <div className="text-xs text-gray-700 bg-gray-100 px-2 py-0.5 rounded inline-block mt-0.5 border border-gray-200">
                                     {user.role_label || user.role}
                                 </div>
                             </div>
@@ -108,22 +115,22 @@ const UsersTable = ({ users, roles, onToggleStatus, onEdit, onDelete }) => (
                     </div>
 
                     {/* Details Grid */}
-                    <div className="grid grid-cols-2 gap-2 text-xs text-gray-400 mb-4 bg-slate-900/50 p-3 rounded-lg border border-white/5">
+                    <div className="grid grid-cols-2 gap-2 text-xs text-gray-500 mb-4 bg-gray-50 p-3 rounded-lg border border-gray-200">
                         <div>
-                            <span className="block text-gray-500 mb-0.5">Username</span>
-                            <span className="text-gray-200 font-mono">@{user.username}</span>
+                            <span className="block text-gray-400 mb-0.5">Username</span>
+                            <span className="text-gray-700 font-mono">@{user.username}</span>
                         </div>
                         <div>
                             <span className="block text-gray-500 mb-0.5">Ultimo Accesso</span>
-                            <span className="text-gray-200">{user.last_seen ? new Date(user.last_seen + 'Z').toLocaleDateString('it-IT') : '-'}</span>
+                            <span className="text-gray-700">{user.last_seen ? new Date(user.last_seen + 'Z').toLocaleDateString('it-IT') : '-'}</span>
                         </div>
                     </div>
 
                     {/* Actions */}
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 gap-2">
                         <button
                             onClick={() => onEdit(user)}
-                            className="py-2 rounded-lg bg-blue-500/10 text-blue-300 border border-blue-500/20 text-xs font-bold hover:bg-blue-500/20"
+                            className="py-2 rounded-lg bg-blue-50 text-blue-600 border border-blue-200 text-xs font-bold hover:bg-blue-100"
                         >
                             ✏️ Modifica
                         </button>
@@ -134,22 +141,28 @@ const UsersTable = ({ users, roles, onToggleStatus, onEdit, onDelete }) => (
                                     onClick={() => onToggleStatus(user)}
                                     className={`py-2 rounded-lg border text-xs font-bold
                                         ${user.is_active
-                                            ? 'bg-yellow-500/10 text-yellow-300 border-yellow-500/20 hover:bg-yellow-500/20'
-                                            : 'bg-green-500/10 text-green-300 border-green-500/20 hover:bg-green-500/20'}
+                                            ? 'bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100'
+                                            : 'bg-green-50 text-green-600 border-green-200 hover:bg-green-100'}
                                     `}
                                 >
                                     {user.is_active ? 'Disabilita' : 'Attiva'}
                                 </button>
                                 <button
                                     onClick={() => onDelete(user)}
-                                    className="py-2 rounded-lg bg-red-500/10 text-red-300 border border-red-500/20 text-xs font-bold hover:bg-red-500/20"
+                                    className="py-2 rounded-lg bg-red-50 text-red-600 border border-red-200 text-xs font-bold hover:bg-red-100"
                                 >
                                     🗑️ Elimina
+                                </button>
+                                <button
+                                    onClick={() => onResetPin(user)}
+                                    className="py-2 rounded-lg bg-amber-50 text-amber-600 border border-amber-200 text-xs font-bold hover:bg-amber-100"
+                                >
+                                    🔑 Reset PIN
                                 </button>
                             </>
                         )}
                         {user.role === 'super_admin' && (
-                            <div className="col-span-2 flex items-center justify-center bg-slate-700/30 rounded-lg border border-white/5 text-xs text-gray-500 italic">
+                            <div className="col-span-2 flex items-center justify-center bg-gray-50 rounded-lg border border-gray-200 text-xs text-gray-400 italic">
                                 Azioni bloccate
                             </div>
                         )}
@@ -180,13 +193,13 @@ const PermissionsMatrix = ({ roles, definitions, onTogglePermission, onChangeDef
     };
 
     const categoryColors = {
-        'General': 'from-blue-500/20 to-cyan-500/20 border-blue-500/30',
-        'HR': 'from-green-500/20 to-emerald-500/20 border-green-500/30',
-        'Factory': 'from-orange-500/20 to-amber-500/20 border-orange-500/30',
-        'Production': 'from-red-500/20 to-pink-500/20 border-red-500/30',
-        'Logistics': 'from-purple-500/20 to-violet-500/20 border-purple-500/30',
-        'Admin': 'from-red-500/20 to-rose-500/20 border-red-500/30',
-        'Altro': 'from-gray-500/20 to-slate-500/20 border-gray-500/30'
+        'General': 'from-blue-50 to-cyan-50 border-blue-200',
+        'HR': 'from-green-50 to-emerald-50 border-green-200',
+        'Factory': 'from-orange-50 to-amber-50 border-orange-200',
+        'Production': 'from-red-50 to-pink-50 border-red-200',
+        'Logistics': 'from-purple-50 to-violet-50 border-purple-200',
+        'Admin': 'from-red-50 to-rose-50 border-red-200',
+        'Altro': 'from-gray-50 to-slate-50 border-gray-200'
     };
 
     // Available home pages for dropdown
@@ -204,31 +217,31 @@ const PermissionsMatrix = ({ roles, definitions, onTogglePermission, onChangeDef
     return (
         <div className="space-y-4 animate-fade-in">
             {/* Header */}
-            <div className="bg-slate-800 rounded-xl border border-white/10 p-4">
-                <h3 className="text-lg font-bold text-gray-200 flex items-center gap-2">
+            <div className="master-card p-4">
+                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                     🔒 Matrice Permessi per Ruolo
                 </h3>
-                <p className="text-sm text-gray-400 mt-1">Clicca sulle caselle per abilitare/disabilitare i permessi. Passa il mouse sulle icone ℹ️ per i dettagli.</p>
+                <p className="text-sm text-gray-500 mt-1">Clicca sulle caselle per abilitare/disabilitare i permessi. Passa il mouse sulle icone ℹ️ per i dettagli.</p>
             </div>
 
             {/* Default Home Page Section */}
-            <div className="bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-xl border border-cyan-500/30 overflow-hidden">
-                <div className="p-3 bg-slate-900/50 border-b border-white/10 flex items-center gap-2">
+            <div className="bg-gradient-to-r from-cyan-50 to-blue-50 rounded-xl border border-blue-200 overflow-hidden">
+                <div className="p-3 bg-white border-b border-gray-200 flex items-center gap-2">
                     <span className="text-xl">🏠</span>
-                    <span className="font-bold text-white">Pagina Iniziale</span>
-                    <span className="text-xs text-gray-400 ml-2">Dove viene reindirizzato l'utente dopo il login</span>
+                    <span className="font-bold text-gray-900">Pagina Iniziale</span>
+                    <span className="text-xs text-gray-500 ml-2">Dove viene reindirizzato l'utente dopo il login</span>
                 </div>
                 <div className="flex">
-                    <div className="w-64 shrink-0 p-3 border-r border-white/10 flex items-center">
-                        <span className="text-sm font-medium text-gray-200">Dopo il Login →</span>
+                    <div className="w-64 shrink-0 p-3 border-r border-gray-200 flex items-center">
+                        <span className="text-sm font-medium text-gray-700">Dopo il Login →</span>
                     </div>
                     <div className="flex-1 flex overflow-x-auto">
                         {roles.map(role => (
-                            <div key={`home-${role.id}`} className="min-w-[100px] flex-1 p-2 border-r border-white/5 last:border-r-0">
+                            <div key={`home-${role.id}`} className="min-w-[100px] flex-1 p-2 border-r border-gray-100 last:border-r-0">
                                 <select
                                     value={role.default_home || '/hr/tasks'}
                                     onChange={(e) => onChangeDefaultHome(role, e.target.value)}
-                                    className="w-full bg-slate-800 border border-white/20 rounded-lg p-2 text-xs text-white focus:ring-2 focus:ring-cyan-500 outline-none"
+                                    className="w-full bg-white border border-gray-300 rounded-lg p-2 text-xs text-gray-900 focus:ring-2 focus:ring-green-500 outline-none"
                                 >
                                     {homeOptions.map(opt => (
                                         <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -241,15 +254,15 @@ const PermissionsMatrix = ({ roles, definitions, onTogglePermission, onChangeDef
             </div>
 
             {/* Role Headers - Sticky */}
-            <div className="bg-slate-800 rounded-xl border border-white/10 overflow-hidden sticky top-20 z-30 shadow-2xl">
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden sticky top-20 z-30 shadow-lg">
                 <div className="flex">
-                    <div className="w-64 shrink-0 p-3 bg-slate-900 border-r border-white/10 font-bold text-gray-400 text-xs uppercase">
+                    <div className="w-64 shrink-0 p-3 bg-gray-50 border-r border-gray-200 font-bold text-gray-500 text-xs uppercase">
                         Permesso
                     </div>
                     <div className="flex-1 flex overflow-x-auto">
                         {roles.map(role => (
-                            <div key={role.id} className="min-w-[100px] flex-1 p-3 text-center bg-slate-900 border-r border-white/5 last:border-r-0">
-                                <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">{role.label}</span>
+                            <div key={role.id} className="min-w-[100px] flex-1 p-3 text-center bg-gray-50 border-r border-gray-100 last:border-r-0">
+                                <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">{role.label}</span>
                             </div>
                         ))}
                     </div>
@@ -260,26 +273,26 @@ const PermissionsMatrix = ({ roles, definitions, onTogglePermission, onChangeDef
             {Object.entries(groupedDefs).map(([category, perms]) => (
                 <div key={category} className={`bg-gradient-to-r ${categoryColors[category] || categoryColors['Altro']} rounded-xl border overflow-hidden`}>
                     {/* Category Header */}
-                    <div className="p-3 bg-slate-900/50 border-b border-white/10 flex items-center gap-2">
+                    <div className="p-3 bg-white/80 border-b border-gray-200 flex items-center gap-2">
                         <span className="text-xl">{categoryIcons[category] || '📋'}</span>
-                        <span className="font-bold text-white">{category}</span>
-                        <span className="text-xs text-gray-400 ml-2">({perms.length} permessi)</span>
+                        <span className="font-bold text-gray-900">{category}</span>
+                        <span className="text-xs text-gray-500 ml-2">({perms.length} permessi)</span>
                     </div>
 
                     {/* Permissions in this category */}
-                    <div className="divide-y divide-white/5">
+                    <div className="divide-y divide-gray-100">
                         {perms.map(perm => (
-                            <div key={perm.code} className="flex hover:bg-white/5 transition-colors">
+                            <div key={perm.code} className="flex hover:bg-gray-50 transition-colors">
                                 {/* Permission Name + Tooltip */}
-                                <div className="w-64 shrink-0 p-3 border-r border-white/10 flex items-center gap-2">
+                                <div className="w-64 shrink-0 p-3 border-r border-gray-200 flex items-center gap-2">
                                     <div className="flex-1 min-w-0">
-                                        <span className="text-sm font-medium text-gray-200 block truncate">{perm.label}</span>
-                                        <span className="text-[10px] text-gray-500 font-mono">{perm.code}</span>
+                                        <span className="text-sm font-medium text-gray-800 block truncate">{perm.label}</span>
+                                        <span className="text-[10px] text-gray-400 font-mono">{perm.code}</span>
                                     </div>
                                     {/* Tooltip Icon */}
                                     <div className="relative group shrink-0">
-                                        <span className="cursor-help text-blue-400 hover:text-blue-300 text-sm">ℹ️</span>
-                                        <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 w-64 p-3 bg-slate-900 border border-white/20 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 text-xs text-gray-300">
+                                        <span className="cursor-help text-blue-500 hover:text-blue-600 text-sm">ℹ️</span>
+                                        <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 w-64 p-3 bg-white border border-gray-200 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 text-xs text-gray-600">
                                             {perm.description || 'Nessuna descrizione disponibile.'}
                                         </div>
                                     </div>
@@ -291,14 +304,14 @@ const PermissionsMatrix = ({ roles, definitions, onTogglePermission, onChangeDef
                                         const isGranted = role.permissions?.includes(perm.code);
                                         const isSuperAdmin = role.name === 'super_admin';
                                         return (
-                                            <div key={`${role.id}-${perm.code}`} className="min-w-[100px] flex-1 p-3 flex justify-center items-center border-r border-white/5 last:border-r-0">
+                                            <div key={`${role.id}-${perm.code}`} className="min-w-[100px] flex-1 p-3 flex justify-center items-center border-r border-gray-100 last:border-r-0">
                                                 <button
                                                     onClick={() => !isSuperAdmin && onTogglePermission(role, perm.code)}
                                                     disabled={isSuperAdmin}
                                                     className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-all duration-200 transform hover:scale-110
                                                         ${isGranted
-                                                            ? 'bg-green-500 border-green-400 text-white shadow-[0_0_12px_rgba(34,197,94,0.5)]'
-                                                            : 'bg-slate-700/50 border-slate-600 text-transparent hover:border-gray-400'}
+                                                            ? 'bg-green-500 border-green-400 text-white shadow-sm'
+                                                            : 'bg-gray-100 border-gray-300 text-transparent hover:border-gray-400'}
                                                         ${isSuperAdmin ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer active:scale-95'}
                                                     `}
                                                     title={isSuperAdmin ? 'Super Admin ha sempre tutti i permessi' : (isGranted ? 'Clicca per rimuovere' : 'Clicca per abilitare')}
@@ -318,7 +331,7 @@ const PermissionsMatrix = ({ roles, definitions, onTogglePermission, onChangeDef
             ))}
 
             {/* Footer Note */}
-            <div className="p-3 bg-amber-900/20 text-amber-200 text-xs text-center rounded-xl border border-amber-500/20 flex items-center justify-center gap-2">
+            <div className="p-3 bg-amber-50 text-amber-700 text-xs text-center rounded-xl border border-amber-200 flex items-center justify-center gap-2">
                 <span>⚠️</span>
                 <span>Il ruolo <strong>Super Admin</strong> ha sempre tutti i permessi attivi e non può essere modificato.</span>
             </div>
@@ -566,6 +579,24 @@ export default function UserManagementPage() {
         }
     };
 
+    const handleResetPin = async (user) => {
+        const confirmed = await showConfirm({
+            title: 'Reset PIN Utente',
+            message: `Sei sicuro di voler resettare il PIN di ${user.full_name}?\nL'utente dovrà configurare un nuovo PIN al prossimo accesso.`,
+            type: 'danger'
+        });
+
+        if (!confirmed) return;
+
+        try {
+            await usersApi.resetPin(user.id);
+            toast.success(`PIN di ${user.full_name} resettato con successo`);
+        } catch (error) {
+            console.error('Reset PIN Error:', error);
+            toast.error(error.response?.data?.detail || 'Errore reset PIN');
+        }
+    };
+
     const handleEmployeeSelect = (empId) => {
         const emp = employees.find(e => e.id === parseInt(empId));
         if (emp) {
@@ -582,29 +613,29 @@ export default function UserManagementPage() {
     };
 
     return (
-        <div className="p-4 md:p-6 space-y-6 text-white pb-24 md:pb-20">
+        <div className="p-4 md:p-6 space-y-6 pb-24 md:pb-20">
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+                    <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
                         Gestione Accessi
                     </h1>
-                    <p className="text-gray-400 mt-1 text-sm md:text-base">Gestione completa: Utenti e Permessi della piattaforma</p>
+                    <p className="text-gray-500 mt-1 text-sm md:text-base">Gestione completa: Utenti e Permessi della piattaforma</p>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
                     {/* Tabs */}
-                    <div className="flex bg-slate-800 p-1 rounded-lg border border-white/10 w-full sm:w-auto">
+                    <div className="flex bg-white p-1 rounded-lg border border-gray-200 w-full sm:w-auto shadow-sm">
                         <button
                             onClick={() => setActiveTab('users')}
-                            className={`flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'users' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'
+                            className={`flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'users' ? 'bg-green-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-900'
                                 }`}
                         >
                             👥 Utenti
                         </button>
                         <button
                             onClick={() => setActiveTab('permissions')}
-                            className={`flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'permissions' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'
+                            className={`flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'permissions' ? 'bg-green-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-900'
                                 }`}
                         >
                             🔒 Permessi
@@ -614,7 +645,7 @@ export default function UserManagementPage() {
                     {activeTab === 'users' && (
                         <button
                             onClick={openCreateModal}
-                            className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-500 rounded-lg font-semibold shadow-lg shadow-blue-900/50 transition-all flex items-center justify-center gap-2"
+                            className="w-full sm:w-auto px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold shadow-sm transition-all flex items-center justify-center gap-2"
                         >
                             <span>➕ Nuovo</span>
                         </button>
@@ -624,7 +655,7 @@ export default function UserManagementPage() {
 
             {loading ? (
                 <div className="flex justify-center p-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
                 </div>
             ) : (
                 <>
@@ -635,14 +666,14 @@ export default function UserManagementPage() {
                                 <input
                                     type="text"
                                     placeholder="🔍 Cerca utente..."
-                                    className="w-full bg-slate-800 border border-white/10 rounded-xl p-3 pl-10 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                                    className="w-full bg-white border border-gray-300 rounded-xl p-3 pl-10 text-gray-900 focus:ring-2 focus:ring-green-500 outline-none shadow-sm"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                 />
                                 <span className="absolute left-3 top-3.5 text-gray-400 text-lg"></span>
                             </div>
 
-                            <UsersTable users={filteredUsers} roles={roles} onToggleStatus={handleToggleStatus} onEdit={openEditModal} onDelete={handleDeleteUser} />
+                            <UsersTable users={filteredUsers} roles={roles} onToggleStatus={handleToggleStatus} onEdit={openEditModal} onDelete={handleDeleteUser} onResetPin={handleResetPin} />
                         </div>
                     ) : (
                         <PermissionsMatrix roles={roles} definitions={permDefinitions} onTogglePermission={handleTogglePermission} onChangeDefaultHome={handleChangeDefaultHome} />
@@ -652,23 +683,23 @@ export default function UserManagementPage() {
 
             {/* Create/Edit Modal */}
             {showModal && (
-                <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 backdrop-blur-sm animate-fade-in overflow-y-auto">
-                    <div className="bg-slate-800 rounded-2xl w-full max-w-2xl border border-white/10 shadow-2xl p-6 md:p-8 transform transition-all scale-100 my-auto">
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50 backdrop-blur-sm animate-fade-in overflow-y-auto">
+                    <div className="bg-white rounded-2xl w-full max-w-2xl border border-gray-200 shadow-2xl p-6 md:p-8 transform transition-all scale-100 my-auto">
                         <div className="flex justify-between items-start mb-6">
-                            <h2 className="text-xl md:text-2xl font-bold text-white">
+                            <h2 className="text-xl md:text-2xl font-bold text-gray-900">
                                 {isEditMode ? '✏️ Modifica Utente' : '➕ Crea Nuovo Utente'}
                             </h2>
-                            <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-white transition p-2">✕</button>
+                            <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-700 transition p-2">✕</button>
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-6">
 
                             {/* Employee Selector - Only show in create mode */}
                             {!isEditMode && (
-                                <div className="bg-slate-900/50 p-4 rounded-xl border border-white/5">
-                                    <label className="block text-sm font-bold text-blue-300 mb-2 uppercase tracking-wider">👤 Collega Dipendente (Opzionale)</label>
+                                <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                                    <label className="block text-sm font-bold text-green-700 mb-2 uppercase tracking-wider">👤 Collega Dipendente (Opzionale)</label>
                                     <select
-                                        className="w-full bg-slate-800 border border-white/20 rounded-lg p-3 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                                        className="w-full bg-white border border-gray-300 rounded-lg p-3 text-gray-900 focus:ring-2 focus:ring-green-500 outline-none"
                                         onChange={(e) => handleEmployeeSelect(e.target.value)}
                                         defaultValue=""
                                     >
@@ -685,22 +716,22 @@ export default function UserManagementPage() {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-400 mb-1">Username</label>
+                                    <label className="block text-sm font-medium text-gray-600 mb-1">Username</label>
                                     <input
                                         type="text" required
-                                        className="w-full bg-slate-900 border border-white/10 rounded-lg p-3 text-white focus:ring-2 focus:ring-blue-500 outline-none font-mono"
+                                        className="w-full bg-white border border-gray-300 rounded-lg p-3 text-gray-900 focus:ring-2 focus:ring-green-500 outline-none font-mono"
                                         placeholder="es. nome.cognome"
                                         value={form.username}
                                         onChange={e => setForm({ ...form, username: e.target.value })}
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-400 mb-1">Password</label>
+                                    <label className="block text-sm font-medium text-gray-600 mb-1">Password</label>
                                     <div className="relative">
                                         <input
                                             type={showPassword ? "text" : "password"}
-                                            required={!isEditMode} // Required only for create
-                                            className="w-full bg-slate-900 border border-white/10 rounded-lg p-3 pr-12 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                                            required={!isEditMode}
+                                            className="w-full bg-white border border-gray-300 rounded-lg p-3 pr-12 text-gray-900 focus:ring-2 focus:ring-green-500 outline-none"
                                             placeholder={isEditMode ? "••••••••" : "Min. 8 caratteri"}
                                             value={form.password}
                                             onChange={e => setForm({ ...form, password: e.target.value })}
@@ -708,13 +739,13 @@ export default function UserManagementPage() {
                                         <button
                                             type="button"
                                             onClick={() => setShowPassword(!showPassword)}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition"
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 transition"
                                         >
                                             {showPassword ? '🙈' : '👁️'}
                                         </button>
                                     </div>
                                     {isEditMode && (
-                                        <p className="text-xs text-amber-400/70 mt-1">
+                                        <p className="text-xs text-amber-600 mt-1">
                                             🔒 Compila solo se vuoi cambiarla.
                                         </p>
                                     )}
@@ -723,18 +754,18 @@ export default function UserManagementPage() {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-400 mb-1">Nome Completo</label>
+                                    <label className="block text-sm font-medium text-gray-600 mb-1">Nome Completo</label>
                                     <input
                                         type="text" required
-                                        className="w-full bg-slate-900 border border-white/10 rounded-lg p-3 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                                        className="w-full bg-white border border-gray-300 rounded-lg p-3 text-gray-900 focus:ring-2 focus:ring-green-500 outline-none"
                                         value={form.full_name}
                                         onChange={e => setForm({ ...form, full_name: e.target.value })}
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-400 mb-1">Ruolo</label>
+                                    <label className="block text-sm font-medium text-gray-600 mb-1">Ruolo</label>
                                     <select
-                                        className="w-full bg-slate-900 border border-white/10 rounded-lg p-3 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                                        className="w-full bg-white border border-gray-300 rounded-lg p-3 text-gray-900 focus:ring-2 focus:ring-green-500 outline-none"
                                         value={form.role}
                                         onChange={e => setForm({ ...form, role: e.target.value })}
                                         required
@@ -752,13 +783,13 @@ export default function UserManagementPage() {
 
                             {/* Employee Selector - Available in Edit Mode Only (Use wizard at top for Create) */}
                             {isEditMode && (
-                                <div className="bg-slate-900/50 p-4 rounded-xl border border-white/5">
-                                    <label className="block text-sm font-bold text-blue-300 mb-2 uppercase tracking-wider">
+                                <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                                    <label className="block text-sm font-bold text-green-700 mb-2 uppercase tracking-wider">
                                         🔗 Modifica Collegamento
                                     </label>
                                     <div className="flex gap-2">
                                         <select
-                                            className="w-full bg-slate-800 border border-white/20 rounded-lg p-3 text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                                            className="w-full bg-white border border-gray-300 rounded-lg p-3 text-gray-900 focus:ring-2 focus:ring-green-500 outline-none"
                                             onChange={(e) => {
                                                 const empId = parseInt(e.target.value);
                                                 setForm(prev => ({ ...prev, employee_id: empId }));
@@ -781,22 +812,22 @@ export default function UserManagementPage() {
                             )}
 
                             {form.role && (
-                                <div className="bg-blue-500/10 border border-blue-500/20 p-3 rounded-lg text-sm text-blue-200 flex items-center gap-2">
+                                <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg text-sm text-blue-700 flex items-center gap-2">
                                     ℹ️ {roles.find(r => r.name === form.role)?.description}
                                 </div>
                             )}
 
-                            <div className="flex gap-4 mt-8 pt-6 border-t border-white/10">
+                            <div className="flex gap-4 mt-8 pt-6 border-t border-gray-200">
                                 <button
                                     type="button"
                                     onClick={() => setShowModal(false)}
-                                    className="flex-1 py-3 bg-slate-700 hover:bg-slate-600 rounded-lg font-medium text-gray-300 transition-colors"
+                                    className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium text-gray-700 transition-colors border border-gray-200"
                                 >
                                     Annulla
                                 </button>
                                 <button
                                     type="submit"
-                                    className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 rounded-lg font-bold text-white shadow-lg shadow-blue-500/20 transform hover:-translate-y-0.5 transition-all"
+                                    className="flex-1 py-3 bg-green-600 hover:bg-green-700 rounded-lg font-bold text-white shadow-sm transition-all"
                                 >
                                     {isEditMode ? 'Salva' : 'Crea'}
                                 </button>

@@ -1,15 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { usersApi } from '../../api/client';
+import { Users, X } from 'lucide-react';
 
 const OnlineUsersWidget = ({ variant = 'floating' }) => {
     const [onlineUsers, setOnlineUsers] = useState([]);
     const [isOpen, setIsOpen] = useState(false);
-
-    useEffect(() => {
-        refreshStatus();
-        const interval = setInterval(refreshStatus, 30000);
-        return () => clearInterval(interval);
-    }, []);
 
     const refreshStatus = async () => {
         try {
@@ -21,32 +16,40 @@ const OnlineUsersWidget = ({ variant = 'floating' }) => {
         }
     };
 
+    useEffect(() => {
+        refreshStatus();
+        const interval = setInterval(refreshStatus, 30000);
+        return () => clearInterval(interval);
+    }, []);
+
     if (variant === 'sidebar') {
         return (
             <div className="relative">
                 {/* List Panel (Sidebar Mode) - Opens UP and RIGHT */}
                 {isOpen && (
-                    <div className="absolute bottom-full left-0 mb-2 w-64 bg-slate-800 border border-gray-700 rounded-lg shadow-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200 origin-bottom-left">
-                        <div className="p-3 bg-slate-900 border-b border-gray-700 flex justify-between items-center">
-                            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Online ({onlineUsers.length})</h3>
-                            <button onClick={() => setIsOpen(false)} className="text-gray-500 hover:text-white">✕</button>
+                    <div className="absolute bottom-full left-0 mb-2 w-64 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden z-50">
+                        <div className="p-3 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+                            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Online ({onlineUsers.length})</h3>
+                            <button onClick={() => setIsOpen(false)} className="text-slate-400 hover:text-slate-700 transition-colors">
+                                <X className="w-3.5 h-3.5" />
+                            </button>
                         </div>
                         <div className="max-h-60 overflow-y-auto">
                             {onlineUsers.length === 0 ? (
-                                <div className="p-4 text-center text-xs text-gray-500">Nessun altro online</div>
+                                <div className="p-4 text-center text-xs text-slate-400">Nessun altro online</div>
                             ) : (
-                                <ul className="divide-y divide-gray-700">
+                                <ul className="divide-y divide-slate-100">
                                     {onlineUsers.map(u => (
-                                        <li key={u.id} className="p-3 flex items-center gap-3 hover:bg-white/5">
+                                        <li key={u.id} className="p-3 flex items-center gap-3 hover:bg-brand-green/5 transition-colors">
                                             <div className="relative">
-                                                <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-xs font-bold text-white">
+                                                <div className="w-8 h-8 rounded-lg bg-brand-green/15 flex items-center justify-center text-xs font-bold text-brand-green">
                                                     {u.username.substring(0, 2).toUpperCase()}
                                                 </div>
-                                                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-slate-800 rounded-full"></span>
+                                                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full"></span>
                                             </div>
                                             <div>
-                                                <div className="text-sm font-medium text-white">{u.fullName}</div>
-                                                <div className="text-xs text-gray-400">{u.role}</div>
+                                                <div className="text-sm font-medium text-slate-800">{u.fullName}</div>
+                                                <div className="text-xs text-slate-400">{u.role}</div>
                                             </div>
                                         </li>
                                     ))}
@@ -56,18 +59,18 @@ const OnlineUsersWidget = ({ variant = 'floating' }) => {
                     </div>
                 )}
 
-                {/* Sidebar Button - Restyled */}
+                {/* Sidebar Button - Premium Icon */}
                 <button
                     onClick={() => setIsOpen(!isOpen)}
-                    className={`h-[48px] w-[48px] flex items-center justify-center rounded-lg transition-all relative group
-                        ${isOpen ? 'bg-white/10 text-white' : 'text-gray-400 hover:bg-white/5 hover:text-white'}
+                    className={`h-[48px] w-[48px] flex items-center justify-center rounded-xl transition-all relative group
+                        ${isOpen ? 'bg-brand-green/10 text-brand-green' : 'text-slate-500 hover:bg-brand-green/10 hover:text-brand-green'}
                     `}
                     title="Utenti Online"
                 >
                     <div className="relative">
-                        <span className="text-xl">👥</span>
+                        <Users className="w-5 h-5" />
                         {onlineUsers.length > 0 && (
-                            <span className="absolute -top-2 -right-2 bg-green-500 text-slate-900 text-[10px] font-bold px-1.5 rounded-full min-w-[16px] text-center border border-slate-800 shadow-sm">
+                            <span className="absolute -top-2 -right-2.5 bg-green-500 text-white text-[10px] font-bold px-1.5 rounded-full min-w-[16px] text-center shadow-sm">
                                 {onlineUsers.length}
                             </span>
                         )}

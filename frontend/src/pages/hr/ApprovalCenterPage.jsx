@@ -1,6 +1,7 @@
 /**
  * SL Enterprise - Approval Center Page
  * Central hub for HR approvals (Leaves & Events)
+ * ULTRA PREMIUM Enterprise Light Mode
  */
 import { useState, useEffect } from 'react';
 import LeavesManager from '../../components/hr/LeavesManager';
@@ -9,7 +10,7 @@ import { hrStatsApi } from '../../api/client';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function ApprovalCenterPage() {
-    const [activeTab, setActiveTab] = useState('leaves'); // 'leaves' | 'events'
+    const [activeTab, setActiveTab] = useState('leaves');
     const [counts, setCounts] = useState({ leaves: 0, events: 0 });
 
     const fetchCounts = async () => {
@@ -23,65 +24,124 @@ export default function ApprovalCenterPage() {
 
     useEffect(() => {
         fetchCounts();
-        const interval = setInterval(fetchCounts, 5000); // Poll for badges
+        const interval = setInterval(fetchCounts, 5000);
         return () => clearInterval(interval);
     }, []);
 
     const tabs = [
-        { id: 'leaves', label: 'Ferie & Permessi', icon: '🏖️', count: counts.leaves, color: 'from-orange-400 to-pink-500' },
-        { id: 'events', label: 'Eventi HR', icon: '⚖️', count: counts.events, color: 'from-blue-400 to-cyan-500' }
+        {
+            id: 'leaves',
+            label: 'Ferie & Permessi',
+            count: counts.leaves,
+            icon: (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+            ),
+            activeColor: 'text-blue-600',
+            badgeColor: 'bg-blue-600 text-white',
+        },
+        {
+            id: 'events',
+            label: 'Eventi HR',
+            count: counts.events,
+            icon: (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            ),
+            activeColor: 'text-indigo-600',
+            badgeColor: 'bg-indigo-600 text-white',
+        }
     ];
 
     return (
-        <div className="space-y-8 pb-10">
-            {/* Header Section */}
-            <div className="relative overflow-hidden rounded-3xl bg-slate-900 border border-white/10 p-6 md:p-8 shadow-2xl">
-                <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-                <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3 pointer-events-none" />
+        <div className="space-y-6 pb-10">
+            {/* Ultra Premium Header */}
+            <div className="relative overflow-hidden rounded-2xl bg-white border border-slate-200 shadow-sm">
+                {/* Decorative accent bar */}
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-500" />
 
-                <div className="relative z-10">
-                    <h1 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400">
-                        Centro Approvazioni
-                    </h1>
-                    <p className="text-slate-400 mt-2 text-base md:text-lg max-w-2xl">
-                        Gestisci e revisiona tutte le richieste operative e gli eventi HR in un unico posto centralizzato.
-                    </p>
+                <div className="p-6 md:p-8">
+                    <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                            <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
+                                Centro Approvazioni
+                            </h1>
+                            <p className="text-slate-500 mt-1 text-sm md:text-base">
+                                Gestisci e revisiona tutte le richieste operative e gli eventi HR in un unico posto centralizzato.
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* KPI Strip */}
+                    <div className="flex gap-4 mt-6 pt-5 border-t border-slate-100">
+                        <div className="flex items-center gap-3 bg-amber-50 rounded-xl px-4 py-2.5 border border-amber-100">
+                            <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center">
+                                <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <p className="text-xs text-amber-600 font-medium">Ferie in attesa</p>
+                                <p className="text-xl font-extrabold text-amber-700">{counts.leaves}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3 bg-indigo-50 rounded-xl px-4 py-2.5 border border-indigo-100">
+                            <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center">
+                                <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <p className="text-xs text-indigo-600 font-medium">Eventi in attesa</p>
+                                <p className="text-xl font-extrabold text-indigo-700">{counts.events}</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             {/* Premium Tab Selector */}
-            <div className="flex gap-3 p-2 bg-slate-900/70 backdrop-blur-xl rounded-2xl border border-white/10 w-fit shadow-xl">
+            <div className="flex gap-1 p-1.5 bg-slate-100 rounded-xl border border-slate-200 w-fit shadow-sm">
                 {tabs.map((tab) => {
                     const isActive = activeTab === tab.id;
                     return (
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`relative px-6 py-3 rounded-xl text-sm font-bold transition-all duration-300 flex items-center gap-3 overflow-hidden ${isActive ? 'text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-white/5'
+                            className={`relative px-5 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 flex items-center gap-2.5 cursor-pointer ${isActive
+                                ? 'text-slate-900'
+                                : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'
                                 }`}
                         >
-                            {/* Active background with gradient */}
+                            {/* Active background pill */}
                             {isActive && (
                                 <motion.div
                                     layoutId="activeTabBg"
-                                    className={`absolute inset-0 bg-gradient-to-r ${tab.color} opacity-90 rounded-xl`}
-                                    transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
+                                    className="absolute inset-0 bg-white rounded-lg shadow-sm border border-slate-200"
+                                    transition={{ type: "spring", bounce: 0.15, duration: 0.4 }}
                                 />
                             )}
 
-                            {/* Icon container */}
-                            <span className={`relative z-10 text-xl ${isActive ? 'drop-shadow-lg' : ''}`}>
+                            {/* Icon */}
+                            <span className={`relative z-10 ${isActive ? tab.activeColor : ''}`}>
                                 {tab.icon}
                             </span>
 
                             {/* Label */}
                             <span className="relative z-10 hidden sm:inline">{tab.label}</span>
 
-                            {/* Badge for pending count */}
+                            {/* Badge */}
                             {tab.count > 0 && (
                                 <span className={`relative z-10 px-2 py-0.5 rounded-full text-[10px] font-bold ${isActive
-                                        ? 'bg-white/30 text-white'
-                                        : 'bg-red-500 text-white animate-pulse'
+                                    ? tab.badgeColor
+                                    : 'bg-red-500 text-white animate-pulse'
                                     }`}>
                                     {tab.count}
                                 </span>

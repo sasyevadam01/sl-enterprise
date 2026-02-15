@@ -6,6 +6,9 @@ import HomeRedirect from './components/HomeRedirect';
 import MainLayout from './components/layout/MainLayout';
 import { UIProvider } from './components/ui/CustomUI';
 import LoginPage from './pages/auth/LoginPage';
+import PinSetupPage from './pages/auth/PinSetupPage';
+import PinVerifyPage from './pages/auth/PinVerifyPage';
+import SplashPage from './pages/auth/SplashPage';
 import DashboardPage from './pages/dashboard/DashboardPage';
 import EmployeesPage from './pages/hr/EmployeesPage';
 import EmployeeDetailPage from './pages/hr/EmployeeDetailPage';
@@ -51,6 +54,13 @@ function App() {
           <Routes>
             {/* Public routes */}
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/pin-setup" element={<PinSetupPage />} />
+            <Route path="/pin-verify" element={<PinVerifyPage />} />
+            <Route path="/splash" element={
+              <ProtectedRoute>
+                <SplashPage />
+              </ProtectedRoute>
+            } />
 
             {/* Standalone Protected Routes (No Lateral Menu) */}
             <Route path="/mobile/dashboard" element={

@@ -1,11 +1,13 @@
 /**
  * TodayAbsencesPanel - Pannello collassabile per coordinatori
  * Mostra solo gli assenti di oggi (senza chi sta lavorando)
+ * Premium Enterprise Light Mode
  */
 import React, { useState, useEffect } from 'react';
 import { leavesApi, employeesApi } from '../../api/client';
 import { format } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
+import { AlertCircle, Palmtree, Stethoscope, FileText, Zap, ChevronDown, CheckCircle2 } from 'lucide-react';
 
 export default function TodayAbsencesPanel() {
     const [isOpen, setIsOpen] = useState(true);
@@ -57,11 +59,11 @@ export default function TodayAbsencesPanel() {
 
     const getLeaveIcon = (type) => {
         switch (type) {
-            case 'vacation': return '🏖️';
-            case 'sick': return '🏥';
-            case 'permit': return '📝';
-            case 'sudden_permit': return '⚡';
-            default: return '📋';
+            case 'vacation': return <Palmtree className="w-4 h-4 text-sky-600" />;
+            case 'sick': return <Stethoscope className="w-4 h-4 text-red-500" />;
+            case 'permit': return <FileText className="w-4 h-4 text-amber-600" />;
+            case 'sudden_permit': return <Zap className="w-4 h-4 text-orange-500" />;
+            default: return <FileText className="w-4 h-4 text-slate-500" />;
         }
     };
 
@@ -76,25 +78,23 @@ export default function TodayAbsencesPanel() {
     };
 
     return (
-        <div className="bg-slate-800/60 backdrop-blur-sm rounded-xl border border-white/10 overflow-hidden shadow-lg mb-4">
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-card mb-4">
             {/* Header - Always visible */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-full flex items-center justify-between p-3 hover:bg-white/5 transition-colors"
+                className="w-full flex items-center justify-between p-3 hover:bg-slate-50 transition-colors"
             >
                 <div className="flex items-center gap-3">
-                    <span className="text-xl">🚫</span>
-                    <span className="text-white font-semibold">Assenti Oggi</span>
+                    <AlertCircle className="w-5 h-5 text-slate-500" />
+                    <span className="text-slate-800 font-semibold">Assenti Oggi</span>
                     <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${absentees.length === 0
-                        ? 'bg-green-500/20 text-green-400'
-                        : 'bg-red-500/20 text-red-400'
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        : 'bg-red-50 text-red-600 border border-red-200'
                         }`}>
                         {loading ? '...' : absentees.length}
                     </span>
                 </div>
-                <span className={`text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}>
-                    ▼
-                </span>
+                <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {/* Collapsible Content */}
@@ -107,29 +107,32 @@ export default function TodayAbsencesPanel() {
                         transition={{ duration: 0.2 }}
                         className="overflow-hidden"
                     >
-                        <div className="p-3 pt-0 border-t border-white/5">
+                        <div className="p-3 pt-0 border-t border-slate-100">
                             {loading ? (
-                                <div className="py-4 text-center text-gray-500 animate-pulse">
+                                <div className="py-4 text-center text-slate-400 animate-pulse">
                                     Caricamento...
                                 </div>
                             ) : absentees.length === 0 ? (
-                                <div className="py-4 text-center text-green-400 text-sm">
-                                    ✅ Tutti presenti oggi!
+                                <div className="py-3 mx-1 mt-2 text-center bg-emerald-50 border border-emerald-200 rounded-lg">
+                                    <div className="flex items-center justify-center gap-2">
+                                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                                        <span className="text-emerald-800 text-sm font-medium">Tutti presenti oggi!</span>
+                                    </div>
                                 </div>
                             ) : (
-                                <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
+                                <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar mt-2">
                                     {absentees.map((leave, i) => (
                                         <div
                                             key={i}
-                                            className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/5"
+                                            className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 border border-slate-100"
                                         >
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-lg">{getLeaveIcon(leave.leave_type)}</span>
-                                                <span className="text-white font-medium">
+                                            <div className="flex items-center gap-2.5">
+                                                {getLeaveIcon(leave.leave_type)}
+                                                <span className="text-slate-800 font-medium text-sm">
                                                     {leave.employee_name}
                                                 </span>
                                             </div>
-                                            <span className="text-xs text-gray-400 bg-slate-700/50 px-2 py-1 rounded">
+                                            <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded font-medium">
                                                 {getLeaveLabel(leave.leave_type)}
                                             </span>
                                         </div>

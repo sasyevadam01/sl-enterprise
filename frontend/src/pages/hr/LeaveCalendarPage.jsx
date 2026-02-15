@@ -1,28 +1,25 @@
 /**
  * SL Enterprise - Leave Calendar Page
- * v2.1 - Gantt Timeline View (Fixed Layout)
+ * v3.0 - Premium Enterprise Light Mode
  * Calendario visivo delle assenze con viste Giorno/Settimana/Mese
  */
 import { useState, useEffect, useMemo } from 'react';
 import { leavesApi, employeesApi } from '../../api/client';
 import { Calendar, ChevronLeft, ChevronRight, Users, Filter } from 'lucide-react';
 
-// Helper per giorni della settimana
 const WEEKDAYS = ['LU', 'MA', 'ME', 'GI', 'VE', 'SA', 'DO'];
 const MONTHS = [
     'Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
     'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'
 ];
 
-// Codici assenza con colori Gantt-friendly
 const LEAVE_CODES = {
-    vacation: { code: 'F', label: 'Ferie', color: 'bg-emerald-500', textColor: 'text-white' },
-    sick: { code: 'M', label: 'Malattia', color: 'bg-red-500', textColor: 'text-white' },
-    permit: { code: 'P', label: 'Permesso', color: 'bg-amber-500', textColor: 'text-black' },
-    sudden_permit: { code: 'PI', label: 'Permesso Improvviso', color: 'bg-orange-500', textColor: 'text-white' },
+    vacation: { code: 'F', label: 'Ferie', color: 'bg-emerald-500', textColor: 'text-white', statText: 'text-emerald-600' },
+    sick: { code: 'M', label: 'Malattia', color: 'bg-red-500', textColor: 'text-white', statText: 'text-red-600' },
+    permit: { code: 'P', label: 'Permesso', color: 'bg-amber-500', textColor: 'text-black', statText: 'text-amber-600' },
+    sudden_permit: { code: 'PI', label: 'Permesso Improvviso', color: 'bg-orange-500', textColor: 'text-white', statText: 'text-orange-600' },
 };
 
-// Genera array di giorni in base alla vista
 function getDaysForView(viewType, date) {
     const days = [];
     const year = date.getFullYear();
@@ -67,9 +64,8 @@ function getDaysForView(viewType, date) {
     return days;
 }
 
-// Helper: Calcola i segmenti di assenza per cella
 function calculateLeaveSegments(empLeaves, days) {
-    const segments = {}; // key: dayIndex, value: { config, isStart, isEnd, isMiddle }
+    const segments = {};
 
     empLeaves.forEach(leave => {
         const leaveStart = new Date(leave.start_date);
@@ -138,7 +134,6 @@ export default function LeaveCalendarPage() {
         return employees.filter(e => managerIds.has(e.id)).sort((a, b) => a.last_name.localeCompare(b.last_name));
     }, [employees]);
 
-    // Build timeline data with segments per day
     const timelineData = useMemo(() => {
         const data = [];
 
@@ -206,53 +201,64 @@ export default function LeaveCalendarPage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
             </div>
         );
     }
 
-    // Dynamic grid template
     const gridTemplate = `224px repeat(${days.length}, 1fr)`;
 
     return (
-        <div className="space-y-6">
-            {/* Header */}
-            <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl">
-                    <Calendar className="w-6 h-6 text-white" />
+        <div className="space-y-5">
+            {/* ── Header ── */}
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <div className="p-2.5 bg-blue-50 rounded-xl border border-blue-200">
+                        <Calendar className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div>
+                        <h1 className="text-2xl font-extrabold text-slate-900">Calendario Assenze</h1>
+                        <p className="text-slate-500 text-sm">Vista Timeline • {timelineData.length} dipendenti</p>
+                    </div>
                 </div>
-                <div>
-                    <h1 className="text-2xl font-bold text-white">Calendario Assenze</h1>
-                    <p className="text-zinc-400 text-sm">Vista Timeline • {timelineData.length} dipendenti</p>
-                </div>
+                <a
+                    href="/hr/events/new?tab=leave"
+                    className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm transition-all cursor-pointer text-sm"
+                >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                    Nuova Richiesta
+                </a>
             </div>
 
-            {/* Controls Bar */}
-            <div className="flex flex-col xl:flex-row gap-4 bg-zinc-900/50 rounded-2xl p-4 border border-white/5">
+            {/* ── Controls Bar ── */}
+            <div className="flex flex-col xl:flex-row gap-4 bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
                 <div className="flex items-center gap-4 flex-wrap">
-                    <div className="flex bg-zinc-800 rounded-xl p-1">
-                        <button onClick={() => setViewType('day')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${viewType === 'day' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/25' : 'text-zinc-400 hover:text-white'}`}>Giorno</button>
-                        <button onClick={() => setViewType('week')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${viewType === 'week' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/25' : 'text-zinc-400 hover:text-white'}`}>Settimana</button>
-                        <button onClick={() => setViewType('month')} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${viewType === 'month' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/25' : 'text-zinc-400 hover:text-white'}`}>Mese</button>
+                    {/* View Switcher */}
+                    <div className="flex bg-slate-100 rounded-lg p-1">
+                        <button onClick={() => setViewType('day')} className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 cursor-pointer ${viewType === 'day' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>Giorno</button>
+                        <button onClick={() => setViewType('week')} className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 cursor-pointer ${viewType === 'week' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>Settimana</button>
+                        <button onClick={() => setViewType('month')} className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 cursor-pointer ${viewType === 'month' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>Mese</button>
                     </div>
 
-                    <div className="flex items-center gap-1 bg-zinc-800 rounded-xl p-1">
-                        <button onClick={handlePrev} className="p-2 hover:bg-white/10 rounded-lg text-zinc-400 hover:text-white transition-all">
+                    {/* Date Navigator */}
+                    <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+                        <button onClick={handlePrev} className="p-2 hover:bg-slate-200 rounded-md text-slate-500 hover:text-slate-800 transition-all cursor-pointer">
                             <ChevronLeft className="w-5 h-5" />
                         </button>
-                        <span className="min-w-[160px] text-center font-semibold text-white px-3">{getLabel()}</span>
-                        <button onClick={handleNext} className="p-2 hover:bg-white/10 rounded-lg text-zinc-400 hover:text-white transition-all">
+                        <span className="min-w-[160px] text-center font-semibold text-slate-900 px-3">{getLabel()}</span>
+                        <button onClick={handleNext} className="p-2 hover:bg-slate-200 rounded-md text-slate-500 hover:text-slate-800 transition-all cursor-pointer">
                             <ChevronRight className="w-5 h-5" />
                         </button>
                     </div>
                 </div>
 
+                {/* Filters */}
                 <div className="flex items-center gap-3 flex-wrap xl:ml-auto">
-                    <Filter className="w-4 h-4 text-zinc-500" />
+                    <Filter className="w-4 h-4 text-slate-400" />
                     <select
                         value={filterDepartment}
                         onChange={(e) => setFilterDepartment(e.target.value)}
-                        className="bg-zinc-800 border border-white/5 rounded-xl px-4 py-2.5 text-white text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                        className="bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-slate-800 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm cursor-pointer"
                     >
                         <option value="">Tutti i Reparti</option>
                         {departments.map(dept => (
@@ -263,7 +269,7 @@ export default function LeaveCalendarPage() {
                     <select
                         value={filterCoordinator}
                         onChange={(e) => setFilterCoordinator(e.target.value)}
-                        className="bg-zinc-800 border border-white/5 rounded-xl px-4 py-2.5 text-white text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                        className="bg-white border border-slate-300 rounded-lg px-4 py-2.5 text-slate-800 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm cursor-pointer"
                     >
                         <option value="">Tutti i Coordinatori</option>
                         {coordinators.map(coord => (
@@ -273,62 +279,57 @@ export default function LeaveCalendarPage() {
                 </div>
             </div>
 
-            {/* Legend */}
-            <div className="flex flex-wrap gap-4 bg-zinc-900/30 rounded-xl p-4 border border-white/5">
+            {/* ── Legend ── */}
+            <div className="flex flex-wrap gap-5 bg-white rounded-xl p-3 px-5 border border-slate-200 shadow-sm">
                 {Object.entries(LEAVE_CODES).map(([key, config]) => (
                     <div key={key} className="flex items-center gap-2">
-                        <div className={`w-8 h-4 rounded ${config.color} shadow-sm`}></div>
-                        <span className="text-zinc-400 text-sm">{config.label}</span>
+                        <div className={`w-8 h-4 rounded ${config.color}`}></div>
+                        <span className="text-slate-600 text-sm font-medium">{config.label}</span>
                     </div>
                 ))}
             </div>
 
-            {/* Timeline Grid */}
-            <div className="bg-zinc-900/50 rounded-2xl border border-white/5 overflow-hidden">
+            {/* ── Timeline Grid ── */}
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                 {/* Header Row */}
                 <div
-                    className="grid border-b border-white/10 bg-zinc-800/50"
+                    className="grid border-b border-slate-200 bg-slate-50"
                     style={{ gridTemplateColumns: gridTemplate }}
                 >
-                    <div className="px-4 py-3 border-r border-white/5 flex items-center gap-2 text-zinc-400 text-sm font-medium">
+                    <div className="px-4 py-3 border-r border-slate-300 flex items-center gap-2 text-slate-500 text-sm font-semibold">
                         <Users className="w-4 h-4" />
                         Dipendente
                     </div>
                     {days.map((day) => (
                         <div
                             key={day.date.toISOString()}
-                            className={`text-center py-2 border-r border-white/5 last:border-r-0
-                                ${day.isWeekend ? 'bg-zinc-700/30' : ''}`}
+                            className={`text-center py-2 border-r border-slate-300 last:border-r-0
+                                ${day.isWeekend ? 'bg-amber-100' : ''}`}
                         >
-                            <div className="text-xs font-medium text-zinc-300">{day.day}</div>
-                            <div className="text-[10px] text-zinc-500 uppercase">{day.weekday}</div>
+                            <div className="text-xs font-semibold text-slate-700">{day.day}</div>
+                            <div className="text-[10px] text-slate-400 uppercase">{day.weekday}</div>
                         </div>
                     ))}
                 </div>
 
                 {/* Data Rows */}
-                <div className="max-h-[60vh] overflow-y-auto custom-scrollbar">
+                <div className="max-h-[60vh] overflow-y-auto">
                     {timelineData.length === 0 ? (
-                        <div className="text-center py-16 text-zinc-500">
+                        <div className="text-center py-16 text-slate-400">
                             Nessun dipendente trovato con i filtri selezionati
                         </div>
                     ) : (
                         timelineData.map((emp, idx) => (
                             <div
                                 key={emp.id}
-                                className={`grid border-b border-white/5 last:border-b-0 hover:bg-white/[0.02] transition-colors
-                                    ${idx % 2 === 0 ? '' : 'bg-zinc-800/20'}`}
+                                className={`grid border-b border-slate-300 last:border-b-0 hover:bg-blue-50/30 transition-colors
+                                    ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}
                                 style={{ gridTemplateColumns: gridTemplate }}
                             >
                                 {/* Employee Info */}
-                                <div className="px-4 py-3 border-r border-white/5 bg-zinc-900/50">
-                                    <div className="text-white font-medium text-sm truncate">{emp.name}</div>
-                                    <div className="text-zinc-500 text-xs truncate">{emp.role || emp.department || '-'}</div>
-                                    {emp.totalAbsenceDays > 0 && (
-                                        <div className="mt-1 text-[10px] text-emerald-500/70">
-                                            {emp.totalAbsenceDays} giorni
-                                        </div>
-                                    )}
+                                <div className="px-4 py-3 border-r border-slate-300 bg-white">
+                                    <div className="text-slate-800 font-semibold text-sm truncate">{emp.name}</div>
+                                    <div className="text-slate-400 text-xs truncate">{emp.role || emp.department || '-'}</div>
                                 </div>
 
                                 {/* Day Cells with Gantt Bars */}
@@ -338,8 +339,8 @@ export default function LeaveCalendarPage() {
                                     return (
                                         <div
                                             key={day.date.toISOString()}
-                                            className={`relative h-14 border-r border-white/5 last:border-r-0 flex items-center
-                                                ${day.isWeekend ? 'bg-zinc-800/30' : ''}`}
+                                            className={`relative h-14 border-r border-slate-300 last:border-r-0 flex items-center
+                                                ${day.isWeekend ? 'bg-amber-100' : ''}`}
                                         >
                                             {segment ? (
                                                 <div
@@ -349,7 +350,7 @@ export default function LeaveCalendarPage() {
                                                         ${segment.isStart && !segment.isSingle ? 'left-1 right-0 rounded-l-md' : ''}
                                                         ${segment.isEnd && !segment.isSingle ? 'left-0 right-1 rounded-r-md' : ''}
                                                         ${!segment.isStart && !segment.isEnd ? 'left-0 right-0' : ''}
-                                                        shadow-md hover:shadow-lg transition-shadow cursor-pointer`}
+                                                        shadow-sm hover:shadow-md transition-shadow cursor-pointer`}
                                                     title={segment.config.label}
                                                 >
                                                     {(segment.isStart || segment.isSingle) && (
@@ -358,9 +359,7 @@ export default function LeaveCalendarPage() {
                                                         </span>
                                                     )}
                                                 </div>
-                                            ) : (
-                                                <span className="w-full text-center text-zinc-700">·</span>
-                                            )}
+                                            ) : null}
                                         </div>
                                     );
                                 })}
@@ -370,20 +369,20 @@ export default function LeaveCalendarPage() {
                 </div>
             </div>
 
-            {/* Stats Footer */}
+            {/* ── Stats Footer ── */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {Object.entries(LEAVE_CODES).map(([key, config]) => {
                     const count = timelineData.reduce((sum, emp) =>
                         sum + Object.values(emp.segments).filter(s => s.config.code === config.code).length
                         , 0);
                     return (
-                        <div key={key} className="bg-zinc-900/30 rounded-xl p-4 border border-white/5">
+                        <div key={key} className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
                             <div className="flex items-center gap-2 mb-2">
                                 <div className={`w-3 h-3 rounded ${config.color}`}></div>
-                                <span className="text-zinc-400 text-sm">{config.label}</span>
+                                <span className="text-slate-500 text-sm font-medium">{config.label}</span>
                             </div>
-                            <div className="text-2xl font-bold text-white">{count}</div>
-                            <div className="text-zinc-500 text-xs">giorni totali</div>
+                            <div className={`text-2xl font-bold ${config.statText}`}>{count}</div>
+                            <div className="text-slate-400 text-xs">giorni totali</div>
                         </div>
                     );
                 })}

@@ -2,100 +2,99 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom scrollbar */
+/* ================================================
+   SL ENTERPRISE — LIGHT ENTERPRISE DESIGN SYSTEM v5.0
+   Professional Light Theme with Siervoplast Brand
+   ================================================ */
+
+/* Base Reset */
+html {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: #F5F6FA;
+  color: #111827;
+}
+
+/* Custom Scrollbar — Light */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #1e293b;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #475569;
-  border-radius: 4px;
+  background: #D1D5DB;
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
+  background: #9CA3AF;
 }
 
-/* Custom focus styles */
+/* Custom Focus */
 *:focus-visible {
-  outline: 2px solid #3b82f6;
+  outline: 2px solid #2D8C0E;
   outline-offset: 2px;
 }
 
-/* Smooth transitions */
-* {
-  transition-property: color, background-color, border-color;
+/* Smooth transitions — scoped to interactive elements */
+a,
+button,
+input,
+select,
+textarea {
+  transition-property: color, background-color, border-color, box-shadow, opacity;
   transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Remove default input styles */
+/* Input Autofill — Light */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus {
-  -webkit-box-shadow: 0 0 0 1000px #1e293b inset;
-  -webkit-text-fill-color: white;
+  -webkit-box-shadow: 0 0 0 1000px #FFFFFF inset;
+  -webkit-text-fill-color: #111827;
+  border-color: #D1D5DB;
 }
 
-/* ================================================
-   DARK THEME DATE/TIME PICKER STYLING
-   Forces native browser pickers to use dark mode
-   ================================================ */
-
-/* Force dark color scheme for date/time inputs */
+/* Date/Time Picker — Light */
 input[type="date"],
 input[type="time"],
 input[type="datetime-local"],
 input[type="month"],
 input[type="week"] {
-  color-scheme: dark;
-  background-color: #334155;
+  color-scheme: light;
+  background-color: #FFFFFF;
 }
 
-/* Style the calendar icon (Webkit browsers) */
 input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="time"]::-webkit-calendar-picker-indicator,
-input[type="datetime-local"]::-webkit-calendar-picker-indicator,
-input[type="month"]::-webkit-calendar-picker-indicator,
-input[type="week"]::-webkit-calendar-picker-indicator {
-  filter: invert(0.8);
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
   transition: background-color 0.2s;
+  opacity: 0.6;
 }
 
 input[type="date"]::-webkit-calendar-picker-indicator:hover,
 input[type="time"]::-webkit-calendar-picker-indicator:hover,
 input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
-/* Style the date input inner button area */
-input[type="date"]::-webkit-datetime-edit,
-input[type="time"]::-webkit-datetime-edit,
-input[type="datetime-local"]::-webkit-datetime-edit {
-  padding: 0;
-}
+/* ================================================
+   ANIMATIONS
+   ================================================ */
 
-input[type="date"]::-webkit-datetime-edit-fields-wrapper,
-input[type="time"]::-webkit-datetime-edit-fields-wrapper {
-  padding: 0;
-}
-
-/* Input placeholder text */
-input[type="date"]::-webkit-datetime-edit-text,
-input[type="date"]::-webkit-datetime-edit-month-field,
-input[type="date"]::-webkit-datetime-edit-day-field,
-input[type="date"]::-webkit-datetime-edit-year-field {
-  color: white;
-}
-
-/* Custom Modal Animations */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -109,7 +108,7 @@ input[type="date"]::-webkit-datetime-edit-year-field {
 @keyframes scaleIn {
   from {
     opacity: 0;
-    transform: scale(0.9);
+    transform: scale(0.96);
   }
 
   to {
@@ -130,202 +129,88 @@ input[type="date"]::-webkit-datetime-edit-year-field {
   }
 }
 
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .animate-fadeIn {
   animation: fadeIn 0.2s ease-out;
 }
 
 .animate-scaleIn {
-  animation: scaleIn 0.2s ease-out;
+  animation: scaleIn 0.25s ease-out;
 }
 
 .animate-slideIn {
   animation: slideIn 0.3s ease-out;
 }
 
+.animate-slideUp {
+  animation: slideUp 0.35s ease-out;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
 /* ================================================
-   SL ENTERPRISE - GLOBAL DESIGN SYSTEM v1.0
-   Cyberpunk Premium / Financial Dashboard Style
+   MASTER CARD — White Surface with Soft Shadow
    ================================================ */
 
-/* Master Card - Universal Container */
 .master-card {
-  background: rgba(24, 24, 27, 0.7);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: #FFFFFF;
   border-radius: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid #E5E7EB;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .master-card:hover {
-  border-color: rgba(52, 211, 153, 0.25);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5),
-    0 0 30px -10px rgba(52, 211, 153, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+  border-color: #D1D5DB;
 }
 
-/* Neon Data - Glowing KPI Numbers */
-.neon-cyan {
-  color: #22d3ee;
-  text-shadow: 0 0 10px rgba(34, 211, 238, 0.5),
-    0 0 20px rgba(34, 211, 238, 0.3);
-}
+/* ================================================
+   APP BACKGROUND — Clean Light Gradient
+   ================================================ */
 
-.neon-emerald {
-  color: #34d399;
-  text-shadow: 0 0 10px rgba(52, 211, 153, 0.5),
-    0 0 20px rgba(52, 211, 153, 0.3);
-}
-
-.neon-purple {
-  color: #a78bfa;
-  text-shadow: 0 0 10px rgba(167, 139, 250, 0.5),
-    0 0 20px rgba(167, 139, 250, 0.3);
-}
-
-.neon-orange {
-  color: #fb923c;
-  text-shadow: 0 0 10px rgba(251, 146, 60, 0.5),
-    0 0 20px rgba(251, 146, 60, 0.3);
-}
-
-.neon-red {
-  color: #f87171;
-  text-shadow: 0 0 10px rgba(248, 113, 113, 0.5),
-    0 0 20px rgba(248, 113, 113, 0.3);
-}
-
-/* Status Indicators - Small dots with glow */
-.status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  animation: pulse 2s ease-in-out infinite;
-}
-
-.status-high {
-  background: #ef4444;
-  box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
-}
-
-.status-medium {
-  background: #f59e0b;
-  box-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
-}
-
-.status-low {
-  background: #22c55e;
-  box-shadow: 0 0 6px rgba(34, 197, 94, 0.6);
-}
-
-/* Floating Dock - Bottom Action Bar */
-.floating-dock {
-  position: fixed;
-  bottom: 1.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 40;
-  background: rgba(24, 24, 27, 0.85);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 1.5rem;
-  padding: 0.5rem;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6),
-    0 0 40px -10px rgba(52, 211, 153, 0.1);
-}
-
-.dock-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 0.75rem 1rem;
-  border-radius: 1rem;
-  transition: all 0.2s ease;
-  cursor: pointer;
-}
-
-.dock-item:hover {
-  background: rgba(255, 255, 255, 0.08);
-  transform: translateY(-4px);
-}
-
-.dock-item:hover .dock-icon {
-  transform: scale(1.15);
-}
-
-.dock-icon {
-  font-size: 1.75rem;
-  transition: transform 0.2s ease;
-}
-
-/* Weather Widget - Floating Animation */
-@keyframes float {
-
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-
-  50% {
-    transform: translateY(-8px);
-  }
-}
-
-.animate-float {
-  animation: float 4s ease-in-out infinite;
-}
-
-/* Bento Grid Gap */
-.bento-grid {
-  display: grid;
-  gap: 1.25rem;
-}
-
-/* Subtle Glow Effect for Icons */
-.icon-glow {
-  filter: drop-shadow(0 0 8px currentColor);
-}
-
-/* App Background - Deep Mesh Gradient */
 .app-background {
-  background-color: #09090b;
+  background-color: #EBEEF3;
   background-image:
-    radial-gradient(at 0% 0%, rgba(52, 211, 153, 0.03) 0, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.03) 0, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(34, 211, 238, 0.02) 0, transparent 50%),
-    radial-gradient(at 0% 100%, rgba(251, 146, 60, 0.02) 0, transparent 50%);
+    radial-gradient(ellipse at 0% 0%, rgba(45, 140, 14, 0.04) 0, transparent 50%),
+    radial-gradient(ellipse at 100% 100%, rgba(230, 98, 15, 0.03) 0, transparent 40%);
   min-height: 100vh;
 }
 
-/* Carbon Fiber Background - Premium Geometric Pattern */
+/* Carbon background — kept for sidebar compatibility */
 .carbon-background {
-  background-color: #08080a;
-  background-image:
-    /* Hexagonal carbon weave pattern */
-    linear-gradient(30deg, #101013 12%, transparent 12.5%, transparent 87%, #101013 87.5%, #101013),
-    linear-gradient(150deg, #101013 12%, transparent 12.5%, transparent 87%, #101013 87.5%, #101013),
-    linear-gradient(30deg, #101013 12%, transparent 12.5%, transparent 87%, #101013 87.5%, #101013),
-    linear-gradient(150deg, #101013 12%, transparent 12.5%, transparent 87%, #101013 87.5%, #101013),
-    linear-gradient(60deg, #15151866 25%, transparent 25.5%, transparent 75%, #15151866 75%, #15151866),
-    linear-gradient(60deg, #15151866 25%, transparent 25.5%, transparent 75%, #15151866 75%, #15151866),
-    /* Subtle ambient glow */
-    radial-gradient(ellipse at 50% 0%, rgba(52, 211, 153, 0.03) 0%, transparent 50%);
-  background-size: 32px 56px, 32px 56px, 32px 56px, 32px 56px, 32px 56px, 32px 56px, 100% 100%;
-  background-position: 0 0, 0 0, 16px 28px, 16px 28px, 0 0, 16px 28px, 0 0;
+  background-color: #1A1F2E;
   min-height: 100vh;
-  position: relative;
 }
 
-/* Top Bar */
+/* ================================================
+   TOP BAR — White Header
+   ================================================ */
+
 .top-bar {
-  background: rgba(9, 9, 11, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 2px solid #2D8C0E;
 }
 
-/* Page Header Component */
+/* ================================================
+   PAGE HEADER
+   ================================================ */
+
 .page-header {
   display: flex;
   align-items: center;
@@ -333,9 +218,56 @@ input[type="date"]::-webkit-datetime-edit-year-field {
   margin-bottom: 1.5rem;
 }
 
+/* ================================================
+   DASHBOARD CARD — Hover Lift Effect
+   ================================================ */
+
+.dashboard-card {
+  transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.08), 0 4px 10px -4px rgba(0, 0, 0, 0.04);
+  border-color: #CBD5E1;
+}
+
+/* ================================================
+   ROW HOVER — Visible highlight for list items
+   ================================================ */
+
+.row-hover {
+  position: relative;
+  overflow: hidden;
+  transition: background-color 150ms ease;
+  cursor: pointer;
+}
+
+.row-hover::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 4px;
+  background-color: #2D8C0E;
+  transform: translateX(-100%);
+  transition: transform 150ms ease;
+  z-index: 10;
+}
+
+.row-hover:hover {
+  background-color: #F1F5F9;
+  /* slate-100 */
+}
+
+.row-hover:hover::before {
+  transform: translateX(0);
+}
+
 .page-header-icon {
   padding: 0.625rem;
-  background: linear-gradient(135deg, #10b981, #14b8a6);
+  background: linear-gradient(135deg, #2D8C0E, #3BA515);
   border-radius: 0.75rem;
   display: flex;
   align-items: center;
@@ -348,7 +280,10 @@ input[type="date"]::-webkit-datetime-edit-year-field {
   color: white;
 }
 
-/* Data Table Styles */
+/* ================================================
+   DATA TABLE — Clean Light Rows
+   ================================================ */
+
 .data-table {
   width: 100%;
   border-collapse: collapse;
@@ -361,22 +296,101 @@ input[type="date"]::-webkit-datetime-edit-year-field {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #71717a;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: #6B7280;
+  border-bottom: 2px solid #E5E7EB;
+  background: #FAFBFC;
 }
 
 .data-table td {
   padding: 0.75rem 1rem;
   font-size: 0.875rem;
-  color: #d4d4d8;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  color: #374151;
+  border-bottom: 1px solid #F3F4F6;
 }
 
 .data-table tr:hover td {
-  background: rgba(255, 255, 255, 0.02);
+  background: #F9FAFB;
 }
 
-/* Action Button */
+/* ================================================
+   STATUS INDICATORS
+   ================================================ */
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.status-high {
+  background: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+}
+
+.status-medium {
+  background: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+}
+
+.status-low {
+  background: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+}
+
+/* ================================================
+   FLOATING DOCK — Bottom Action Bar
+   ================================================ */
+
+.floating-dock {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid #E5E7EB;
+  border-radius: 1.5rem;
+  padding: 0.5rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1), 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.dock-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1rem;
+  border-radius: 1rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  color: #6B7280;
+}
+
+.dock-item:hover {
+  background: #F3F4F6;
+  color: #2D8C0E;
+  transform: translateY(-2px);
+}
+
+.dock-icon {
+  font-size: 1.75rem;
+  transition: transform 0.2s ease;
+}
+
+/* ================================================
+   BENTO GRID
+   ================================================ */
+
+.bento-grid {
+  display: grid;
+  gap: 1.25rem;
+}
+
+/* ================================================
+   ACTION BUTTONS
+   ================================================ */
+
 .action-btn {
   padding: 0.5rem 1rem;
   border-radius: 0.75rem;
@@ -386,27 +400,94 @@ input[type="date"]::-webkit-datetime-edit-year-field {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+  cursor: pointer;
 }
 
 .action-btn-primary {
-  background: linear-gradient(135deg, #10b981, #14b8a6);
+  background: #2D8C0E;
   color: white;
   border: none;
 }
 
 .action-btn-primary:hover {
-  box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+  background: #1E6B08;
+  box-shadow: 0 2px 8px rgba(45, 140, 14, 0.25);
   transform: translateY(-1px);
 }
 
 .action-btn-ghost {
   background: transparent;
-  color: #a1a1aa;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #6B7280;
+  border: 1px solid #E5E7EB;
 }
 
 .action-btn-ghost:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: white;
-  border-color: rgba(255, 255, 255, 0.2);
+  background: #F9FAFB;
+  color: #374151;
+  border-color: #D1D5DB;
+}
+
+/* ================================================
+   NEON COMPATIBILITY CLASSES (mapped to light)
+   Keep for backward compatibility with existing pages
+   ================================================ */
+
+.neon-cyan {
+  color: #0891b2;
+}
+
+.neon-emerald {
+  color: #2D8C0E;
+}
+
+.neon-purple {
+  color: #7c3aed;
+}
+
+.neon-orange {
+  color: #E6620F;
+}
+
+.neon-red {
+  color: #dc2626;
+}
+
+/* ================================================
+   WEATHER FLOAT ANIMATION
+   ================================================ */
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+/* Icon glow — subtle in light mode */
+.icon-glow {
+  filter: drop-shadow(0 0 4px rgba(45, 140, 14, 0.2));
+}
+
+/* ================================================
+   PULSE ANIMATION
+   ================================================ */
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.6;
+  }
 }

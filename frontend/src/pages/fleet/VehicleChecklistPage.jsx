@@ -402,44 +402,42 @@ export default function VehicleChecklistPage() {
     }, {});
 
     if (loading) return (
-        <div className="min-h-screen bg-[#0f172a] flex items-center justify-center p-8">
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-8">
             <div className="flex flex-col items-center gap-4">
                 <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                <p className="text-slate-400 font-bold tracking-widest text-xs uppercase">Caricamento Flotta...</p>
+                <p className="text-slate-500 font-bold tracking-widest text-xs uppercase">Caricamento Flotta...</p>
             </div>
         </div>
     );
 
     return (
-        <div className="min-h-screen bg-[#0f172a] text-slate-200 pb-32">
+        <div className="min-h-screen bg-slate-50 text-slate-800 pb-32">
             {/* Header */}
-            <header className="sticky top-0 z-40 bg-[#0f172a]/80 backdrop-blur-xl border-b border-white/5 px-6 py-4 overflow-hidden">
+            <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-200 px-6 py-4 overflow-hidden shadow-sm">
                 <div className="max-w-4xl mx-auto flex items-center justify-between relative">
-                    <div className="absolute -top-10 -left-10 w-40 h-40 bg-blue-600/10 blur-[80px] rounded-full"></div>
-
                     <div className="relative z-10">
-                        <h1 className="text-xl font-black text-white tracking-widest flex items-center gap-3">
-                            <div className="p-2 bg-blue-600 rounded-xl shadow-lg shadow-blue-600/20 text-white">
+                        <h1 className="text-xl font-black text-slate-900 tracking-widest flex items-center gap-3">
+                            <div className="p-2 bg-blue-600 rounded-xl shadow-sm text-white">
                                 <ShieldCheck size={20} />
                             </div>
                             PARCO MEZZI
                         </h1>
-                        <p className="text-slate-500 text-[9px] font-black uppercase tracking-[0.3em] mt-1">
+                        <p className="text-slate-400 text-[9px] font-black uppercase tracking-[0.3em] mt-1">
                             Controllo & Gestione • SL Enterprise
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-2 bg-white/5 p-1 rounded-2xl border border-white/5">
+                    <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-2xl border border-slate-200">
                         <button
                             onClick={() => setActiveView('checklist')}
-                            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeView === 'checklist' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-500 hover:text-slate-300'}`}
+                            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeView === 'checklist' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                         >
                             <span className="flex items-center gap-2"><ClipboardCheck size={14} /> Check-In</span>
                         </button>
                         {canManageFleet && (
                             <button
                                 onClick={() => setActiveView('management')}
-                                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeView === 'management' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-500 hover:text-slate-300'}`}
+                                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeView === 'management' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                             >
                                 <span className="flex items-center gap-2"><Settings size={14} /> Gestione</span>
                             </button>
@@ -460,21 +458,21 @@ export default function VehicleChecklistPage() {
                                 >
                                     <div className="flex flex-col gap-6 mb-8">
                                         {/* Progress Counter */}
-                                        <div className="flex items-center justify-between bg-[#1e293b]/50 p-4 rounded-2xl border border-white/5 backdrop-blur-md">
+                                        <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
                                             <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400">
+                                                <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-200">
                                                     <ClipboardCheck size={20} />
                                                 </div>
                                                 <div>
-                                                    <h4 className="text-white font-black uppercase text-sm tracking-widest">Avanzamento Turno</h4>
-                                                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Mezzi Controllati</p>
+                                                    <h4 className="text-slate-900 font-black uppercase text-sm tracking-widest">Avanzamento Turno</h4>
+                                                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Mezzi Controllati</p>
                                                 </div>
                                             </div>
                                             <div className="flex items-end flex-col">
-                                                <span className="text-2xl font-black text-white tracking-tighter">
-                                                    {Object.keys(checkedVehicles).length} <span className="text-slate-500 text-sm">/ {vehicles.length}</span>
+                                                <span className="text-2xl font-black text-slate-900 tracking-tighter">
+                                                    {Object.keys(checkedVehicles).length} <span className="text-slate-400 text-sm">/ {vehicles.length}</span>
                                                 </span>
-                                                <div className="w-32 h-1.5 bg-slate-700/50 rounded-full overflow-hidden mt-1">
+                                                <div className="w-32 h-1.5 bg-slate-200 rounded-full overflow-hidden mt-1">
                                                     <div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${(Object.keys(checkedVehicles).length / vehicles.length) * 100}%` }}></div>
                                                 </div>
                                             </div>
@@ -482,7 +480,7 @@ export default function VehicleChecklistPage() {
 
                                     </div>
 
-                                    <div className="flex flex-wrap gap-4 bg-[#1e293b]/50 p-2 rounded-2xl border border-white/5 backdrop-blur-md">
+                                    <div className="flex flex-wrap gap-4 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm">
                                         {[
                                             { id: 'all', label: 'Tutti' },
                                             { id: 'todo', label: 'Da Fare' },
@@ -493,15 +491,14 @@ export default function VehicleChecklistPage() {
                                                 onClick={() => {
                                                     if (opt.id === 'all') { setHideCompleted(false); }
                                                     else if (opt.id === 'todo') { setHideCompleted(true); }
-                                                    else if (opt.id === 'completed') { setHideCompleted(false); /* Logic to hide todo? Need separate state or just reuse hideCompleted logic properly */ }
+                                                    else if (opt.id === 'completed') { setHideCompleted(false); }
 
-                                                    // Simplify logic: Use a single filter state for these 3 modes
                                                     setFilter(opt.id);
                                                 }}
-                                                className={`flex-1 py-3 px-6 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all
+                                                className={`flex-1 py-3 px-6 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer
                                                         ${filter === opt.id
-                                                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-                                                        : 'bg-transparent text-slate-500 hover:bg-white/5 hover:text-white'}`}
+                                                        ? 'bg-blue-600 text-white shadow-sm'
+                                                        : 'bg-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-700'}`}
                                             >
                                                 {opt.label}
                                             </button>
@@ -509,18 +506,18 @@ export default function VehicleChecklistPage() {
                                     </div>
 
                                     {Object.entries(grouped).length === 0 ? (
-                                        <div className="text-center py-20 bg-white/5 rounded-[40px] border border-dashed border-white/10">
-                                            <Truck size={48} className="mx-auto text-slate-600 mb-4" />
-                                            <p className="text-slate-400 font-medium">Nessun mezzo disponibile al momento.</p>
+                                        <div className="text-center py-20 bg-white rounded-[40px] border border-dashed border-slate-200">
+                                            <Truck size={48} className="mx-auto text-slate-300 mb-4" />
+                                            <p className="text-slate-500 font-medium">Nessun mezzo disponibile al momento.</p>
                                         </div>
                                     ) : (
                                         Object.entries(grouped).map(([type, list]) => (
                                             <section key={type}>
                                                 <div className="flex items-center gap-4 mb-6">
-                                                    <h3 className="text-sm font-black text-blue-400 uppercase tracking-[0.2em] whitespace-nowrap">
+                                                    <h3 className="text-sm font-black text-blue-600 uppercase tracking-[0.2em] whitespace-nowrap">
                                                         {type}
                                                     </h3>
-                                                    <div className="h-px w-full bg-blue-500/10"></div>
+                                                    <div className="h-px w-full bg-blue-100"></div>
                                                 </div>
 
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -537,17 +534,17 @@ export default function VehicleChecklistPage() {
                                                                 key={v.id}
                                                                 onClick={() => handleSelectVehicle(v)}
                                                                 disabled={isChecked}
-                                                                className={`group relative h-48 rounded-[32px] text-left transition-all duration-300 border overflow-hidden p-6 flex flex-col justify-between
+                                                                className={`group relative h-48 rounded-[32px] text-left transition-all duration-300 border overflow-hidden p-6 flex flex-col justify-between cursor-pointer
                                                                     ${isChecked
-                                                                        ? 'bg-slate-900/30 border-white/5 opacity-50 cursor-not-allowed'
+                                                                        ? 'bg-slate-50 border-slate-200 opacity-50 cursor-not-allowed'
                                                                         : isMitsubishi
-                                                                            ? 'bg-[#1e293b]/40 backdrop-blur-xl border-emerald-500/20 hover:border-emerald-500/50 hover:bg-emerald-900/10 active:scale-95'
-                                                                            : 'bg-[#1e293b]/40 backdrop-blur-xl border-amber-500/20 hover:border-amber-500/50 hover:bg-amber-900/10 active:scale-95'
+                                                                            ? 'bg-white border-emerald-200 hover:border-emerald-400 hover:shadow-md active:scale-95'
+                                                                            : 'bg-white border-amber-200 hover:border-amber-400 hover:shadow-md active:scale-95'
                                                                     }`}
                                                             >
                                                                 {/* Realistic Technical Drawing Background */}
-                                                                <div className={`absolute -right-4 bottom-0 w-48 h-48 opacity-10 transition-all duration-500 group-hover:scale-110 group-hover:opacity-20 pointer-events-none
-                                                                    ${isMitsubishi ? 'text-emerald-500' : 'text-amber-500'}`}>
+                                                                <div className={`absolute -right-4 bottom-0 w-48 h-48 opacity-5 transition-all duration-500 group-hover:scale-110 group-hover:opacity-10 pointer-events-none
+                                                                    ${isMitsubishi ? 'text-emerald-600' : 'text-amber-600'}`}>
                                                                     <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
                                                                         <path d="M60 160V170H40V160H60ZM60 160H80V120H40V160H60Z" fill="currentColor" />
                                                                         <path d="M120 50V170H100V50H120ZM140 170H180C191 170 200 161 200 150V90L150 60H140V170ZM150 80L185 100V160H140V80H150Z" fill="currentColor" />
@@ -568,26 +565,26 @@ export default function VehicleChecklistPage() {
 
                                                                 {/* Decorator Light Blur */}
                                                                 <div className={`absolute -top-10 -right-10 w-40 h-40 blur-3xl rounded-full transition-colors pointer-events-none
-                                                                    ${isMitsubishi ? 'bg-emerald-500/10 group-hover:bg-emerald-500/20' : 'bg-amber-500/10 group-hover:bg-amber-500/20'}`}>
+                                                                    ${isMitsubishi ? 'bg-emerald-500/5 group-hover:bg-emerald-500/10' : 'bg-amber-500/5 group-hover:bg-amber-500/10'}`}>
                                                                 </div>
 
                                                                 <div className="relative z-10 w-full">
                                                                     <div className="flex justify-between items-start">
                                                                         <div>
-                                                                            <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 opacity-70">{v.brand}</div>
-                                                                            <div className={`text-4xl font-black text-white transition-colors tracking-tighter ${isMitsubishi ? 'group-hover:text-emerald-400' : 'group-hover:text-amber-400'}`}>
+                                                                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 opacity-70">{v.brand}</div>
+                                                                            <div className={`text-4xl font-black text-slate-900 transition-colors tracking-tighter ${isMitsubishi ? 'group-hover:text-emerald-600' : 'group-hover:text-amber-600'}`}>
                                                                                 {v.internal_code}
                                                                             </div>
                                                                         </div>
                                                                         <div className="flex flex-col gap-2">
-                                                                            <div className={`p-2 rounded-xl bg-white/5 border border-white/5 backdrop-blur-sm self-end ${isMitsubishi ? 'text-emerald-400' : 'text-amber-400'}`}>
+                                                                            <div className={`p-2 rounded-xl bg-slate-50 border border-slate-200 self-end ${isMitsubishi ? 'text-emerald-600' : 'text-amber-600'}`}>
                                                                                 <ForkliftIcon className="w-6 h-6" />
                                                                             </div>
                                                                             {/* Tablet Status Icon */}
-                                                                            <div className={`p-1.5 rounded-lg border border-white/5 backdrop-blur-sm self-end flex items-center justify-center transition-colors
+                                                                            <div className={`p-1.5 rounded-lg border self-end flex items-center justify-center transition-colors
                                                                                 ${isChecked
-                                                                                    ? (tabletStatus === 'broken' ? 'bg-red-500/20 text-red-500 border-red-500/30' : 'bg-emerald-500/20 text-emerald-500 border-emerald-500/30')
-                                                                                    : 'bg-white/5 text-slate-600'}`}
+                                                                                    ? (tabletStatus === 'broken' ? 'bg-red-50 text-red-500 border-red-200' : 'bg-emerald-50 text-emerald-500 border-emerald-200')
+                                                                                    : 'bg-slate-50 text-slate-400 border-slate-200'}`}
                                                                                 title={`Tablet: ${isChecked ? (tabletStatus === 'broken' ? 'Problema Segnalato' : 'OK') : 'Da Verificare'}`}
                                                                             >
                                                                                 {isChecked && tabletStatus === 'broken' ? <AlertTriangle size={14} /> : <Tablet size={14} />}
@@ -596,16 +593,16 @@ export default function VehicleChecklistPage() {
                                                                     </div>
 
                                                                     {isChecked ? (
-                                                                        <div className="mt-8 pt-4 border-t border-white/5 flex flex-col gap-1">
-                                                                            <div className="flex items-center gap-2 text-emerald-400 font-black text-[10px] uppercase tracking-widest">
+                                                                        <div className="mt-8 pt-4 border-t border-slate-100 flex flex-col gap-1">
+                                                                            <div className="flex items-center gap-2 text-emerald-600 font-black text-[10px] uppercase tracking-widest">
                                                                                 <CheckCircle2 size={12} /> COMPLETATO
                                                                             </div>
-                                                                            <div className="text-[10px] text-slate-500 font-bold truncate">
+                                                                            <div className="text-[10px] text-slate-400 font-bold truncate">
                                                                                 Operatore: {operatorName}
                                                                             </div>
                                                                         </div>
                                                                     ) : (
-                                                                        <div className={`mt-8 flex items-center gap-2 transition-transform group-hover:translate-x-1 ${isMitsubishi ? 'text-emerald-400' : 'text-amber-400'}`}>
+                                                                        <div className={`mt-8 flex items-center gap-2 transition-transform group-hover:translate-x-1 ${isMitsubishi ? 'text-emerald-600' : 'text-amber-600'}`}>
                                                                             <span className="text-[10px] font-black uppercase tracking-widest">Seleziona</span>
                                                                             <ArrowRight size={14} />
                                                                         </div>
@@ -627,25 +624,24 @@ export default function VehicleChecklistPage() {
                                     key="step2"
                                 >
                                     {/* Checklist Header */}
-                                    <div className="bg-[#1e293b]/50 backdrop-blur-2xl rounded-[40px] p-8 border border-white/5 shadow-2xl mb-10 overflow-hidden relative">
-                                        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/5 blur-[100px] rounded-full -mr-32 -mt-32"></div>
+                                    <div className="bg-white rounded-[40px] p-8 border border-slate-200 shadow-sm mb-10 overflow-hidden relative">
 
                                         <div className="flex flex-col md:flex-row justify-between items-center gap-6 relative z-10">
                                             <div className="flex items-center gap-6">
-                                                <div className="w-20 h-20 bg-blue-600 rounded-[28px] flex items-center justify-center text-white shadow-2xl shadow-blue-600/30">
+                                                <div className="w-20 h-20 bg-blue-600 rounded-[28px] flex items-center justify-center text-white shadow-sm">
                                                     <ForkliftIcon className="w-10 h-10" />
                                                 </div>
                                                 <div>
-                                                    <div className="text-[10px] font-black text-blue-500 uppercase tracking-[0.4em] mb-1">{selectedVehicle.brand}</div>
-                                                    <h2 className="text-4xl font-black text-white tracking-tighter leading-none">{selectedVehicle.internal_code}</h2>
-                                                    <p className="text-slate-500 text-xs font-bold mt-2 flex items-center gap-2 uppercase tracking-widest">
-                                                        <User size={12} className="text-blue-400" /> {user.full_name}
+                                                    <div className="text-[10px] font-black text-blue-600 uppercase tracking-[0.4em] mb-1">{selectedVehicle.brand}</div>
+                                                    <h2 className="text-4xl font-black text-slate-900 tracking-tighter leading-none">{selectedVehicle.internal_code}</h2>
+                                                    <p className="text-slate-400 text-xs font-bold mt-2 flex items-center gap-2 uppercase tracking-widest">
+                                                        <User size={12} className="text-blue-600" /> {user.full_name}
                                                     </p>
                                                 </div>
                                             </div>
                                             <button
                                                 onClick={() => setStep(1)}
-                                                className="px-6 py-3 bg-white/5 hover:bg-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 border border-white/5 transition-all active:scale-95"
+                                                className="px-6 py-3 bg-slate-100 hover:bg-slate-200 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-500 border border-slate-200 transition-all active:scale-95 cursor-pointer"
                                             >
                                                 Cambia Mezzo
                                             </button>
@@ -654,34 +650,34 @@ export default function VehicleChecklistPage() {
                                         {/* Progress Visual */}
                                         <div className="mt-10">
                                             <div className="flex justify-between items-center mb-3">
-                                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Avanzamento Controlli</span>
-                                                <span className={`text-xs font-black p-1 px-3 rounded-full ${getProgress().percent === 100 ? 'bg-emerald-500 text-white' : 'bg-blue-600/20 text-blue-400'}`}>
+                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Avanzamento Controlli</span>
+                                                <span className={`text-xs font-black p-1 px-3 rounded-full ${getProgress().percent === 100 ? 'bg-emerald-500 text-white' : 'bg-blue-50 text-blue-600 border border-blue-200'}`}>
                                                     {getProgress().answered} / {getProgress().total}
                                                 </span>
                                             </div>
-                                            <div className="w-full bg-white/5 rounded-full h-3 overflow-hidden p-0.5 border border-white/5">
+                                            <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden p-0.5 border border-slate-200">
                                                 <motion.div
                                                     initial={{ width: 0 }}
                                                     animate={{ width: `${getProgress().percent}%` }}
-                                                    className={`h-full rounded-full transition-all duration-500 ${getProgress().percent === 100 ? 'bg-gradient-to-r from-emerald-500 to-green-600 shadow-lg shadow-emerald-500/20' : 'bg-gradient-to-r from-blue-500 to-indigo-600'}`}
+                                                    className={`h-full rounded-full transition-all duration-500 ${getProgress().percent === 100 ? 'bg-gradient-to-r from-emerald-500 to-green-600' : 'bg-gradient-to-r from-blue-500 to-indigo-600'}`}
                                                 />
                                             </div>
                                         </div>
                                     </div>
 
                                     {/* Checklist Content */}
-                                    <h3 className="text-xl font-black text-white uppercase tracking-widest pl-2 border-l-4 border-blue-500 mb-6">
+                                    <h3 className="text-xl font-black text-slate-900 uppercase tracking-widest pl-2 border-l-4 border-blue-500 mb-6">
                                         Controlli
                                     </h3>
 
                                     {/* Tablet Check Section */}
-                                    <div id="tablet-check-section" className="bg-[#1e293b]/60 backdrop-blur-xl border border-white/5 rounded-[32px] p-6 mb-8 group hover:border-blue-500/30 transition-all">
+                                    <div id="tablet-check-section" className="bg-white border border-slate-200 rounded-[32px] p-6 mb-8 group hover:border-blue-300 transition-all shadow-sm">
                                         <div className="flex items-center gap-4 mb-6">
-                                            <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400">
+                                            <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 border border-indigo-200">
                                                 <Tablet size={24} />
                                             </div>
                                             <div>
-                                                <h4 className="text-lg font-black text-white uppercase tracking-wider">Controllo Tablet</h4>
+                                                <h4 className="text-lg font-black text-slate-900 uppercase tracking-wider">Controllo Tablet</h4>
                                                 <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Verifica integrità dispositivo di bordo</p>
                                             </div>
                                         </div>
@@ -693,18 +689,18 @@ export default function VehicleChecklistPage() {
                                                 <div className="grid grid-cols-2 gap-3">
                                                     <button
                                                         onClick={() => setTabletStatus('ok')}
-                                                        className={`p-4 rounded-2xl flex flex-col items-center gap-2 transition-all border ${tabletStatus === 'ok'
-                                                            ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400'
-                                                            : 'bg-slate-900/50 border-white/5 text-slate-500 hover:bg-slate-800'}`}
+                                                        className={`p-4 rounded-2xl flex flex-col items-center gap-2 transition-all border cursor-pointer ${tabletStatus === 'ok'
+                                                            ? 'bg-emerald-50 border-emerald-500 text-emerald-600'
+                                                            : 'bg-slate-50 border-slate-200 text-slate-400 hover:bg-slate-100'}`}
                                                     >
                                                         <CheckCircle2 size={24} />
                                                         <span className="text-[10px] font-black uppercase tracking-widest">OK</span>
                                                     </button>
                                                     <button
                                                         onClick={() => setTabletStatus('broken')}
-                                                        className={`p-4 rounded-2xl flex flex-col items-center gap-2 transition-all border ${tabletStatus === 'broken'
-                                                            ? 'bg-red-500/10 border-red-500 text-red-400'
-                                                            : 'bg-slate-900/50 border-white/5 text-slate-500 hover:bg-slate-800'}`}
+                                                        className={`p-4 rounded-2xl flex flex-col items-center gap-2 transition-all border cursor-pointer ${tabletStatus === 'broken'
+                                                            ? 'bg-red-50 border-red-500 text-red-500'
+                                                            : 'bg-slate-50 border-slate-200 text-slate-400 hover:bg-slate-100'}`}
                                                     >
                                                         <AlertTriangle size={24} />
                                                         <span className="text-[10px] font-black uppercase tracking-widest">Problema</span>
@@ -718,7 +714,7 @@ export default function VehicleChecklistPage() {
                                                         value={tabletNote}
                                                         onChange={(e) => setTabletNote(e.target.value)}
                                                         placeholder="Descrivi il problema del tablet..."
-                                                        className="w-full bg-slate-900/50 border border-white/10 rounded-xl p-4 text-white text-sm focus:outline-none focus:border-red-500/50 min-h-[80px]"
+                                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-800 text-sm focus:outline-none focus:border-red-400 min-h-[80px]"
                                                     />
                                                 )}
                                             </div>
@@ -741,7 +737,7 @@ export default function VehicleChecklistPage() {
                                                     />
 
                                                     {photoPreview ? (
-                                                        <div className="relative w-full h-48 rounded-2xl overflow-hidden border border-white/10 bg-black">
+                                                        <div className="relative w-full h-48 rounded-2xl overflow-hidden border border-slate-200 bg-slate-50">
                                                             <img src={photoPreview} alt="Tablet Preview" className="w-full h-full object-cover opacity-80" />
                                                             <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover/photo:opacity-100 transition-opacity">
                                                                 <button
@@ -758,9 +754,9 @@ export default function VehicleChecklistPage() {
                                                     ) : (
                                                         <label
                                                             htmlFor="tablet-photo-input"
-                                                            className="w-full h-48 rounded-2xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center gap-4 cursor-pointer hover:border-blue-500/50 hover:bg-blue-500/5 transition-all text-slate-500 hover:text-blue-400"
+                                                            className="w-full h-48 rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-4 cursor-pointer hover:border-blue-400 hover:bg-blue-50/50 transition-all text-slate-400 hover:text-blue-500"
                                                         >
-                                                            <div className="p-4 rounded-full bg-slate-800 group-hover:bg-blue-500/20 transition-colors">
+                                                            <div className="p-4 rounded-full bg-slate-100 group-hover:bg-blue-100 transition-colors">
                                                                 <Camera size={32} />
                                                             </div>
                                                             <div className="text-center">
@@ -788,15 +784,15 @@ export default function VehicleChecklistPage() {
                                                     transition={{ delay: idx * 0.03 }}
                                                     key={item.key}
                                                     className={`group flex items-center justify-between p-6 rounded-[28px] border transition-all duration-300 
-                                                        ${isOK ? 'bg-emerald-500/5 border-emerald-500/20' :
-                                                            isKO ? 'bg-red-500/5 border-red-500/20' :
-                                                                'bg-[#1e293b]/30 border-white/5 hover:bg-[#1e293b]/50'
+                                                        ${isOK ? 'bg-emerald-50 border-emerald-200' :
+                                                            isKO ? 'bg-red-50 border-red-200' :
+                                                                'bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm'
                                                         }`}
                                                 >
                                                     <div className="flex items-center gap-6">
-                                                        <span className="text-slate-600 font-black text-sm italic w-4">{idx + 1}</span>
+                                                        <span className="text-slate-300 font-black text-sm italic w-4">{idx + 1}</span>
                                                         <div className="flex flex-col">
-                                                            <span className="text-white font-bold tracking-tight text-lg">{item.label}</span>
+                                                            <span className="text-slate-900 font-bold tracking-tight text-lg">{item.label}</span>
                                                             {isKO && (
                                                                 <div className="flex items-center gap-2 mt-2 text-red-400">
                                                                     <AlertTriangle size={12} />
@@ -804,7 +800,7 @@ export default function VehicleChecklistPage() {
                                                                         {typeof val === 'object' && val.note ? val.note : "Segnalazione Anomalia"}
                                                                     </span>
                                                                     {typeof val === 'object' && val.photo && (
-                                                                        <span className="flex items-center gap-1 text-[10px] bg-red-400/10 px-2 py-0.5 rounded text-red-300">
+                                                                        <span className="flex items-center gap-1 text-[10px] bg-red-100 px-2 py-0.5 rounded text-red-500">
                                                                             <Camera size={10} /> Foto
                                                                         </span>
                                                                     )}
@@ -816,19 +812,19 @@ export default function VehicleChecklistPage() {
                                                     <div className="flex gap-3">
                                                         <button
                                                             onClick={() => handleCheck(item.key, true)}
-                                                            className={`px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all
+                                                            className={`px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all cursor-pointer
                                                                 ${isOK
-                                                                    ? 'bg-emerald-500 text-white shadow-xl shadow-emerald-500/20'
-                                                                    : 'bg-white/5 text-slate-500 hover:bg-emerald-500/10 hover:text-emerald-400'}`}
+                                                                    ? 'bg-emerald-500 text-white shadow-sm'
+                                                                    : 'bg-slate-100 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 border border-slate-200'}`}
                                                         >
                                                             OK
                                                         </button>
                                                         <button
                                                             onClick={() => handleCheck(item.key, false)}
-                                                            className={`px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all
+                                                            className={`px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all cursor-pointer
                                                                 ${isKO
-                                                                    ? 'bg-red-500 text-white shadow-xl shadow-red-500/20'
-                                                                    : 'bg-white/5 text-slate-500 hover:bg-red-500/10 hover:text-red-400'}`}
+                                                                    ? 'bg-red-500 text-white shadow-sm'
+                                                                    : 'bg-slate-100 text-slate-400 hover:bg-red-50 hover:text-red-500 border border-slate-200'}`}
                                                         >
                                                             KO
                                                         </button>
@@ -840,15 +836,15 @@ export default function VehicleChecklistPage() {
 
                                     {/* Footer Actions */}
                                     <div className="mt-12 flex flex-col md:flex-row items-center gap-6 p-2">
-                                        <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest text-center md:text-left flex-1 max-w-sm">
+                                        <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest text-center md:text-left flex-1 max-w-sm">
                                             Cliccando su invia, confermi che i dati inseriti sono veritieri e che il mezzo è in stato di {Object.values(checks).every(v => v === true) ? 'Sicurezza' : 'Allerta'}.
                                         </p>
                                         <button
                                             onClick={handleSubmit}
                                             disabled={submitting}
-                                            className={`w-full md:w-auto px-12 py-5 rounded-[32px] font-black text-base uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-4 shadow-2xl active:scale-95
-                                                ${submitting ? 'bg-slate-800 text-slate-600 grayscale' :
-                                                    'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-500/20'}`}
+                                            className={`w-full md:w-auto px-12 py-5 rounded-[32px] font-black text-base uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-4 shadow-sm active:scale-95 cursor-pointer
+                                                ${submitting ? 'bg-slate-200 text-slate-400 grayscale' :
+                                                    'bg-blue-600 hover:bg-blue-700 text-white'}`}
                                         >
                                             {submitting ? 'Elaborazione...' : (
                                                 <>
@@ -867,8 +863,8 @@ export default function VehicleChecklistPage() {
                                         {reportingIssue && (
                                             <div className="space-y-6">
                                                 <div>
-                                                    <h4 className="text-white font-bold text-lg mb-2">{reportingIssue.label}</h4>
-                                                    <p className="text-slate-400 text-xs">Descrivi il problema riscontrato ed eventualmente allega una foto.</p>
+                                                    <h4 className="text-slate-900 font-bold text-lg mb-2">{reportingIssue.label}</h4>
+                                                    <p className="text-slate-500 text-xs">Descrivi il problema riscontrato ed eventualmente allega una foto.</p>
                                                 </div>
 
                                                 {/* Note Input */}
@@ -877,7 +873,7 @@ export default function VehicleChecklistPage() {
                                                         Descrizione Guasto *
                                                     </label>
                                                     <textarea
-                                                        className="w-full h-32 bg-black/20 border border-white/10 rounded-xl p-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-red-500/50 transition-all resize-none"
+                                                        className="w-full h-32 bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-red-400 transition-all resize-none"
                                                         placeholder="Es. Forca piegata, Tubo perde olio..."
                                                         value={reportingIssue.note}
                                                         onChange={(e) => setReportingIssue(prev => ({ ...prev, note: e.target.value }))}
@@ -891,9 +887,9 @@ export default function VehicleChecklistPage() {
                                                         Foto Guasto (Opzionale)
                                                     </label>
                                                     <div className="flex items-start gap-4">
-                                                        <label className="flex-1 h-24 border-2 border-dashed border-white/10 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-white/20 hover:bg-white/5 transition-all group">
-                                                            <Camera className="text-slate-500 group-hover:text-white transition-colors" />
-                                                            <span className="text-[10px] text-slate-500">Scatta / Carica</span>
+                                                        <label className="flex-1 h-24 border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-slate-300 hover:bg-slate-50 transition-all group">
+                                                            <Camera className="text-slate-400 group-hover:text-slate-600 transition-colors" />
+                                                            <span className="text-[10px] text-slate-400">Scatta / Carica</span>
                                                             <input
                                                                 type="file"
                                                                 accept="image/*"
@@ -917,7 +913,7 @@ export default function VehicleChecklistPage() {
                                                         </label>
 
                                                         {reportingIssue.photoPreview && (
-                                                            <div className="w-24 h-24 rounded-xl border border-white/10 overflow-hidden relative group">
+                                                            <div className="w-24 h-24 rounded-xl border border-slate-200 overflow-hidden relative group">
                                                                 <img src={reportingIssue.photoPreview} alt="Preview" className="w-full h-full object-cover" />
                                                                 <button
                                                                     onClick={() => setReportingIssue(prev => ({ ...prev, photo: null, photoPreview: null }))}
@@ -933,13 +929,13 @@ export default function VehicleChecklistPage() {
                                                 <div className="flex gap-4 pt-4">
                                                     <button
                                                         onClick={cancelIssue}
-                                                        className="flex-1 py-4 bg-white/5 hover:bg-white/10 text-slate-500 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all"
+                                                        className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all cursor-pointer"
                                                     >
                                                         Annulla
                                                     </button>
                                                     <button
                                                         onClick={confirmIssue}
-                                                        className="flex-1 py-4 bg-red-600 hover:bg-red-500 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-red-600/20 transition-all active:scale-95"
+                                                        className="flex-1 py-4 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-sm transition-all active:scale-95 cursor-pointer"
                                                     >
                                                         Conferma Guasto
                                                     </button>
@@ -962,22 +958,22 @@ export default function VehicleChecklistPage() {
                                         </div>
                                     </div>
 
-                                    <h2 className="text-4xl font-black text-white tracking-tight mb-4">CHECK REGISTRATO!</h2>
-                                    <p className="text-slate-400 font-medium text-lg max-w-sm mx-auto mb-12">
+                                    <h2 className="text-4xl font-black text-slate-900 tracking-tight mb-4">CHECK REGISTRATO!</h2>
+                                    <p className="text-slate-500 font-medium text-lg max-w-sm mx-auto mb-12">
                                         Il rapporto è stato archiviato correttamente. Grazie per garantire la sicurezza del turno.
                                     </p>
 
                                     <div className="flex flex-col gap-4 w-full max-w-md items-center">
                                         <button
                                             onClick={() => { setStep(1); setSelectedVehicle(null); }}
-                                            className="w-full h-16 bg-white/5 hover:bg-white/10 text-slate-300 rounded-[28px] font-black uppercase tracking-widest transition-all border border-white/5 active:scale-95"
+                                            className="w-full h-16 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-[28px] font-black uppercase tracking-widest transition-all border border-slate-200 active:scale-95 cursor-pointer"
                                         >
                                             Nuovo Check
                                         </button>
                                         {(user?.permissions?.includes('view_checklist_history') || user?.permissions?.includes('*')) && (
                                             <button
                                                 onClick={() => navigate("/production/checklist/history")}
-                                                className="w-full h-16 bg-blue-600 hover:bg-blue-500 text-white rounded-[28px] font-black uppercase tracking-widest transition-all shadow-xl shadow-blue-600/20 active:scale-95 flex items-center justify-center gap-3"
+                                                className="w-full h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-[28px] font-black uppercase tracking-widest transition-all shadow-sm active:scale-95 flex items-center justify-center gap-3 cursor-pointer"
                                             >
                                                 Storico <ChevronRight size={18} />
                                             </button>
@@ -993,10 +989,10 @@ export default function VehicleChecklistPage() {
                             className="space-y-8"
                         >
                             <div className="flex justify-between items-center mb-6">
-                                <h2 className="text-xl font-black text-white tracking-widest uppercase">Anagrafica Flotta</h2>
+                                <h2 className="text-xl font-black text-slate-900 tracking-widest uppercase">Anagrafica Flotta</h2>
                                 <button
                                     onClick={openAddModal}
-                                    className="bg-indigo-600 hover:bg-indigo-500 text-white p-3 rounded-2xl flex items-center gap-2 text-xs font-black uppercase tracking-widest shadow-lg transition-all active:scale-95"
+                                    className="bg-indigo-600 hover:bg-indigo-700 text-white p-3 rounded-2xl flex items-center gap-2 text-xs font-black uppercase tracking-widest shadow-sm transition-all active:scale-95 cursor-pointer"
                                 >
                                     <Plus size={18} /> Aggiungi Mezzo
                                 </button>
@@ -1004,25 +1000,25 @@ export default function VehicleChecklistPage() {
 
                             <div className="space-y-4">
                                 {vehicles.map(v => (
-                                    <div key={v.id} className="bg-[#1e293b]/40 backdrop-blur-xl border border-white/5 p-6 rounded-[32px] flex items-center justify-between group">
+                                    <div key={v.id} className="bg-white border border-slate-200 p-6 rounded-[32px] flex items-center justify-between group hover:shadow-md transition-all">
                                         <div className="flex items-center gap-6">
-                                            <div className="w-14 h-14 bg-indigo-600/10 rounded-2xl flex items-center justify-center text-indigo-400 border border-indigo-500/20 group-hover:bg-indigo-600/20 transition-all">
+                                            <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 border border-indigo-200 group-hover:bg-indigo-100 transition-all">
                                                 <ForkliftIcon className="w-6 h-6" />
                                             </div>
                                             <div>
                                                 <div className="flex items-center gap-3">
-                                                    <span className="text-2xl font-black text-white tracking-tighter">{v.internal_code}</span>
-                                                    <span className="text-[10px] bg-white/5 px-2 py-1 rounded-lg text-slate-400 font-bold uppercase">{v.vehicle_type}</span>
+                                                    <span className="text-2xl font-black text-slate-900 tracking-tighter">{v.internal_code}</span>
+                                                    <span className="text-[10px] bg-slate-100 px-2 py-1 rounded-lg text-slate-500 font-bold uppercase border border-slate-200">{v.vehicle_type}</span>
                                                 </div>
-                                                <div className="text-xs text-slate-500 font-medium mt-1 uppercase tracking-widest">
+                                                <div className="text-xs text-slate-400 font-medium mt-1 uppercase tracking-widest">
                                                     {v.brand} {v.model}
                                                 </div>
                                             </div>
                                         </div>
 
                                         <div className="flex gap-2">
-                                            <button onClick={() => openEditModal(v)} className="p-3 bg-white/5 hover:bg-blue-600/20 text-slate-400 hover:text-blue-400 rounded-xl transition-all"><Pencil size={18} /></button>
-                                            <button onClick={() => handleDeleteVehicle(v.id)} className="p-3 bg-white/5 hover:bg-red-600/20 text-slate-400 hover:text-red-400 rounded-xl transition-all"><Trash2 size={18} /></button>
+                                            <button onClick={() => openEditModal(v)} className="p-3 bg-slate-100 hover:bg-blue-50 text-slate-400 hover:text-blue-600 rounded-xl transition-all border border-slate-200 cursor-pointer"><Pencil size={18} /></button>
+                                            <button onClick={() => handleDeleteVehicle(v.id)} className="p-3 bg-slate-100 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-xl transition-all border border-slate-200 cursor-pointer"><Trash2 size={18} /></button>
                                         </div>
                                     </div>
                                 ))}
@@ -1043,26 +1039,26 @@ export default function VehicleChecklistPage() {
                         Stai iniziando il check-in per il mezzo:
                     </p>
                     {confirmVehicle && (
-                        <div className="bg-[#0f172a] p-4 rounded-2xl border border-white/5 flex items-center gap-4">
-                            <div className="w-12 h-12 bg-blue-600/20 rounded-xl flex items-center justify-center text-blue-400">
+                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 flex items-center gap-4">
+                            <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 border border-blue-200">
                                 <Truck size={24} />
                             </div>
                             <div>
-                                <h3 className="text-xl font-black text-white tracking-tight">{confirmVehicle.internal_code}</h3>
-                                <p className="text-[10px] uppercase tracking-widest text-slate-500">{confirmVehicle.brand} {confirmVehicle.model}</p>
+                                <h3 className="text-xl font-black text-slate-900 tracking-tight">{confirmVehicle.internal_code}</h3>
+                                <p className="text-[10px] uppercase tracking-widest text-slate-400">{confirmVehicle.brand} {confirmVehicle.model}</p>
                             </div>
                         </div>
                     )}
                     <div className="flex gap-4 pt-4">
                         <button
                             onClick={() => setConfirmVehicle(null)}
-                            className="flex-1 py-4 bg-white/5 hover:bg-white/10 text-slate-500 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all"
+                            className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all cursor-pointer"
                         >
                             Annulla
                         </button>
                         <button
                             onClick={confirmSelection}
-                            className="flex-1 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-blue-600/20 transition-all active:scale-95"
+                            className="flex-1 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-sm transition-all active:scale-95 cursor-pointer"
                         >
                             Conferma e Inizia
                         </button>
@@ -1084,7 +1080,7 @@ export default function VehicleChecklistPage() {
                                 type="text"
                                 value={vehicleForm.internal_code}
                                 onChange={e => setVehicleForm({ ...vehicleForm, internal_code: e.target.value })}
-                                className="w-full bg-[#0f172a] border border-white/5 rounded-2xl p-4 text-white focus:outline-none focus:border-indigo-500/50 transition-all"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-slate-800 focus:outline-none focus:border-indigo-400 transition-all"
                                 placeholder="E.g. 29"
                             />
                         </div>
@@ -1093,7 +1089,7 @@ export default function VehicleChecklistPage() {
                             <select
                                 value={vehicleForm.vehicle_type}
                                 onChange={e => setVehicleForm({ ...vehicleForm, vehicle_type: e.target.value })}
-                                className="w-full bg-[#0f172a] border border-white/5 rounded-2xl p-4 text-white focus:outline-none focus:border-indigo-500/50 transition-all"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-slate-800 focus:outline-none focus:border-indigo-400 transition-all"
                             >
                                 <option value="forklift">Muletto</option>
                                 <option value="retractable">Retrattile</option>
@@ -1111,7 +1107,7 @@ export default function VehicleChecklistPage() {
                                 type="text"
                                 value={vehicleForm.brand}
                                 onChange={e => setVehicleForm({ ...vehicleForm, brand: e.target.value })}
-                                className="w-full bg-[#0f172a] border border-white/5 rounded-2xl p-4 text-white focus:outline-none focus:border-indigo-500/50 transition-all"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-slate-800 focus:outline-none focus:border-indigo-400 transition-all"
                             />
                         </div>
                         <div className="space-y-2">
@@ -1120,31 +1116,31 @@ export default function VehicleChecklistPage() {
                                 type="text"
                                 value={vehicleForm.model}
                                 onChange={e => setVehicleForm({ ...vehicleForm, model: e.target.value })}
-                                className="w-full bg-[#0f172a] border border-white/5 rounded-2xl p-4 text-white focus:outline-none focus:border-indigo-500/50 transition-all"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-slate-800 focus:outline-none focus:border-indigo-400 transition-all"
                             />
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/5">
+                    <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200">
                         <input
                             type="checkbox"
                             checked={vehicleForm.is_4_0}
                             onChange={e => setVehicleForm({ ...vehicleForm, is_4_0: e.target.checked })}
-                            className="w-5 h-5 rounded border-white/10 bg-[#0f172a]"
+                            className="w-5 h-5 rounded border-slate-300 bg-white"
                         />
-                        <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Industria 4.0</label>
+                        <label className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Industria 4.0</label>
                     </div>
 
-                    <div className="pt-6 border-t border-white/5 flex gap-4">
+                    <div className="pt-6 border-t border-slate-200 flex gap-4">
                         <button
                             onClick={() => setShowVehicleModal(false)}
-                            className="flex-1 py-4 bg-white/5 hover:bg-white/10 text-slate-500 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all"
+                            className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all cursor-pointer"
                         >
                             Annulla
                         </button>
                         <button
                             onClick={handleSaveVehicle}
-                            className="flex-1 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-indigo-600/20 transition-all active:scale-95"
+                            className="flex-1 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-sm transition-all active:scale-95 cursor-pointer"
                         >
                             Salva Mezzo
                         </button>
@@ -1161,7 +1157,7 @@ export default function VehicleChecklistPage() {
                     <div className="w-24 h-24 bg-red-500/10 rounded-full flex items-center justify-center text-red-500 mb-2">
                         <Camera size={48} />
                     </div>
-                    <h3 className="text-xl font-black text-white uppercase tracking-tight">
+                    <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">
                         {validationError?.message}
                     </h3>
                     <p className="text-slate-400 text-sm">
@@ -1170,7 +1166,7 @@ export default function VehicleChecklistPage() {
 
                     <button
                         onClick={() => setValidationError(null)}
-                        className="w-full h-16 bg-red-600 hover:bg-red-500 text-white rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-red-600/30 transition-all active:scale-95"
+                        className="w-full h-16 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-black uppercase tracking-widest shadow-sm transition-all active:scale-95 cursor-pointer"
                     >
                         Ho capito, vado a farla
                     </button>

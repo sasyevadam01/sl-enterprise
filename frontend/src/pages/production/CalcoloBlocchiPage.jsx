@@ -268,11 +268,11 @@ export default function CalcoloBlocchiPage() {
             {[1, 2, 3, 4].map((s) => (
                 <div key={s} className="flex items-center">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all
-                        ${step >= s ? 'bg-violet-500 text-white' : 'bg-zinc-800 text-zinc-500'}`}>
+                        ${step >= s ? 'bg-green-600 text-white shadow-sm' : 'bg-gray-200 text-gray-400'}`}>
                         {step > s ? <Check className="w-4 h-4" /> : s}
                     </div>
                     {s < 4 && (
-                        <div className={`w-8 h-1 mx-1 rounded ${step > s ? 'bg-violet-500' : 'bg-zinc-800'}`} />
+                        <div className={`w-8 h-1 mx-1 rounded ${step > s ? 'bg-green-600' : 'bg-gray-200'}`} />
                     )}
                 </div>
             ))}
@@ -280,30 +280,30 @@ export default function CalcoloBlocchiPage() {
     );
 
     return (
-        <div className="min-h-screen bg-zinc-950 p-4 md:p-6 print:bg-white print:text-black">
+        <div className="min-h-screen p-4 md:p-6 print:bg-white print:text-black">
             {/* Header */}
             <div className="flex items-center gap-4 mb-6 print:hidden">
                 <button
                     onClick={() => navigate(-1)}
-                    className="p-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
+                    className="p-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 transition-all shadow-sm"
                 >
-                    <ArrowLeft className="w-5 h-5 text-zinc-400" />
+                    <ArrowLeft className="w-5 h-5 text-gray-500" />
                 </button>
                 <div className="flex items-center gap-3 flex-1">
-                    <div className="p-3 rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-600/20 border border-violet-500/30">
-                        <Calculator className="w-7 h-7 text-violet-400" />
+                    <div className="page-header-icon">
+                        <Calculator className="w-7 h-7 text-white" />
                     </div>
                     <div>
-                        <h1 className="text-xl font-bold text-white">Calcolo Blocchi</h1>
-                        <p className="text-sm text-zinc-500">Ottimizzazione taglio</p>
+                        <h1 className="text-xl font-bold text-gray-900">Calcolo Blocchi</h1>
+                        <p className="text-sm text-gray-500">Ottimizzazione taglio</p>
                     </div>
                 </div>
                 <button
                     onClick={resetCalculator}
-                    className="p-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
+                    className="p-2 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 transition-all shadow-sm"
                     title="Ricomincia"
                 >
-                    <RefreshCw className="w-5 h-5 text-zinc-400" />
+                    <RefreshCw className="w-5 h-5 text-gray-500" />
                 </button>
             </div>
 
@@ -313,8 +313,8 @@ export default function CalcoloBlocchiPage() {
                     onClick={() => setActiveTab('lastre')}
                     className={`flex-1 py-3 px-4 rounded-xl font-medium transition-all text-center
                         ${activeTab === 'lastre'
-                            ? 'bg-violet-500/20 text-violet-400 border border-violet-500/30'
-                            : 'bg-zinc-900/50 text-zinc-500 border border-white/5'}`}
+                            ? 'bg-green-600 text-white shadow-sm'
+                            : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50'}`}
                 >
                     Lastre Lisce
                 </button>
@@ -322,20 +322,20 @@ export default function CalcoloBlocchiPage() {
                     onClick={() => setActiveTab('future')}
                     disabled
                     className="flex-1 py-3 px-4 rounded-xl font-medium transition-all text-center
-                        bg-zinc-900/30 text-zinc-600 border border-white/5 cursor-not-allowed opacity-50"
+                        bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed opacity-50"
                 >
                     Prossimamente...
                 </button>
             </div>
 
             {activeTab === 'lastre' && (
-                <div className="bg-zinc-900/50 backdrop-blur-sm rounded-2xl border border-white/10 p-6">
+                <div className="master-card p-6">
                     <ProgressBar />
 
                     {/* STEP 1: Material Type */}
                     {step === 1 && (
                         <div className="space-y-4">
-                            <h2 className="text-lg font-semibold text-white mb-4">Seleziona Materiale</h2>
+                            <h2 className="text-lg font-semibold text-gray-900 mb-4">Seleziona Materiale</h2>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <button
@@ -343,15 +343,15 @@ export default function CalcoloBlocchiPage() {
                                         setMaterialType('sponge');
                                         setStep(2);
                                     }}
-                                    className="p-6 rounded-2xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-500/30 
-                                        hover:from-blue-500/30 hover:to-cyan-500/30 transition-all text-center group"
+                                    className="p-6 rounded-2xl bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200 
+                                        hover:border-blue-400 hover:shadow-md transition-all text-center group"
                                 >
-                                    <div className="w-16 h-16 mx-auto mb-3 rounded-2xl bg-blue-500/20 flex items-center justify-center
+                                    <div className="w-16 h-16 mx-auto mb-3 rounded-2xl bg-blue-100 flex items-center justify-center
                                         group-hover:scale-110 transition-transform">
-                                        <Layers className="w-8 h-8 text-blue-400" />
+                                        <Layers className="w-8 h-8 text-blue-600" />
                                     </div>
-                                    <span className="text-lg font-bold text-white">SPUGNA</span>
-                                    <p className="text-sm text-zinc-400 mt-1">D23, D25, D30...</p>
+                                    <span className="text-lg font-bold text-gray-900">SPUGNA</span>
+                                    <p className="text-sm text-gray-500 mt-1">D23, D25, D30...</p>
                                 </button>
 
                                 <button
@@ -359,15 +359,15 @@ export default function CalcoloBlocchiPage() {
                                         setMaterialType('memory');
                                         setStep(2);
                                     }}
-                                    className="p-6 rounded-2xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-500/30 
-                                        hover:from-purple-500/30 hover:to-pink-500/30 transition-all text-center group"
+                                    className="p-6 rounded-2xl bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 
+                                        hover:border-purple-400 hover:shadow-md transition-all text-center group"
                                 >
-                                    <div className="w-16 h-16 mx-auto mb-3 rounded-2xl bg-purple-500/20 flex items-center justify-center
+                                    <div className="w-16 h-16 mx-auto mb-3 rounded-2xl bg-purple-100 flex items-center justify-center
                                         group-hover:scale-110 transition-transform">
-                                        <Package className="w-8 h-8 text-purple-400" />
+                                        <Package className="w-8 h-8 text-purple-600" />
                                     </div>
-                                    <span className="text-lg font-bold text-white">MEMORY</span>
-                                    <p className="text-sm text-zinc-400 mt-1">Viscoflex, Aloe...</p>
+                                    <span className="text-lg font-bold text-gray-900">MEMORY</span>
+                                    <p className="text-sm text-gray-500 mt-1">Viscoflex, Aloe...</p>
                                 </button>
                             </div>
                         </div>
@@ -377,10 +377,10 @@ export default function CalcoloBlocchiPage() {
                     {step === 2 && (
                         <div className="space-y-4">
                             <div className="flex items-center justify-between">
-                                <h2 className="text-lg font-semibold text-white">
+                                <h2 className="text-lg font-semibold text-gray-900">
                                     {materialType === 'sponge' ? 'Seleziona Densità e Colore' : 'Seleziona Tipo Memory'}
                                 </h2>
-                                <button onClick={() => setStep(1)} className="text-sm text-zinc-400 hover:text-white">
+                                <button onClick={() => setStep(1)} className="text-sm text-gray-500 hover:text-gray-900">
                                     ← Indietro
                                 </button>
                             </div>
@@ -389,7 +389,7 @@ export default function CalcoloBlocchiPage() {
                                 <>
                                     {/* Densities */}
                                     <div>
-                                        <label className="text-sm text-zinc-400 mb-2 block">Densità</label>
+                                        <label className="text-sm text-gray-600 font-medium mb-2 block">Densità</label>
                                         <div className="flex flex-wrap gap-2">
                                             {densities.map(d => (
                                                 <button
@@ -397,8 +397,8 @@ export default function CalcoloBlocchiPage() {
                                                     onClick={() => setSelectedMaterial(d)}
                                                     className={`px-4 py-3 rounded-xl font-medium transition-all
                                                         ${selectedMaterial?.id === d.id
-                                                            ? 'bg-blue-500 text-white'
-                                                            : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'}`}
+                                                            ? 'bg-blue-600 text-white shadow-sm'
+                                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'}`}
                                                 >
                                                     {d.label}
                                                 </button>
@@ -407,7 +407,7 @@ export default function CalcoloBlocchiPage() {
                                     </div>
                                     {/* Colors */}
                                     <div>
-                                        <label className="text-sm text-zinc-400 mb-2 block">Colore</label>
+                                        <label className="text-sm text-gray-600 font-medium mb-2 block">Colore</label>
                                         <div className="flex flex-wrap gap-2">
                                             {colors.map(c => (
                                                 <button
@@ -415,11 +415,11 @@ export default function CalcoloBlocchiPage() {
                                                     onClick={() => setSelectedColor(c)}
                                                     className={`px-4 py-3 rounded-xl font-medium transition-all flex items-center gap-2
                                                         ${selectedColor?.id === c.id
-                                                            ? 'bg-blue-500 text-white'
-                                                            : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'}`}
+                                                            ? 'bg-blue-600 text-white shadow-sm'
+                                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'}`}
                                                 >
                                                     {c.value && (
-                                                        <div className="w-4 h-4 rounded-full border border-white/30"
+                                                        <div className="w-4 h-4 rounded-full border border-gray-300"
                                                             style={{ backgroundColor: c.value }} />
                                                     )}
                                                     {c.label}
@@ -437,8 +437,8 @@ export default function CalcoloBlocchiPage() {
                                             onClick={() => setSelectedMaterial(m)}
                                             className={`px-4 py-3 rounded-xl font-medium transition-all text-sm
                                                 ${selectedMaterial?.id === m.id
-                                                    ? 'bg-purple-500 text-white'
-                                                    : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'}`}
+                                                    ? 'bg-purple-600 text-white shadow-sm'
+                                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'}`}
                                         >
                                             {m.label}
                                         </button>
@@ -449,8 +449,8 @@ export default function CalcoloBlocchiPage() {
                             <button
                                 onClick={() => setStep(3)}
                                 disabled={!selectedMaterial || (materialType === 'sponge' && !selectedColor)}
-                                className="w-full mt-4 py-4 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 text-white font-bold
-                                    disabled:opacity-50 disabled:cursor-not-allowed hover:from-violet-600 hover:to-purple-700 transition-all
+                                className="w-full mt-4 py-4 rounded-xl bg-green-600 text-white font-bold shadow-sm
+                                    disabled:opacity-50 disabled:cursor-not-allowed hover:bg-green-700 transition-all
                                     flex items-center justify-center gap-2"
                             >
                                 Continua <ChevronRight className="w-5 h-5" />
@@ -462,26 +462,26 @@ export default function CalcoloBlocchiPage() {
                     {step === 3 && (
                         <div className="space-y-5">
                             <div className="flex items-center justify-between">
-                                <h2 className="text-lg font-semibold text-white">Dimensioni e Altezza</h2>
-                                <button onClick={() => setStep(2)} className="text-sm text-zinc-400 hover:text-white">
+                                <h2 className="text-lg font-semibold text-gray-900">Dimensioni e Altezza</h2>
+                                <button onClick={() => setStep(2)} className="text-sm text-gray-500 hover:text-gray-900">
                                     ← Indietro
                                 </button>
                             </div>
 
                             {/* Selected material summary */}
-                            <div className="bg-zinc-800/50 rounded-xl p-3 flex items-center gap-3">
-                                <div className={`p-2 rounded-lg ${materialType === 'sponge' ? 'bg-blue-500/20' : 'bg-purple-500/20'}`}>
-                                    {materialType === 'sponge' ? <Layers className="w-5 h-5 text-blue-400" /> : <Package className="w-5 h-5 text-purple-400" />}
+                            <div className="bg-gray-50 rounded-xl p-3 flex items-center gap-3 border border-gray-200">
+                                <div className={`p-2 rounded-lg ${materialType === 'sponge' ? 'bg-blue-100' : 'bg-purple-100'}`}>
+                                    {materialType === 'sponge' ? <Layers className="w-5 h-5 text-blue-600" /> : <Package className="w-5 h-5 text-purple-600" />}
                                 </div>
                                 <div>
-                                    <p className="text-white font-medium">{selectedMaterial?.label}</p>
-                                    {selectedColor && <p className="text-sm text-zinc-400">{selectedColor.label}</p>}
+                                    <p className="text-gray-900 font-medium">{selectedMaterial?.label}</p>
+                                    {selectedColor && <p className="text-sm text-gray-500">{selectedColor.label}</p>}
                                 </div>
                             </div>
 
                             {/* Dimension */}
                             <div>
-                                <label className="text-sm text-zinc-400 mb-2 block">Misura Blocco</label>
+                                <label className="text-sm text-gray-600 font-medium mb-2 block">Misura Blocco</label>
                                 <div className="flex flex-wrap gap-2">
                                     {dimensions.map(d => (
                                         <button
@@ -489,8 +489,8 @@ export default function CalcoloBlocchiPage() {
                                             onClick={() => setSelectedDimension(d.label)}
                                             className={`px-4 py-3 rounded-xl font-medium transition-all
                                                 ${selectedDimension === d.label
-                                                    ? 'bg-violet-500 text-white'
-                                                    : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'}`}
+                                                    ? 'bg-green-600 text-white shadow-sm'
+                                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'}`}
                                         >
                                             {d.label}
                                         </button>
@@ -500,35 +500,35 @@ export default function CalcoloBlocchiPage() {
 
                             {/* Sheet thickness */}
                             <div>
-                                <label className="text-sm text-zinc-400 mb-2 block">Spessore Lastra (cm)</label>
+                                <label className="text-sm text-gray-600 font-medium mb-2 block">Spessore Lastra (cm)</label>
                                 <input
                                     type="number"
                                     step="0.5"
                                     value={sheetThickness}
                                     onChange={(e) => setSheetThickness(e.target.value)}
                                     placeholder="Es: 10.5"
-                                    className="w-full px-4 py-4 rounded-xl bg-zinc-800 border border-white/10 text-white text-lg
-                                        placeholder:text-zinc-500 focus:outline-none focus:border-violet-500"
+                                    className="w-full px-4 py-4 rounded-xl bg-white border border-gray-300 text-gray-900 text-lg
+                                        placeholder:text-gray-400 focus:outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600"
                                 />
                             </div>
 
                             {/* Quantity */}
                             <div>
-                                <label className="text-sm text-zinc-400 mb-2 block">Quantità Pezzi</label>
+                                <label className="text-sm text-gray-600 font-medium mb-2 block">Quantità Pezzi</label>
                                 <input
                                     type="number"
                                     value={quantity}
                                     onChange={(e) => setQuantity(e.target.value)}
                                     placeholder="Es: 50"
-                                    className="w-full px-4 py-4 rounded-xl bg-zinc-800 border border-white/10 text-white text-lg
-                                        placeholder:text-zinc-500 focus:outline-none focus:border-violet-500"
+                                    className="w-full px-4 py-4 rounded-xl bg-white border border-gray-300 text-gray-900 text-lg
+                                        placeholder:text-gray-400 focus:outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600"
                                 />
                             </div>
 
                             {/* Block Height */}
                             <div>
-                                <label className="text-sm text-zinc-400 mb-2 block">
-                                    Altezza Lavorabile (cm) <span className="text-zinc-600">- bucce già scalate</span>
+                                <label className="text-sm text-gray-600 font-medium mb-2 block">
+                                    Altezza Lavorabile (cm) <span className="text-gray-400">- bucce già scalate</span>
                                 </label>
 
                                 {/* Quick select saved heights */}
@@ -540,8 +540,8 @@ export default function CalcoloBlocchiPage() {
                                                 onClick={() => setBlockHeight(String(h.height_cm))}
                                                 className={`px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1
                                                     ${parseFloat(blockHeight) === h.height_cm
-                                                        ? 'bg-emerald-500 text-white'
-                                                        : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'}`}
+                                                        ? 'bg-emerald-600 text-white shadow-sm'
+                                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'}`}
                                             >
                                                 {h.height_cm} cm
                                                 <span className="text-xs opacity-60">({h.usage_count}x)</span>
@@ -557,14 +557,14 @@ export default function CalcoloBlocchiPage() {
                                         value={blockHeight}
                                         onChange={(e) => setBlockHeight(e.target.value)}
                                         placeholder="Es: 98"
-                                        className="flex-1 px-4 py-4 rounded-xl bg-zinc-800 border border-white/10 text-white text-lg
-                                            placeholder:text-zinc-500 focus:outline-none focus:border-violet-500"
+                                        className="flex-1 px-4 py-4 rounded-xl bg-white border border-gray-300 text-gray-900 text-lg
+                                            placeholder:text-gray-400 focus:outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600"
                                     />
                                     <button
                                         onClick={saveCurrentHeight}
                                         disabled={!blockHeight}
-                                        className="px-4 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30
-                                            disabled:opacity-50 disabled:cursor-not-allowed hover:bg-emerald-500/30 transition-all"
+                                        className="px-4 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-300
+                                            disabled:opacity-50 disabled:cursor-not-allowed hover:bg-emerald-100 transition-all"
                                         title="Salva questa altezza"
                                     >
                                         <Plus className="w-5 h-5" />
@@ -575,8 +575,8 @@ export default function CalcoloBlocchiPage() {
                             <button
                                 onClick={handleCalculate}
                                 disabled={!selectedDimension || !sheetThickness || !quantity || !blockHeight || calculating}
-                                className="w-full mt-4 py-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold
-                                    disabled:opacity-50 disabled:cursor-not-allowed hover:from-emerald-600 hover:to-teal-700 transition-all
+                                className="w-full mt-4 py-4 rounded-xl bg-green-600 text-white font-bold shadow-sm
+                                    disabled:opacity-50 disabled:cursor-not-allowed hover:bg-green-700 transition-all
                                     flex items-center justify-center gap-2"
                             >
                                 {calculating ? (
@@ -601,66 +601,66 @@ export default function CalcoloBlocchiPage() {
                             </div>
 
                             <div className="flex items-center justify-between print:hidden">
-                                <h2 className="text-lg font-semibold text-white">Risultato</h2>
-                                <button onClick={() => setStep(3)} className="text-sm text-zinc-400 hover:text-white">
+                                <h2 className="text-lg font-semibold text-gray-900">Risultato</h2>
+                                <button onClick={() => setStep(3)} className="text-sm text-gray-500 hover:text-gray-900">
                                     ← Modifica
                                 </button>
                             </div>
 
                             {/* Summary */}
-                            <div className="bg-zinc-800/50 rounded-xl p-4 space-y-2 print:bg-gray-100 print:border print:border-gray-300">
+                            <div className="bg-gray-50 rounded-xl p-4 space-y-2 border border-gray-200 print:bg-gray-100 print:border print:border-gray-300">
                                 <div className="flex justify-between">
-                                    <span className="text-zinc-400 print:text-gray-600">Materiale:</span>
-                                    <span className="text-white font-medium print:text-black">
+                                    <span className="text-gray-500 print:text-gray-600">Materiale:</span>
+                                    <span className="text-gray-900 font-medium print:text-black">
                                         {selectedMaterial?.label} {selectedColor ? `- ${selectedColor.label}` : ''}
                                     </span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-zinc-400 print:text-gray-600">Misura:</span>
-                                    <span className="text-white font-medium print:text-black">{selectedDimension}</span>
+                                    <span className="text-gray-500 print:text-gray-600">Misura:</span>
+                                    <span className="text-gray-900 font-medium print:text-black">{selectedDimension}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-zinc-400 print:text-gray-600">Spessore Lastra:</span>
-                                    <span className="text-white font-medium print:text-black">{result.input.sheet_thickness} cm</span>
+                                    <span className="text-gray-500 print:text-gray-600">Spessore Lastra:</span>
+                                    <span className="text-gray-900 font-medium print:text-black">{result.input.sheet_thickness} cm</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-zinc-400 print:text-gray-600">Quantità Ordine:</span>
-                                    <span className="text-white font-medium print:text-black">{result.input.quantity} pz</span>
+                                    <span className="text-gray-500 print:text-gray-600">Quantità Ordine:</span>
+                                    <span className="text-gray-900 font-medium print:text-black">{result.input.quantity} pz</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-zinc-400 print:text-gray-600">Altezza Blocco:</span>
-                                    <span className="text-white font-medium print:text-black">{result.input.block_height} cm</span>
+                                    <span className="text-gray-500 print:text-gray-600">Altezza Blocco:</span>
+                                    <span className="text-gray-900 font-medium print:text-black">{result.input.block_height} cm</span>
                                 </div>
                             </div>
 
                             {/* Main Result */}
-                            <div className="bg-gradient-to-br from-emerald-500/20 to-teal-500/20 rounded-2xl border border-emerald-500/30 p-6 text-center
+                            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border-2 border-green-200 p-6 text-center
                                 print:bg-green-50 print:border-green-300">
-                                <p className="text-emerald-400 text-sm uppercase tracking-wider mb-2 print:text-green-600">Blocchi Necessari</p>
-                                <p className="text-5xl font-bold text-white print:text-black">{result.blocks_needed}</p>
-                                <p className="text-zinc-400 mt-2 print:text-gray-600">
+                                <p className="text-green-700 text-sm uppercase tracking-wider mb-2 font-semibold print:text-green-600">Blocchi Necessari</p>
+                                <p className="text-5xl font-bold text-gray-900 print:text-black">{result.blocks_needed}</p>
+                                <p className="text-gray-500 mt-2 print:text-gray-600">
                                     {result.sheets_per_block} lastre per blocco
                                 </p>
                             </div>
 
                             {/* Details */}
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-zinc-800/50 rounded-xl p-4 text-center print:bg-gray-100 print:border print:border-gray-300">
-                                    <p className="text-sm text-zinc-400 print:text-gray-600">Totale Lastre</p>
-                                    <p className="text-2xl font-bold text-white print:text-black">{result.total_sheets}</p>
+                                <div className="bg-gray-50 rounded-xl p-4 text-center border border-gray-200 print:bg-gray-100 print:border print:border-gray-300">
+                                    <p className="text-sm text-gray-500 print:text-gray-600">Totale Lastre</p>
+                                    <p className="text-2xl font-bold text-gray-900 print:text-black">{result.total_sheets}</p>
                                 </div>
-                                <div className="bg-zinc-800/50 rounded-xl p-4 text-center print:bg-gray-100 print:border print:border-gray-300">
-                                    <p className="text-sm text-zinc-400 print:text-gray-600">Lastre Extra</p>
-                                    <p className="text-2xl font-bold text-blue-400 print:text-blue-600">+{result.extra_sheets}</p>
+                                <div className="bg-gray-50 rounded-xl p-4 text-center border border-gray-200 print:bg-gray-100 print:border print:border-gray-300">
+                                    <p className="text-sm text-gray-500 print:text-gray-600">Lastre Extra</p>
+                                    <p className="text-2xl font-bold text-blue-600 print:text-blue-600">+{result.extra_sheets}</p>
                                 </div>
                             </div>
 
                             {/* Remainder & Recovery */}
-                            <div className="bg-amber-500/10 rounded-xl border border-amber-500/30 p-4 print:bg-yellow-50 print:border-yellow-300">
+                            <div className="bg-amber-50 rounded-xl border border-amber-200 p-4 print:bg-yellow-50 print:border-yellow-300">
                                 <div className="flex items-start gap-3">
-                                    <AlertCircle className="w-5 h-5 text-amber-400 mt-0.5 print:text-yellow-600" />
+                                    <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 print:text-yellow-600" />
                                     <div className="flex-1">
-                                        <p className="text-amber-400 font-medium print:text-yellow-700">
+                                        <p className="text-amber-700 font-medium print:text-yellow-700">
                                             Rimanenza: {result.remainder_per_block} cm per blocco
                                         </p>
                                         {(() => {
@@ -668,8 +668,8 @@ export default function CalcoloBlocchiPage() {
                                             if (recovery) {
                                                 const isCombination = recovery._combination && recovery._count > 1;
                                                 return (
-                                                    <p className="text-sm text-zinc-400 mt-1 print:text-gray-600">
-                                                        💡 Suggerimento: <span className="text-white print:text-black font-medium">
+                                                    <p className="text-sm text-gray-600 mt-1 print:text-gray-600">
+                                                        💡 Suggerimento: <span className="text-gray-900 print:text-black font-medium">
                                                             {isCombination ? (
                                                                 <>{recovery._count} x {recovery.thickness_cm}cm = {recovery.product_type}</>
                                                             ) : (
@@ -677,16 +677,16 @@ export default function CalcoloBlocchiPage() {
                                                             )}
                                                         </span>
                                                         {recovery.notes && (
-                                                            <span className="text-zinc-500"> ({recovery.notes})</span>
+                                                            <span className="text-gray-400"> ({recovery.notes})</span>
                                                         )}
                                                         {isCombination && recovery._leftover > 0 && (
-                                                            <span className="text-zinc-600"> + {recovery._leftover.toFixed(1)}cm scarto</span>
+                                                            <span className="text-gray-400"> + {recovery._leftover.toFixed(1)}cm scarto</span>
                                                         )}
                                                     </p>
                                                 );
                                             } else {
                                                 return (
-                                                    <p className="text-sm text-zinc-500 mt-1 print:text-gray-500">
+                                                    <p className="text-sm text-gray-500 mt-1 print:text-gray-500">
                                                         Nessun recupero standard trovato - chiedi al coordinatore
                                                     </p>
                                                 );
@@ -699,12 +699,12 @@ export default function CalcoloBlocchiPage() {
                                                 onClick={askAi}
                                                 disabled={loadingAi}
                                                 className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-600 to-purple-600 
-                                                    text-white rounded-lg text-sm font-medium hover:from-violet-700 hover:to-purple-700
+                                                    text-white rounded-lg text-sm font-medium hover:from-violet-700 hover:to-purple-700 shadow-sm
                                                     transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                             >
                                                 {loadingAi ? (
                                                     <>
-                                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                                        <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                                                         Analisi in corso...
                                                     </>
                                                 ) : (
@@ -715,10 +715,10 @@ export default function CalcoloBlocchiPage() {
                                             </button>
 
                                             {aiSuggestion && (
-                                                <div className="mt-3 p-3 bg-gradient-to-r from-violet-500/10 to-purple-500/10 
-                                                    rounded-lg border border-violet-500/30">
-                                                    <p className="text-sm text-violet-300 font-medium mb-1">🤖 Suggerimento IA:</p>
-                                                    <p className="text-sm text-white">{aiSuggestion}</p>
+                                                <div className="mt-3 p-3 bg-violet-50 
+                                                    rounded-lg border border-violet-200">
+                                                    <p className="text-sm text-violet-700 font-medium mb-1">🤖 Suggerimento IA:</p>
+                                                    <p className="text-sm text-gray-800">{aiSuggestion}</p>
                                                 </div>
                                             )}
                                         </div>
@@ -731,8 +731,8 @@ export default function CalcoloBlocchiPage() {
                                 <div className="print:hidden">
                                     <button
                                         onClick={() => setShowRecoveryPanel(!showRecoveryPanel)}
-                                        className="w-full flex items-center justify-between px-4 py-3 bg-zinc-800/50 rounded-xl 
-                                            hover:bg-zinc-800 transition-all text-zinc-300"
+                                        className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 rounded-xl 
+                                            hover:bg-gray-100 transition-all text-gray-600 border border-gray-200"
                                     >
                                         <span className="flex items-center gap-2">
                                             <Info className="w-4 h-4" />
@@ -742,24 +742,24 @@ export default function CalcoloBlocchiPage() {
                                     </button>
 
                                     {showRecoveryPanel && (
-                                        <div className="mt-2 bg-zinc-800/30 rounded-xl border border-white/5 overflow-hidden">
+                                        <div className="mt-2 bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
                                             <table className="w-full text-sm">
                                                 <thead>
-                                                    <tr className="bg-zinc-900/50 text-zinc-400">
+                                                    <tr className="bg-gray-50 text-gray-500">
                                                         <th className="px-4 py-2 text-left">Spessore</th>
                                                         <th className="px-4 py-2 text-left">Prodotto</th>
                                                         <th className="px-4 py-2 text-left">Note</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody className="divide-y divide-white/5">
+                                                <tbody className="divide-y divide-gray-100">
                                                     {/* Deduplicate by thickness+product */}
                                                     {[...new Map(recoveryRules.map(r =>
                                                         [`${r.thickness_cm}-${r.product_type}`, r]
                                                     )).values()].map(r => (
-                                                        <tr key={`${r.thickness_cm}-${r.product_type}`} className="text-zinc-300">
+                                                        <tr key={`${r.thickness_cm}-${r.product_type}`} className="text-gray-700 hover:bg-gray-50">
                                                             <td className="px-4 py-2 font-medium">{r.thickness_cm} cm</td>
                                                             <td className="px-4 py-2">{r.product_type}</td>
-                                                            <td className="px-4 py-2 text-zinc-500">{r.notes || '-'}</td>
+                                                            <td className="px-4 py-2 text-gray-400">{r.notes || '-'}</td>
                                                         </tr>
                                                     ))}
                                                 </tbody>
@@ -774,7 +774,7 @@ export default function CalcoloBlocchiPage() {
                                 onClick={() => setShow3D(true)}
                                 className="w-full py-4 rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 
                                     text-white font-bold text-lg hover:from-indigo-700 hover:via-violet-700 hover:to-purple-700 
-                                    transition-all flex items-center justify-center gap-3 shadow-lg shadow-violet-500/25
+                                    transition-all flex items-center justify-center gap-3 shadow-md
                                     print:hidden"
                             >
                                 <Box className="w-6 h-6" />
@@ -785,16 +785,16 @@ export default function CalcoloBlocchiPage() {
                             <div className="flex gap-3 print:hidden">
                                 <button
                                     onClick={handlePrint}
-                                    className="flex-1 py-4 rounded-xl bg-zinc-800 text-white font-medium
-                                        hover:bg-zinc-700 transition-all flex items-center justify-center gap-2"
+                                    className="flex-1 py-4 rounded-xl bg-white text-gray-700 font-medium border border-gray-200
+                                        hover:bg-gray-50 transition-all flex items-center justify-center gap-2 shadow-sm"
                                 >
                                     <Printer className="w-5 h-5" />
                                     Stampa
                                 </button>
                                 <button
                                     onClick={resetCalculator}
-                                    className="flex-1 py-4 rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 text-white font-bold
-                                        hover:from-violet-600 hover:to-purple-700 transition-all flex items-center justify-center gap-2"
+                                    className="flex-1 py-4 rounded-xl bg-green-600 text-white font-bold
+                                        hover:bg-green-700 transition-all flex items-center justify-center gap-2 shadow-sm"
                                 >
                                     <RefreshCw className="w-5 h-5" />
                                     Nuovo Calcolo
@@ -807,22 +807,22 @@ export default function CalcoloBlocchiPage() {
 
             {/* Coming Soon Tab */}
             {activeTab === 'future' && (
-                <div className="bg-zinc-900/50 backdrop-blur-sm rounded-2xl border border-white/10 p-8 text-center">
-                    <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-zinc-800 flex items-center justify-center">
-                        <Package className="w-10 h-10 text-zinc-600" />
+                <div className="master-card p-8 text-center">
+                    <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gray-100 flex items-center justify-center">
+                        <Package className="w-10 h-10 text-gray-400" />
                     </div>
-                    <h2 className="text-xl font-semibold text-white mb-2">Funzionalità in Arrivo</h2>
-                    <p className="text-zinc-400">Questa sezione sarà disponibile prossimamente.</p>
+                    <h2 className="text-xl font-semibold text-gray-900 mb-2">Funzionalità in Arrivo</h2>
+                    <p className="text-gray-500">Questa sezione sarà disponibile prossimamente.</p>
                 </div>
             )}
 
             {/* 3D Viewer Modal */}
             {show3D && result && (
                 <Suspense fallback={
-                    <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
+                    <div className="fixed inset-0 z-50 bg-white/80 backdrop-blur-sm flex items-center justify-center">
                         <div className="text-center">
-                            <div className="w-16 h-16 border-4 border-violet-500/30 border-t-violet-500 rounded-full animate-spin mx-auto mb-4" />
-                            <p className="text-white text-lg">Caricamento Vista 3D...</p>
+                            <div className="w-16 h-16 border-4 border-green-200 border-t-green-600 rounded-full animate-spin mx-auto mb-4" />
+                            <p className="text-gray-700 text-lg">Caricamento Vista 3D...</p>
                         </div>
                     </div>
                 }>

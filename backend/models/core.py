@@ -25,6 +25,8 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(50), unique=True, index=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
+    pin_hash = Column(String(255), nullable=True)       # bcrypt hash del PIN a 4 cifre
+    pin_required = Column(Boolean, default=True)         # Se True, PIN obbligatorio al login
     full_name = Column(String(100), nullable=False)
     email = Column(String(100), nullable=True)
     
@@ -56,6 +58,11 @@ class User(Base):
     def employee_id(self):
         """Ritorna ID dipendente collegato (se esiste)."""
         return self.employee.id if hasattr(self, 'employee') and self.employee else None
+
+    @property
+    def has_pin(self):
+        """Ritorna True se l'utente ha configurato un PIN."""
+        return self.pin_hash is not None
 
     @property
     def role_label(self):

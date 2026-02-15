@@ -443,4 +443,79 @@ async def delete_user(
         )
 
 
+# ============================================================
+# PIN MANAGEMENT (Admin Only)
+# ============================================================
 
+@router.patch("/{user_id}/reset-pin", response_model=MessageResponse, summary="Reset PIN Utente")
+async def reset_user_pin(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_admin)
+):
+    """
+    Resetta il PIN di un utente (lo forza a reimpostarlo al prossimo login).
+    
+    ⚠️ **Solo Super Admin**
+    """
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Utente non trovato"
+        )
+    
+    user.pin_hash = None  # Rimuovi PIN → al prossimo login dovrà reimpostarlo
+    
+    log = AuditLog(
+        user_id=current_user.id,
+        action="PIN_RESET",
+        details=f"PIN resettato per utente: {user.username}"
+    )
+    db.add(log)
+    db.commit()
+    
+    return {"message": f"PIN di {user.username} resettato. Dovrà reimpostarlo al prossimo accesso.", "success": True}
+
+
+@router.patch("/{user_id}/set-pin", response_model=MessageResponse, summary="Imposta PIN Utente")
+async def set_user_pin(
+    user_id: int,
+    pin_data: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_admin)
+):
+    """
+    Admin imposta un PIN specifico per un utente.
+    
+    ⚠️ **Solo Super Admin**
+
+    - **pin**: PIN a 4 cifre numeriche
+    """
+    import re
+    pin = pin_data.get("pin", "")
+    
+    if not re.match(r'^\d{4}$', pin):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Il PIN deve essere esattamente 4 cifre numeriche"
+        )
+    
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Utente non trovato"
+        )
+    
+    user.pin_hash = get_password_hash(pin)
+    
+    log = AuditLog(
+        user_id=current_user.id,
+        action="PIN_SET_BY_ADMIN",
+        details=f"PIN impostato dall'admin per utente: {user.username}"
+    )
+    db.add(log)
+    db.commit()
+    
+    return {"message": f"PIN impostato per {user.username}.", "success": True}

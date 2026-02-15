@@ -55,9 +55,9 @@ const DocumentsTab = ({ employeeId, employeeName }) => {
         }
     };
 
-    const openPreview = (filePath) => {
+    const openPreview = (path) => {
         // Base URL for static files served by backend
-        const url = `/uploads/${fileName}`;
+        const url = `/uploads/${path}`;
         setPreviewUrl(url);
     };
 
@@ -85,81 +85,91 @@ const DocumentsTab = ({ employeeId, employeeName }) => {
     return (
         <div className="space-y-6">
             {/* Upload Form */}
-            <form onSubmit={handleUpload} className="bg-black/20 rounded-lg p-4 space-y-4">
-                <h4 className="text-white font-medium">Carica Nuovo Documento</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <select
-                        value={newDoc.type}
-                        onChange={(e) => setNewDoc(prev => ({ ...prev, type: e.target.value }))}
-                        className="bg-slate-700 border border-white/10 rounded px-3 py-2 text-white"
-                    >
-                        {docTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                    </select>
-                    <input
-                        type="text"
-                        placeholder="Nome documento (opzionale)"
-                        value={newDoc.name}
-                        onChange={(e) => setNewDoc(prev => ({ ...prev, name: e.target.value }))}
-                        className="bg-slate-700 border border-white/10 rounded px-3 py-2 text-white"
-                    />
-                    <input
-                        type="file"
-                        accept=".pdf,.jpg,.jpeg,.png"
-                        onChange={(e) => setNewDoc(prev => ({ ...prev, file: e.target.files[0] }))}
-                        className="text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-blue-600 file:text-white file:cursor-pointer"
-                    />
+            <form onSubmit={handleUpload} className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+                <h4 className="text-slate-800 font-semibold mb-4 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                    Carica Nuovo Documento
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                    <div>
+                        <label className="block text-xs text-slate-500 mb-1 uppercase tracking-wider font-medium">Tipo</label>
+                        <select
+                            value={newDoc.type}
+                            onChange={(e) => setNewDoc(prev => ({ ...prev, type: e.target.value }))}
+                            className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            {docTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-xs text-slate-500 mb-1 uppercase tracking-wider font-medium">Nome (opzionale)</label>
+                        <input
+                            type="text"
+                            placeholder="Nome documento"
+                            value={newDoc.name}
+                            onChange={(e) => setNewDoc(prev => ({ ...prev, name: e.target.value }))}
+                            className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs text-slate-500 mb-1 uppercase tracking-wider font-medium">File</label>
+                        <input
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            onChange={(e) => setNewDoc(prev => ({ ...prev, file: e.target.files[0] }))}
+                            className="w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border file:border-slate-300 file:text-sm file:font-medium file:bg-slate-50 file:text-slate-700 hover:file:bg-slate-100 file:cursor-pointer"
+                        />
+                    </div>
                 </div>
-                <button
-                    type="submit"
-                    disabled={uploading}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition disabled:opacity-50"
-                >
-                    {uploading ? 'Caricamento...' : 'Carica'}
-                </button>
+                <div className="flex justify-end mt-4">
+                    <button
+                        type="submit"
+                        disabled={uploading}
+                        className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition disabled:opacity-50 cursor-pointer"
+                    >
+                        {uploading ? 'Caricamento...' : 'Carica'}
+                    </button>
+                </div>
             </form>
 
             {/* Documents List */}
-            {documents.length === 0 ? (
-                <p className="text-gray-400 text-center py-8">Nessun documento caricato</p>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {documents.map(doc => (
-                        <div key={doc.id} className="bg-slate-700/50 rounded-lg p-4 flex items-center justify-between">
-                            <div>
-                                <p className="text-white font-medium">{doc.doc_name}</p>
-                                <p className="text-gray-400 text-sm">{docTypes.find(t => t.value === doc.doc_type)?.label || doc.doc_type}</p>
-                                <p className="text-gray-500 text-xs">{new Date(doc.uploaded_at).toLocaleDateString('it-IT')}</p>
+            {
+                documents.length === 0 ? (
+                    <p className="text-gray-500 text-center py-8">Nessun documento caricato</p>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {documents.map(doc => (
+                            <div key={doc.id} className="bg-white border border-slate-200 rounded-xl p-4 flex items-center justify-between group hover:shadow-md transition-shadow">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                                        <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                    </div>
+                                    <div>
+                                        <p className="text-slate-800 font-medium">{doc.doc_name}</p>
+                                        <p className="text-xs text-slate-400">{docTypes.find(t => t.value === doc.doc_type)?.label || doc.doc_type} • {new Date(doc.uploaded_at).toLocaleDateString('it-IT')}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button onClick={() => openPreview(doc.file_path)} className="px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 rounded-lg text-sm transition cursor-pointer">Anteprima</button>
+                                    <a href={`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/employees/${employeeId}/documents/${doc.id}/download`} target="_blank" rel="noreferrer" className="px-3 py-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-sm transition">Scarica</a>
+                                    <button onClick={() => handleDelete(doc)} className="px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 rounded-lg text-sm transition cursor-pointer">Elimina</button>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    onClick={() => openPreview(doc.file_path)}
-                                    className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/30 transition"
-                                >
-                                    Visualizza
-                                </button>
-                                <button
-                                    onClick={() => handleDelete(doc)}
-                                    className="px-3 py-1 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30 transition"
-                                >
-                                    🗑️
-                                </button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            )
+                        ))}
+                    </div>
+                )
             }
 
             {/* PDF Preview Modal */}
             {
                 previewUrl && (
-                    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50" onClick={() => setPreviewUrl(null)}>
-                        <div className="bg-slate-800 rounded-lg w-11/12 h-5/6 p-4 flex flex-col" onClick={(e) => e.stopPropagation()}>
-                            <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-white font-semibold">Anteprima Documento</h3>
-                                <button onClick={() => setPreviewUrl(null)} className="text-gray-400 hover:text-white text-2xl">&times;</button>
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setPreviewUrl(null)}>
+                        <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[80vh] overflow-auto border border-slate-200" onClick={e => e.stopPropagation()}>
+                            <div className="flex justify-between items-center p-4 border-b border-slate-200">
+                                <h3 className="text-slate-800 font-bold text-lg">Anteprima Documento</h3>
+                                <button onClick={() => setPreviewUrl(null)} className="text-slate-400 hover:text-slate-700 text-2xl cursor-pointer">&times;</button>
                             </div>
-                            <iframe src={previewUrl} className="flex-1 rounded bg-white" title="PDF Preview" />
+                            <iframe src={previewUrl} className="w-full h-[calc(80vh-70px)] bg-white" title="PDF Preview" />
                         </div>
                     </div>
                 )
@@ -260,32 +270,32 @@ const CertificationsTab = ({ employeeId, employeeName }) => {
     };
 
     const statusStyles = {
-        valid: 'bg-green-500/20 text-green-400',
-        warning: 'bg-orange-500/20 text-orange-400',
-        expired: 'bg-red-500/20 text-red-400',
+        valid: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+        warning: 'bg-amber-50 text-amber-700 border border-amber-200',
+        expired: 'bg-red-50 text-red-600 border border-red-200',
     };
 
-    if (loading) return <div className="text-gray-400 text-center py-8">Caricamento certificazioni...</div>;
+    if (loading) return <div className="text-slate-400 text-center py-8">Caricamento certificazioni...</div>;
 
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
-                <h4 className="text-white font-medium">Certificazioni e Patentini</h4>
+                <h4 className="text-slate-800 font-semibold">Certificazioni e Patentini</h4>
                 <button
                     onClick={() => setShowForm(!showForm)}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition"
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition cursor-pointer font-medium"
                 >
                     + Aggiungi
                 </button>
             </div>
 
             {showForm && (
-                <form onSubmit={handleSubmit} className="bg-black/20 rounded-lg p-4 space-y-4">
+                <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <select
                             value={formData.cert_type}
                             onChange={(e) => setFormData(prev => ({ ...prev, cert_type: e.target.value }))}
-                            className="bg-slate-700 border border-white/10 rounded px-3 py-2 text-white"
+                            className="bg-white border border-slate-300 rounded-md px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                             {certTypes.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                         </select>
@@ -294,45 +304,45 @@ const CertificationsTab = ({ employeeId, employeeName }) => {
                             placeholder="Nome/Descrizione"
                             value={formData.cert_name}
                             onChange={(e) => setFormData(prev => ({ ...prev, cert_name: e.target.value }))}
-                            className="bg-slate-700 border border-white/10 rounded px-3 py-2 text-white"
+                            className="bg-white border border-slate-300 rounded-md px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                         <div>
-                            <label className="text-gray-400 text-sm">Data Rilascio</label>
+                            <label className="text-slate-500 text-sm">Data Rilascio</label>
                             <input
                                 type="date"
                                 value={formData.issue_date}
                                 onChange={(e) => setFormData(prev => ({ ...prev, issue_date: e.target.value }))}
-                                className="w-full bg-slate-700 border border-white/10 rounded px-3 py-2 text-white"
+                                className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </div>
                         <div>
-                            <label className="text-gray-400 text-sm">Data Scadenza</label>
+                            <label className="text-slate-500 text-sm">Data Scadenza</label>
                             <input
                                 type="date"
                                 value={formData.expiry_date}
                                 onChange={(e) => setFormData(prev => ({ ...prev, expiry_date: e.target.value }))}
-                                className="w-full bg-slate-700 border border-white/10 rounded px-3 py-2 text-white"
+                                className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </div>
                     </div>
                     <div className="flex gap-2">
-                        <button type="submit" className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded">{editingId ? 'Aggiorna' : 'Salva'}</button>
-                        <button type="button" onClick={() => { setShowForm(false); setEditingId(null); }} className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded">Annulla</button>
+                        <button type="submit" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg cursor-pointer font-medium">{editingId ? 'Aggiorna' : 'Salva'}</button>
+                        <button type="button" onClick={() => { setShowForm(false); setEditingId(null); }} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg cursor-pointer border border-slate-300">Annulla</button>
                     </div>
                 </form>
             )}
 
             {certifications.length === 0 ? (
-                <p className="text-gray-400 text-center py-8">Nessuna certificazione registrata</p>
+                <p className="text-slate-400 text-center py-8">Nessuna certificazione registrata</p>
             ) : (
                 <div className="space-y-3">
                     {certifications.map(cert => {
                         const status = getExpiryStatus(cert.expiry_date);
                         return (
-                            <div key={cert.id} className="bg-slate-700/50 rounded-lg p-4 flex items-center justify-between">
+                            <div key={cert.id} className="bg-white border border-slate-200 rounded-xl p-4 flex items-center justify-between hover:shadow-md transition-shadow">
                                 <div>
-                                    <p className="text-white font-medium">{cert.cert_name || certTypes.find(t => t.value === cert.cert_type)?.label}</p>
-                                    <p className="text-gray-400 text-sm">
+                                    <p className="text-slate-800 font-medium">{cert.cert_name || certTypes.find(t => t.value === cert.cert_type)?.label}</p>
+                                    <p className="text-slate-400 text-sm">
                                         Rilasciato: {cert.issue_date ? new Date(cert.issue_date).toLocaleDateString('it-IT') : 'N/D'}
                                     </p>
                                 </div>
@@ -340,20 +350,22 @@ const CertificationsTab = ({ employeeId, employeeName }) => {
                                     <span className={`px-3 py-1 rounded-full text-sm ${statusStyles[status]}`}>
                                         {cert.expiry_date ? new Date(cert.expiry_date).toLocaleDateString('it-IT') : 'Nessuna scadenza'}
                                     </span>
-                                    {status === 'expired' && <p className="text-red-400 text-xs mt-1">SCADUTO</p>}
-                                    {status === 'warning' && <p className="text-orange-400 text-xs mt-1">In scadenza</p>}
+                                    {status === 'expired' && <p className="text-red-600 text-xs mt-1 font-bold">SCADUTO</p>}
+                                    {status === 'warning' && <p className="text-amber-600 text-xs mt-1 font-bold">In scadenza</p>}
                                     <div className="flex gap-2 mt-1">
                                         <button
                                             onClick={() => handleEdit(cert)}
-                                            className="text-blue-400 hover:text-blue-300 text-xs flex items-center gap-1"
+                                            className="text-blue-600 hover:text-blue-800 text-xs flex items-center gap-1 cursor-pointer"
                                         >
-                                            ✏️ Modifica
+                                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                            Modifica
                                         </button>
                                         <button
                                             onClick={() => handleDelete(cert.id, cert.cert_name || certTypes.find(t => t.value === cert.cert_type)?.label)}
-                                            className="text-red-400 hover:text-red-300 text-xs flex items-center gap-1"
+                                            className="text-red-500 hover:text-red-700 text-xs flex items-center gap-1 cursor-pointer"
                                         >
-                                            🗑️ Elimina
+                                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                            Elimina
                                         </button>
                                     </div>
                                 </div>
@@ -383,10 +395,10 @@ const MedicalTab = ({ employeeId, employeeName }) => {
     ];
 
     const outcomeStyles = {
-        fit: 'bg-green-500/20 text-green-400',
-        fit_with_limits: 'bg-yellow-500/20 text-yellow-400',
-        unfit: 'bg-red-500/20 text-red-400',
-        pending: 'bg-gray-500/20 text-gray-400',
+        fit: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+        fit_with_limits: 'bg-amber-50 text-amber-700 border border-amber-200',
+        unfit: 'bg-red-50 text-red-600 border border-red-200',
+        pending: 'bg-slate-50 text-slate-500 border border-slate-200',
     };
 
     const loadExams = useCallback(async () => {
@@ -458,46 +470,46 @@ const MedicalTab = ({ employeeId, employeeName }) => {
         }
     };
 
-    if (loading) return <div className="text-gray-400 text-center py-8">Caricamento visite mediche...</div>;
+    if (loading) return <div className="text-slate-400 text-center py-8">Caricamento visite mediche...</div>;
 
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
-                <h4 className="text-white font-medium">Visite Mediche</h4>
+                <h4 className="text-slate-800 font-semibold">Visite Mediche</h4>
                 <button
                     onClick={() => setShowForm(!showForm)}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition"
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition cursor-pointer font-medium"
                 >
                     + Aggiungi Visita
                 </button>
             </div>
 
             {showForm && (
-                <form onSubmit={handleSubmit} className="bg-black/20 rounded-lg p-4 space-y-4">
+                <form onSubmit={handleSubmit} className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="text-gray-400 text-sm">Data Visita</label>
+                            <label className="text-slate-500 text-sm">Data Visita</label>
                             <input
                                 type="date"
                                 value={formData.exam_date}
                                 onChange={(e) => setFormData(prev => ({ ...prev, exam_date: e.target.value }))}
-                                className="w-full bg-slate-700 border border-white/10 rounded px-3 py-2 text-white"
+                                className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 required
                             />
                         </div>
                         <div>
-                            <label className="text-gray-400 text-sm">Prossima Visita</label>
+                            <label className="text-slate-500 text-sm">Prossima Visita</label>
                             <input
                                 type="date"
                                 value={formData.next_exam_date}
                                 onChange={(e) => setFormData(prev => ({ ...prev, next_exam_date: e.target.value }))}
-                                className="w-full bg-slate-700 border border-white/10 rounded px-3 py-2 text-white"
+                                className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </div>
                         <select
                             value={formData.outcome}
                             onChange={(e) => setFormData(prev => ({ ...prev, outcome: e.target.value }))}
-                            className="bg-slate-700 border border-white/10 rounded px-3 py-2 text-white"
+                            className="bg-white border border-slate-300 rounded-md px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                             {outcomes.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                         </select>
@@ -506,49 +518,51 @@ const MedicalTab = ({ employeeId, employeeName }) => {
                             placeholder="Note / Limitazioni"
                             value={formData.notes}
                             onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                            className="bg-slate-700 border border-white/10 rounded px-3 py-2 text-white"
+                            className="bg-white border border-slate-300 rounded-md px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                     </div>
                     <div className="flex gap-2">
-                        <button type="submit" className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded">{editingId ? 'Aggiorna' : 'Salva'}</button>
-                        <button type="button" onClick={() => { setShowForm(false); setEditingId(null); }} className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded">Annulla</button>
+                        <button type="submit" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg cursor-pointer font-medium">{editingId ? 'Aggiorna' : 'Salva'}</button>
+                        <button type="button" onClick={() => { setShowForm(false); setEditingId(null); }} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg cursor-pointer border border-slate-300">Annulla</button>
                     </div>
                 </form>
             )}
 
             {exams.length === 0 ? (
-                <p className="text-gray-400 text-center py-8">Nessuna visita medica registrata</p>
+                <p className="text-slate-400 text-center py-8">Nessuna visita medica registrata</p>
             ) : (
                 <div className="space-y-3">
                     {exams.map(exam => (
-                        <div key={exam.id} className="bg-slate-700/50 rounded-lg p-4 flex items-center justify-between">
+                        <div key={exam.id} className="bg-white border border-slate-200 rounded-xl p-4 flex items-center justify-between hover:shadow-md transition-shadow">
                             <div>
-                                <p className="text-white font-medium">
+                                <p className="text-slate-800 font-medium">
                                     Visita del {new Date(exam.exam_date).toLocaleDateString('it-IT')}
                                 </p>
-                                {exam.notes && <p className="text-gray-400 text-sm">{exam.notes}</p>}
+                                {exam.notes && <p className="text-slate-400 text-sm">{exam.notes}</p>}
                             </div>
                             <div className="text-right flex flex-col items-end gap-2">
                                 <span className={`px-3 py-1 rounded-full text-sm ${outcomeStyles[exam.outcome]}`}>
                                     {outcomes.find(o => o.value === exam.outcome)?.label}
                                 </span>
                                 {exam.next_exam_date && (
-                                    <p className="text-gray-400 text-xs mt-1">
+                                    <p className="text-slate-400 text-xs mt-1">
                                         Prossima: {new Date(exam.next_exam_date).toLocaleDateString('it-IT')}
                                     </p>
                                 )}
                                 <div className="flex gap-2 mt-1">
                                     <button
                                         onClick={() => handleEdit(exam)}
-                                        className="text-blue-400 hover:text-blue-300 text-xs flex items-center gap-1"
+                                        className="text-blue-600 hover:text-blue-800 text-xs flex items-center gap-1 cursor-pointer"
                                     >
-                                        ✏️ Modifica
+                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                        Modifica
                                     </button>
                                     <button
                                         onClick={() => handleDelete(exam.id, exam.exam_date)}
-                                        className="text-red-400 hover:text-red-300 text-xs flex items-center gap-1"
+                                        className="text-red-500 hover:text-red-700 text-xs flex items-center gap-1 cursor-pointer"
                                     >
-                                        🗑️ Elimina
+                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                        Elimina
                                     </button>
                                 </div>
                             </div>
@@ -611,49 +625,52 @@ const EventsTab = ({ employeeId, employeeName }) => {
         });
     };
 
-    if (loading) return <div className="text-gray-400 text-center py-8">Caricamento eventi...</div>;
+    if (loading) return <div className="text-slate-400 text-center py-8">Caricamento eventi...</div>;
 
     return (
         <div className="space-y-6">
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className={`rounded-xl p-4 ${timeline.total_points >= 0 ? 'bg-green-500/10 border border-green-500/30' : 'bg-red-500/10 border border-red-500/30'}`}>
-                    <p className="text-gray-400 text-sm">Punteggio Totale</p>
-                    <p className={`text-3xl font-bold ${timeline.total_points >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                    <p className="text-slate-500 text-sm">Punteggio Totale</p>
+                    <p className={`text-3xl font-bold ${timeline.total_points >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                         {timeline.total_points > 0 ? '+' : ''}{timeline.total_points}
                     </p>
                 </div>
-                <div className="rounded-xl p-4 bg-green-500/10 border border-green-500/30">
-                    <p className="text-gray-400 text-sm">Eventi Positivi</p>
-                    <p className="text-3xl font-bold text-green-400">{timeline.positive_count}</p>
+                <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                    <p className="text-slate-500 text-sm">Eventi Positivi</p>
+                    <p className="text-3xl font-bold text-emerald-600">{timeline.positive_count}</p>
                 </div>
-                <div className="rounded-xl p-4 bg-red-500/10 border border-red-500/30">
-                    <p className="text-gray-400 text-sm">Eventi Negativi</p>
-                    <p className="text-3xl font-bold text-red-400">{timeline.negative_count}</p>
+                <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                    <p className="text-slate-500 text-sm">Eventi Negativi</p>
+                    <p className="text-3xl font-bold text-red-600">{timeline.negative_count}</p>
                 </div>
-                <div className="rounded-xl p-4 bg-purple-500/10 border border-purple-500/30">
-                    <p className="text-gray-400 text-sm">Badge Ottenuti</p>
-                    <p className="text-3xl font-bold text-purple-400">{badges.length}</p>
+                <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                    <p className="text-slate-500 text-sm">Badge Ottenuti</p>
+                    <p className="text-3xl font-bold text-purple-600">{badges.length}</p>
                 </div>
             </div>
 
             {/* Badges Section */}
             {badges.length > 0 && (
-                <div className="bg-slate-700/30 rounded-xl p-4">
-                    <h4 className="text-white font-medium mb-3">🏆 Badge</h4>
+                <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+                    <h4 className="text-slate-800 font-semibold mb-3 flex items-center gap-2">
+                        <svg className="w-5 h-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
+                        Badge
+                    </h4>
                     <div className="flex flex-wrap gap-3">
                         {badges.map(badge => (
                             <div
                                 key={badge.id}
-                                className={`flex items-center gap-2 px-3 py-2 rounded-lg ${badge.badge_type === 'positive'
-                                    ? 'bg-green-500/20 border border-green-500/30'
-                                    : 'bg-red-500/20 border border-red-500/30'
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${badge.badge_type === 'positive'
+                                    ? 'bg-emerald-50 border-emerald-200'
+                                    : 'bg-red-50 border-red-200'
                                     }`}
                             >
                                 <span className="text-2xl">{badge.badge_icon}</span>
                                 <div>
-                                    <p className="text-white text-sm font-medium">{badge.badge_name}</p>
-                                    <p className="text-gray-400 text-xs">{formatDate(badge.earned_at)}</p>
+                                    <p className="text-slate-800 text-sm font-medium">{badge.badge_name}</p>
+                                    <p className="text-slate-400 text-xs">{formatDate(badge.earned_at)}</p>
                                 </div>
                             </div>
                         ))}
@@ -663,10 +680,13 @@ const EventsTab = ({ employeeId, employeeName }) => {
 
             {/* Quick Add Event Button */}
             <div className="flex justify-between items-center">
-                <h4 className="text-white font-medium">📋 Storico Eventi</h4>
+                <h4 className="text-slate-800 font-semibold flex items-center gap-2">
+                    <svg className="w-5 h-5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+                    Storico Eventi
+                </h4>
                 <Link
                     to={`/hr/events/new?employee=${employeeId}`}
-                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition flex items-center gap-2 text-sm"
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition flex items-center gap-2 text-sm cursor-pointer font-medium"
                 >
                     + Nuovo Evento
                 </Link>
@@ -675,52 +695,49 @@ const EventsTab = ({ employeeId, employeeName }) => {
             {/* Events Timeline */}
             {timeline.events.length === 0 ? (
                 <div className="text-center py-12">
-                    <p className="text-gray-500 text-lg">Nessun evento registrato</p>
-                    <p className="text-gray-600 text-sm mt-2">Gli eventi positivi e negativi appariranno qui</p>
+                    <p className="text-slate-400 text-lg">Nessun evento registrato</p>
+                    <p className="text-slate-500 text-sm mt-2">Gli eventi positivi e negativi appariranno qui</p>
                 </div>
             ) : (
                 <div className="relative">
                     {/* Timeline Line */}
-                    <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-white/10"></div>
+                    <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-slate-200"></div>
 
                     <div className="space-y-4">
-                        {timeline.events.map((event, index) => {
+                        {timeline.events.map((event) => {
                             const isPositive = event.points > 0;
                             return (
                                 <div key={event.id} className="relative pl-12">
                                     {/* Timeline Dot */}
                                     <div className={`absolute left-2 w-5 h-5 rounded-full border-2 ${isPositive
-                                        ? 'bg-green-500/20 border-green-500'
-                                        : 'bg-red-500/20 border-red-500'
+                                        ? 'bg-emerald-50 border-emerald-500'
+                                        : 'bg-red-50 border-red-500'
                                         }`}>
-                                        <div className={`absolute inset-1 rounded-full ${isPositive ? 'bg-green-500' : 'bg-red-500'
+                                        <div className={`absolute inset-1 rounded-full ${isPositive ? 'bg-emerald-500' : 'bg-red-500'
                                             }`}></div>
                                     </div>
 
                                     {/* Event Card */}
-                                    <div className={`rounded-xl p-4 ${isPositive
-                                        ? 'bg-green-500/5 border border-green-500/20'
-                                        : 'bg-red-500/5 border border-red-500/20'
-                                        }`}>
+                                    <div className={`bg-white rounded-xl p-4 border border-slate-200 shadow-sm ${!isPositive ? 'border-l-4 border-l-red-500' : ''}`}>
                                         <div className="flex items-start justify-between">
                                             <div>
-                                                <p className="text-white font-medium">{event.label}</p>
+                                                <p className="text-slate-800 font-medium">{event.label}</p>
                                                 {event.description && (
-                                                    <p className="text-gray-400 text-sm mt-1">{event.description}</p>
+                                                    <p className="text-slate-400 text-sm mt-1">{event.description}</p>
                                                 )}
-                                                <p className="text-gray-500 text-xs mt-2">{formatDate(event.date)}</p>
+                                                <p className="text-slate-400 text-xs mt-2">{formatDate(event.date)}</p>
                                             </div>
                                             <div className="flex flex-col items-end gap-2">
-                                                <span className={`text-xl font-bold ${isPositive ? 'text-green-400' : 'text-red-400'
+                                                <span className={`text-xl font-bold ${isPositive ? 'text-emerald-600' : 'text-red-600'
                                                     }`}>
                                                     {event.points > 0 ? '+' : ''}{event.points}
                                                 </span>
                                                 <button
                                                     onClick={() => handleDeleteEvent(event)}
-                                                    className="text-white/40 hover:text-red-400 transition"
+                                                    className="text-slate-300 hover:text-red-500 transition cursor-pointer"
                                                     title="Elimina evento"
                                                 >
-                                                    🗑️
+                                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                                 </button>
                                             </div>
                                         </div>
@@ -753,13 +770,13 @@ const LogisticsTab = ({ employeeId }) => {
         loadPerf();
     }, [employeeId]);
 
-    if (loading) return <div className="text-gray-400 text-center py-8">Caricamento performance...</div>;
+    if (loading) return <div className="text-slate-400 text-center py-8">Caricamento performance...</div>;
 
     if (!performance || performance.missions_completed === 0) {
         return (
             <div className="text-center py-12">
-                <p className="text-gray-500 text-lg">Nessuna attività logistica registrata</p>
-                <p className="text-gray-600 text-sm mt-2">I dati appariranno qui quando il dipendente completerà missioni di magazzino</p>
+                <p className="text-slate-400 text-lg">Nessuna attività logistica registrata</p>
+                <p className="text-slate-500 text-sm mt-2">I dati appariranno qui quando il dipendente completerà missioni di magazzino</p>
             </div>
         );
     }
@@ -767,53 +784,53 @@ const LogisticsTab = ({ employeeId }) => {
     return (
         <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="rounded-xl p-4 bg-blue-500/10 border border-blue-500/30">
-                    <p className="text-gray-400 text-sm">Punti Totali</p>
-                    <p className="text-3xl font-bold text-blue-400">{performance.net_points}</p>
+                <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                    <p className="text-slate-500 text-sm">Punti Totali</p>
+                    <p className="text-3xl font-bold text-blue-600">{performance.net_points}</p>
                 </div>
-                <div className="rounded-xl p-4 bg-green-500/10 border border-green-500/30">
-                    <p className="text-gray-400 text-sm">Missioni Completate</p>
-                    <p className="text-3xl font-bold text-green-400">{performance.missions_completed}</p>
+                <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                    <p className="text-slate-500 text-sm">Missioni Completate</p>
+                    <p className="text-3xl font-bold text-emerald-600">{performance.missions_completed}</p>
                 </div>
-                <div className="rounded-xl p-4 bg-yellow-500/10 border border-yellow-500/30">
-                    <p className="text-gray-400 text-sm">Reazione Media</p>
-                    <p className="text-3xl font-bold text-yellow-400">{performance.avg_reaction_seconds}s</p>
+                <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                    <p className="text-slate-500 text-sm">Reazione Media</p>
+                    <p className="text-3xl font-bold text-amber-600">{performance.avg_reaction_seconds}s</p>
                 </div>
-                <div className="rounded-xl p-4 bg-red-500/10 border border-red-500/30">
-                    <p className="text-gray-400 text-sm">Urgenti Gestite</p>
-                    <p className="text-3xl font-bold text-red-400">{performance.missions_urgent}</p>
+                <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                    <p className="text-slate-500 text-sm">Urgenti Gestite</p>
+                    <p className="text-3xl font-bold text-red-600">{performance.missions_urgent}</p>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-slate-700/30 rounded-xl p-4">
-                    <h4 className="text-white font-medium mb-4">Dettagli Performance</h4>
+                <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+                    <h4 className="text-slate-800 font-semibold mb-4">Dettagli Performance</h4>
                     <div className="space-y-3">
-                        <div className="flex justify-between items-center p-2 bg-slate-800/50 rounded">
-                            <span className="text-gray-400">Punti Lordi</span>
-                            <span className="text-white font-bold">{performance.total_points}</span>
+                        <div className="flex justify-between items-center p-2 bg-slate-50 rounded border border-slate-100">
+                            <span className="text-slate-500">Punti Lordi</span>
+                            <span className="text-slate-800 font-bold">{performance.total_points}</span>
                         </div>
-                        <div className="flex justify-between items-center p-2 bg-slate-800/50 rounded">
-                            <span className="text-gray-400">Penalità</span>
-                            <span className="text-red-400 font-bold">-{performance.penalties_received}</span>
+                        <div className="flex justify-between items-center p-2 bg-slate-50 rounded border border-slate-100">
+                            <span className="text-slate-500">Penalità</span>
+                            <span className="text-red-600 font-bold">-{performance.penalties_received}</span>
                         </div>
-                        <div className="flex justify-between items-center p-2 bg-slate-800/50 rounded">
-                            <span className="text-gray-400">Missioni Rilasciate</span>
-                            <span className="text-white">{performance.missions_released}</span>
+                        <div className="flex justify-between items-center p-2 bg-slate-50 rounded border border-slate-100">
+                            <span className="text-slate-500">Missioni Rilasciate</span>
+                            <span className="text-slate-800">{performance.missions_released}</span>
                         </div>
-                        <div className="flex justify-between items-center p-2 bg-slate-800/50 rounded">
-                            <span className="text-gray-400">Record Velocità</span>
-                            <span className="text-green-400 font-bold">{performance.fastest_reaction_seconds}s</span>
+                        <div className="flex justify-between items-center p-2 bg-slate-50 rounded border border-slate-100">
+                            <span className="text-slate-500">Record Velocità</span>
+                            <span className="text-emerald-600 font-bold">{performance.fastest_reaction_seconds}s</span>
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-slate-700/30 rounded-xl p-4 flex flex-col items-center justify-center text-center">
+                <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col items-center justify-center text-center">
                     <div className="w-32 h-32 rounded-full border-4 border-blue-500 flex items-center justify-center mb-4">
-                        <span className="text-3xl font-bold text-white">{performance.eta_accuracy_percent}%</span>
+                        <span className="text-3xl font-bold text-slate-800">{performance.eta_accuracy_percent}%</span>
                     </div>
-                    <p className="text-white font-medium">Accuratezza ETA</p>
-                    <p className="text-gray-400 text-sm">Percentuale missioni completate entro l'ETA promesso</p>
+                    <p className="text-slate-800 font-medium">Accuratezza ETA</p>
+                    <p className="text-slate-400 text-sm">Percentuale missioni completate entro l'ETA promesso</p>
                 </div>
             </div>
         </div>
@@ -830,10 +847,10 @@ const AbsenceTab = ({ employeeId, employeeName }) => {
 
     // Status styles map
     const ABSENCE_STATUS = {
-        pending: { label: 'In Attesa', color: 'text-yellow-400 bg-yellow-400/10 border-yellow-400/20' },
-        approved: { label: 'Approvata', color: 'text-green-400 bg-green-400/10 border-green-400/20' },
-        rejected: { label: 'Rifiutata', color: 'text-red-400 bg-red-400/10 border-red-400/20' },
-        cancelled: { label: 'Annullata', color: 'text-gray-400 bg-gray-400/10 border-gray-400/20' },
+        pending: { label: 'In Attesa', color: 'text-amber-700 bg-amber-50 border-amber-200' },
+        approved: { label: 'Approvata', color: 'text-emerald-700 bg-emerald-50 border-emerald-200' },
+        rejected: { label: 'Rifiutata', color: 'text-red-600 bg-red-50 border-red-200' },
+        cancelled: { label: 'Annullata', color: 'text-slate-500 bg-slate-50 border-slate-200' },
     };
 
     const LEAVE_LABELS = {
@@ -917,43 +934,43 @@ const AbsenceTab = ({ employeeId, employeeName }) => {
             // Rimuovi subito dalla lista per feedback immediato
             setAbsences(prev => prev.filter(l => l.id !== leave.id));
             // Non ricarichiamo loadAbsences() per evitare race condition dove il server restituisce ancora il dato vecchio
-        } catch (e) {
+        } catch {
             toast.error("Errore durante l'eliminazione");
         }
     };
 
     useEffect(() => { loadAbsences(); }, [loadAbsences]);
 
-    if (loading) return <div className="text-center py-8 text-gray-400">Caricamento assenze...</div>;
+    if (loading) return <div className="text-center py-8 text-slate-400">Caricamento assenze...</div>;
 
     return (
         <div className="space-y-4">
             {/* Edit Modal */}
             {showEditForm && (
-                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={() => setShowEditForm(false)}>
-                    <div className="bg-slate-800 rounded-xl p-6 w-full max-w-md space-y-4 border border-white/10 shadow-2xl" onClick={e => e.stopPropagation()}>
-                        <h3 className="text-lg font-bold text-white">Modifica Assenza</h3>
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowEditForm(false)}>
+                    <div className="bg-white rounded-xl p-6 w-full max-w-md space-y-4 border border-slate-200 shadow-2xl" onClick={ev => ev.stopPropagation()}>
+                        <h3 className="text-lg font-bold text-slate-800">Modifica Assenza</h3>
 
                         <form onSubmit={handleUpdate} className="space-y-4">
                             <div>
-                                <label className="text-xs text-gray-400 block mb-2">Tipo Assenza</label>
+                                <label className="text-xs text-slate-500 block mb-2 uppercase tracking-wider font-medium">Tipo Assenza</label>
                                 <div className="grid grid-cols-2 gap-2">
                                     {Object.entries(LEAVE_LABELS).map(([key, info]) => {
                                         const isSelected = formData.leave_type === key;
                                         const colorMap = {
-                                            blue: 'border-blue-500 bg-blue-500/20 text-blue-400',
-                                            red: 'border-red-500 bg-red-500/20 text-red-400',
-                                            purple: 'border-purple-500 bg-purple-500/20 text-purple-400',
-                                            yellow: 'border-yellow-500 bg-yellow-500/20 text-yellow-400',
+                                            blue: 'border-blue-500 bg-blue-50 text-blue-700',
+                                            red: 'border-red-500 bg-red-50 text-red-700',
+                                            purple: 'border-purple-500 bg-purple-50 text-purple-700',
+                                            yellow: 'border-amber-500 bg-amber-50 text-amber-700',
                                         };
                                         return (
                                             <button
                                                 key={key}
                                                 type="button"
                                                 onClick={() => setFormData({ ...formData, leave_type: key })}
-                                                className={`p-2 rounded-lg border-2 text-left transition-all flex items-center gap-2 text-sm ${isSelected
+                                                className={`p-2 rounded-lg border-2 text-left transition-all flex items-center gap-2 text-sm cursor-pointer ${isSelected
                                                     ? colorMap[info.color]
-                                                    : 'border-white/10 bg-slate-700/50 hover:border-white/30 text-white'
+                                                    : 'border-slate-200 bg-slate-50 hover:border-slate-300 text-slate-600'
                                                     }`}
                                             >
                                                 {info.label}
@@ -965,85 +982,86 @@ const AbsenceTab = ({ employeeId, employeeName }) => {
 
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className="text-xs text-gray-400 block mb-1">Inizio</label>
+                                    <label className="text-xs text-slate-500 block mb-1 uppercase tracking-wider font-medium">Inizio</label>
                                     <input
                                         type="date"
-                                        className="w-full bg-slate-700 border border-white/10 rounded p-2 text-white"
+                                        className="w-full bg-white border border-slate-300 rounded-md p-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         value={formData.start_date}
-                                        onChange={e => setFormData({ ...formData, start_date: e.target.value })}
+                                        onChange={ev => setFormData({ ...formData, start_date: ev.target.value })}
                                         required
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-xs text-gray-400 block mb-1">Fine</label>
+                                    <label className="text-xs text-slate-500 block mb-1 uppercase tracking-wider font-medium">Fine</label>
                                     <input
                                         type="date"
-                                        className="w-full bg-slate-700 border border-white/10 rounded p-2 text-white"
+                                        className="w-full bg-white border border-slate-300 rounded-md p-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         value={formData.end_date}
-                                        onChange={e => setFormData({ ...formData, end_date: e.target.value })}
+                                        onChange={ev => setFormData({ ...formData, end_date: ev.target.value })}
                                         required
                                     />
                                 </div>
                             </div>
 
                             <div>
-                                <label className="text-xs text-gray-400 block mb-1">Ore (Opzionale)</label>
+                                <label className="text-xs text-slate-500 block mb-1 uppercase tracking-wider font-medium">Ore (Opzionale)</label>
                                 <input
                                     type="number"
                                     step="0.5"
-                                    className="w-full bg-slate-700 border border-white/10 rounded p-2 text-white"
+                                    className="w-full bg-white border border-slate-300 rounded-md p-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     value={formData.hours}
-                                    onChange={e => setFormData({ ...formData, hours: e.target.value })}
+                                    onChange={ev => setFormData({ ...formData, hours: ev.target.value })}
                                     placeholder="Es: 4"
                                 />
                             </div>
 
                             <div>
-                                <label className="text-xs text-gray-400 block mb-1">Motivazione</label>
+                                <label className="text-xs text-slate-500 block mb-1 uppercase tracking-wider font-medium">Motivazione</label>
                                 <textarea
-                                    className="w-full bg-slate-700 border border-white/10 rounded p-2 text-white"
+                                    className="w-full bg-white border border-slate-300 rounded-md p-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     value={formData.reason}
-                                    onChange={e => setFormData({ ...formData, reason: e.target.value })}
+                                    onChange={ev => setFormData({ ...formData, reason: ev.target.value })}
                                     rows={3}
                                 />
                             </div>
 
                             <div className="flex justify-end gap-2 pt-2">
-                                <button type="button" onClick={() => setShowEditForm(false)} className="px-4 py-2 rounded bg-slate-600 text-white hover:bg-slate-500">Annulla</button>
-                                <button type="submit" className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-500">Salva Modifiche</button>
+                                <button type="button" onClick={() => setShowEditForm(false)} className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300 cursor-pointer">Annulla</button>
+                                <button type="submit" className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 cursor-pointer font-medium">Salva Modifiche</button>
                             </div>
                         </form>
                     </div>
                 </div>
             )}
 
-            <div className="flex justify-between items-center bg-slate-800/50 p-4 rounded-xl border border-white/5">
-                <h4 className="text-white font-medium">Storico Assenze e Permessi</h4>
-                <Link to="/hr/leaves" className="text-sm text-blue-400 hover:text-blue-300">+ Gestisci Tutto</Link>
+            <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                <h4 className="text-slate-800 font-semibold">Storico Assenze e Permessi</h4>
+                <Link to="/hr/leaves" className="text-sm text-blue-600 hover:text-blue-800 font-medium">+ Gestisci Tutto</Link>
             </div>
 
             <div className="space-y-3">
                 {absences.map(leave => {
-                    const statusInfo = ABSENCE_STATUS[leave.status] || { label: leave.status, color: 'text-gray-400' };
-                    // Format dates
+                    const statusInfo = ABSENCE_STATUS[leave.status] || { label: leave.status, color: 'text-slate-400' };
                     const start = new Date(leave.start_date).toLocaleDateString('it-IT');
                     const end = new Date(leave.end_date).toLocaleDateString('it-IT');
                     const dateRange = start === end ? start : `${start} al ${end}`;
 
                     return (
-                        <div key={leave.id} className="bg-slate-700/30 border border-white/5 rounded-lg p-4 flex flex-col md:flex-row justify-between items-center gap-4">
+                        <div key={leave.id} className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col md:flex-row justify-between items-center gap-4 hover:shadow-md transition-shadow">
                             <div className="flex items-center gap-4">
-                                <span className="text-2xl">{leave.leave_type === 'permit' || leave.leave_type === 'sudden_permit' ? '📝' : '📅'}</span>
+                                <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                                    <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                </div>
                                 <div>
                                     <div className="flex items-center gap-2 mb-1">
-                                        <span className="text-white font-medium text-lg capitalize">{LEAVE_LABELS[leave.leave_type]?.label || leave.leave_type}</span>
-                                        <span className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider ${statusInfo.color}`}>
+                                        <span className="text-slate-800 font-medium text-lg capitalize">{LEAVE_LABELS[leave.leave_type]?.label || leave.leave_type}</span>
+                                        <span className={`text-[10px] px-2 py-0.5 rounded border uppercase font-bold tracking-wider ${statusInfo.color}`}>
                                             {statusInfo.label}
                                         </span>
                                     </div>
-                                    <p className="text-gray-400 text-sm">Dal {dateRange} {leave.hours ? `(${leave.hours}h)` : ''}</p>
+                                    <p className="text-slate-400 text-sm">Dal {dateRange} {leave.hours ? `(${leave.hours}h)` : ''}</p>
                                     {leave.reason && (
-                                        <div className="mt-2 text-sm text-white font-medium bg-slate-800/50 p-2 rounded border-l-2 border-blue-400">
+                                        <div className="mt-2 text-sm text-slate-700 font-medium bg-slate-50 p-2 rounded border-l-2 border-blue-400">
                                             "{leave.reason}"
                                         </div>
                                     )}
@@ -1053,22 +1071,24 @@ const AbsenceTab = ({ employeeId, employeeName }) => {
                             <div className="flex gap-2 w-full md:w-auto">
                                 <button
                                     onClick={() => handleEditClick(leave)}
-                                    className="flex-1 md:flex-none px-3 py-2 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded hover:bg-blue-500/20 transition flex items-center justify-center gap-2"
+                                    className="flex-1 md:flex-none px-3 py-2 bg-blue-50 text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-100 transition flex items-center justify-center gap-2 cursor-pointer"
                                 >
-                                    ✏️ Modifica
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                    Modifica
                                 </button>
                                 <button
                                     onClick={() => handleDelete(leave)}
-                                    className="flex-1 md:flex-none px-3 py-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded hover:bg-red-500/20 transition flex items-center justify-center gap-2"
+                                    className="flex-1 md:flex-none px-3 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 transition flex items-center justify-center gap-2 cursor-pointer"
                                 >
-                                    🗑️ Elimina
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                    Elimina
                                 </button>
                             </div>
                         </div>
                     );
                 })}
                 {absences.length === 0 && (
-                    <p className="text-gray-500 text-center py-8">Nessun dato presente in storico.</p>
+                    <p className="text-slate-400 text-center py-8">Nessun dato presente in storico.</p>
                 )}
             </div>
         </div>
@@ -1110,7 +1130,7 @@ export default function EmployeeDetailPage() {
     const [allEmployees, setAllEmployees] = useState([]);
     const [banchine, setBanchine] = useState([]); // [NEW]
     const [availableRoles, setAvailableRoles] = useState([]); // [NEW] Ruoli da Macchine_Ruoli_Banchine
-    const [roleFilter, setRoleFilter] = useState(''); // [NEW] Filtro ricerca ruoli
+    // roleFilter removed — not yet used
     const [loading, setLoading] = useState(!isNew);
     const [saving, setSaving] = useState(false);
 
@@ -1138,6 +1158,7 @@ export default function EmployeeDetailPage() {
         if (!isNew) {
             loadEmployee();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
 
     const loadEmployee = async () => {
@@ -1205,16 +1226,16 @@ export default function EmployeeDetailPage() {
         }
     };
 
-    if (loading) return <div className="text-white text-center mt-20">Caricamento...</div>;
+    if (loading) return <div className="text-slate-500 text-center mt-20">Caricamento...</div>;
 
     const tabs = [
-        { id: 'overview', label: '👤 Anagrafica' },
-        { id: 'documents', label: '📁 Documenti' },
-        { id: 'certifications', label: '🎓 Certificazioni' },
-        { id: 'medical', label: '⚕️ Visite Mediche' },
-        { id: 'events', label: '📋 Eventi & Badge' },
-        { id: 'logistics', label: '📦 Logistica & Magazzino' },
-        { id: 'absences', label: '🏖️ Assenze' },
+        { id: 'overview', label: 'Anagrafica', icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg> },
+        { id: 'documents', label: 'Documenti', icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg> },
+        { id: 'certifications', label: 'Certificazioni', icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg> },
+        { id: 'medical', label: 'Visite Mediche', icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg> },
+        { id: 'events', label: 'Eventi & Badge', icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg> },
+        { id: 'logistics', label: 'Logistica', icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg> },
+        { id: 'absences', label: 'Assenze', icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg> },
     ];
 
     return (
@@ -1222,14 +1243,14 @@ export default function EmployeeDetailPage() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <button onClick={() => navigate('/hr/employees')} className="text-gray-400 hover:text-white mb-2 text-sm">
+                    <button onClick={() => navigate('/hr/employees')} className="text-slate-500 hover:text-slate-800 mb-2 text-sm cursor-pointer">
                         &larr; Torna alla lista
                     </button>
-                    <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+                    <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
                         {isNew ? 'Nuovo Dipendente' : (
                             <>
                                 {employee.first_name} {employee.last_name}
-                                <span className="text-sm font-bold text-cyan-400 font-mono bg-cyan-950/30 px-2 py-1 rounded border border-cyan-500/30 shadow-[0_0_10px_rgba(34,211,238,0.2)] tracking-wider">
+                                <span className="text-sm font-bold text-blue-600 font-mono bg-blue-50 px-2 py-1 rounded border border-blue-200 tracking-wider">
                                     ID {id}
                                 </span>
                             </>
@@ -1241,14 +1262,14 @@ export default function EmployeeDetailPage() {
                     {!isNew && (
                         <>
                             {employee.user ? (
-                                <div className="flex items-center gap-2 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-lg mr-2">
-                                    <span className="text-lg">👤</span>
+                                <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 border border-blue-200 rounded-lg mr-2">
+                                    <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                                     <div>
-                                        <p className="text-[10px] text-blue-300 font-bold uppercase leading-none">Utente Collegato</p>
-                                        <p className="text-sm text-white font-mono leading-none mt-1">{employee.user.username}</p>
+                                        <p className="text-[10px] text-blue-600 font-bold uppercase leading-none">Utente Collegato</p>
+                                        <p className="text-sm text-slate-800 font-mono leading-none mt-1">{employee.user.username}</p>
                                     </div>
                                     {(employee.user.role_label || employee.user.role) && (
-                                        <div className="ml-2 px-2 py-0.5 bg-slate-700/50 border border-white/10 rounded text-xs text-gray-300">
+                                        <div className="ml-2 px-2 py-0.5 bg-slate-100 border border-slate-200 rounded text-xs text-slate-600">
                                             {employee.user.role_label || {
                                                 'admin': 'Amministratore',
                                                 'super_admin': 'Super Admin',
@@ -1262,18 +1283,18 @@ export default function EmployeeDetailPage() {
                                     )}
                                 </div>
                             ) : (
-                                <div className="px-3 py-1 bg-slate-700/30 border border-white/5 rounded-lg mr-2">
-                                    <p className="text-xs text-slate-500">Nessun utente collegato</p>
+                                <div className="px-3 py-1 bg-slate-50 border border-slate-200 rounded-lg mr-2">
+                                    <p className="text-xs text-slate-400">Nessun utente collegato</p>
                                 </div>
                             )}
 
                             <button
                                 onClick={handleDelete}
-                                className="px-3 py-1 bg-red-600/20 text-red-400 hover:bg-red-600/40 rounded-lg text-sm transition font-medium"
+                                className="px-3 py-1 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 rounded-lg text-sm transition font-medium cursor-pointer"
                             >
                                 Elimina
                             </button>
-                            <span className={`px-3 py-1 rounded-full text-sm font-semibold ${employee.is_active ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                            <span className={`px-3 py-1 rounded-full text-sm font-semibold ${employee.is_active ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-600 border border-red-200'}`}>
                                 {employee.is_active ? 'Attivo' : 'Non Attivo'}
                             </span>
                         </>
@@ -1283,13 +1304,14 @@ export default function EmployeeDetailPage() {
 
             {/* Tabs */}
             {!isNew && (
-                <div className="flex gap-2 border-b border-white/10 pb-4 overflow-x-auto">
+                <div className="flex gap-1 border-b border-slate-200 overflow-x-auto">
                     {tabs.map(tab => (
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`px-4 py-2 rounded-lg transition whitespace-nowrap ${activeTab === tab.id ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                            className={`px-4 py-3 transition whitespace-nowrap flex items-center gap-2 text-sm font-medium cursor-pointer ${activeTab === tab.id ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-800 border-b-2 border-transparent'}`}
                         >
+                            {tab.icon}
                             {tab.label}
                         </button>
                     ))}
@@ -1297,7 +1319,7 @@ export default function EmployeeDetailPage() {
             )}
 
             {/* Content */}
-            <div className="bg-slate-800/50 backdrop-blur-md border border-white/10 rounded-2xl p-8">
+            <div className="bg-white border border-slate-200 rounded-xl p-8 shadow-sm">
                 {activeTab === 'overview' && (
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {/* Monte Ore Widget - Visible only for existing employees */}
@@ -1310,40 +1332,40 @@ export default function EmployeeDetailPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* Anagrafica */}
                             <div className="space-y-4">
-                                <h3 className="text-lg font-semibold text-white border-b border-white/10 pb-2">Anagrafica</h3>
+                                <h3 className="text-lg font-semibold text-slate-800 border-b border-slate-200 pb-2">Anagrafica</h3>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-sm text-gray-400 mb-1">Nome</label>
-                                        <input name="first_name" value={employee.first_name} onChange={handleChange} className="w-full bg-black/20 border border-white/10 rounded px-3 py-2 text-white" required />
+                                        <label className="block text-sm text-slate-500 mb-1">Nome</label>
+                                        <input name="first_name" value={employee.first_name} onChange={handleChange} className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required />
                                     </div>
                                     <div>
-                                        <label className="block text-sm text-gray-400 mb-1">Cognome</label>
-                                        <input name="last_name" value={employee.last_name} onChange={handleChange} className="w-full bg-black/20 border border-white/10 rounded px-3 py-2 text-white" required />
+                                        <label className="block text-sm text-slate-500 mb-1">Cognome</label>
+                                        <input name="last_name" value={employee.last_name} onChange={handleChange} className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required />
                                     </div>
                                 </div>
                                 <div>
                                     {/* Fiscal Code Input Removed */}
                                 </div>
                                 <div>
-                                    <label className="block text-sm text-gray-400 mb-1">Email</label>
-                                    <input name="email" type="email" value={employee.email || ''} onChange={handleChange} className="w-full bg-black/20 border border-white/10 rounded px-3 py-2 text-white" />
+                                    <label className="block text-sm text-slate-500 mb-1">Email</label>
+                                    <input name="email" type="email" value={employee.email || ''} onChange={handleChange} className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm text-gray-400 mb-1">Telefono</label>
-                                    <input name="phone" value={employee.phone || ''} onChange={handleChange} className="w-full bg-black/20 border border-white/10 rounded px-3 py-2 text-white" />
+                                    <label className="block text-sm text-slate-500 mb-1">Telefono</label>
+                                    <input name="phone" value={employee.phone || ''} onChange={handleChange} className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
                                 </div>
                             </div>
 
                             {/* Contratto */}
                             <div className="space-y-4">
-                                <h3 className="text-lg font-semibold text-white border-b border-white/10 pb-2">Contratto</h3>
+                                <h3 className="text-lg font-semibold text-slate-800 border-b border-slate-200 pb-2">Contratto</h3>
                                 <div>
-                                    <label className="block text-sm text-gray-400 mb-1">Reparto</label>
+                                    <label className="block text-sm text-slate-500 mb-1">Reparto</label>
                                     <select
                                         name="department_name"
                                         value={employee.department_name || ''}
                                         onChange={handleChange}
-                                        className="w-full bg-black/20 border border-white/10 rounded px-3 py-2 text-white"
+                                        className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
                                         <option value="">-- Seleziona Reparto --</option>
                                         {['Autista', 'Bordatura', 'Bugnatura', 'Coordinamento', 'Dirigenza', 'Foratura', 'Guanciali e Culle', 'Imballaggio', 'Incollaggio', 'Keyhelm', 'Magazzinieri', 'Manutenzione', 'Preparazione', 'Pressa', 'Pulizie', 'Recupero', 'Resi', 'Reti/Letti', 'Spedizioni', 'Taglio Poliuretano', 'Ufficio'].map(reparto => (
@@ -1352,12 +1374,12 @@ export default function EmployeeDetailPage() {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm text-gray-400 mb-1">Ruolo Attuale</label>
+                                    <label className="block text-sm text-slate-500 mb-1">Ruolo Attuale</label>
                                     <select
                                         name="current_role"
                                         value={employee.current_role || ''}
                                         onChange={handleChange}
-                                        className="w-full bg-black/20 border border-white/10 rounded px-3 py-2 text-white"
+                                        className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
                                         <option value="">-- Seleziona Ruolo --</option>
                                         {availableRoles.map(role => (
@@ -1368,12 +1390,12 @@ export default function EmployeeDetailPage() {
                                 {/* [NEW] Secondary Role and Banchina */}
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-sm text-gray-400 mb-1">Ruolo Secondario (Jolly)</label>
+                                        <label className="block text-sm text-slate-500 mb-1">Ruolo Secondario (Jolly)</label>
                                         <select
                                             name="secondary_role"
                                             value={employee.secondary_role || ''}
                                             onChange={handleChange}
-                                            className="w-full bg-black/20 border border-white/10 rounded px-3 py-2 text-white"
+                                            className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         >
                                             <option value="">-- Nessuno --</option>
                                             {availableRoles.map(role => (
@@ -1382,12 +1404,12 @@ export default function EmployeeDetailPage() {
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="block text-sm text-gray-400 mb-1">Banchina Default</label>
+                                        <label className="block text-sm text-slate-500 mb-1">Banchina Default</label>
                                         <select
                                             name="default_banchina_id"
                                             value={employee.default_banchina_id || ''}
                                             onChange={handleChange}
-                                            className="w-full bg-black/20 border border-white/10 rounded px-3 py-2 text-white"
+                                            className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         >
                                             <option value="">-- Nessuna --</option>
                                             {banchine.map(b => (
@@ -1399,8 +1421,8 @@ export default function EmployeeDetailPage() {
                                 {/* End NEW */}
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-sm text-gray-400 mb-1">Tipo Contratto</label>
-                                        <select name="contract_type" value={employee.contract_type} onChange={handleChange} className="w-full bg-black/20 border border-white/10 rounded px-3 py-2 text-white">
+                                        <label className="block text-sm text-slate-500 mb-1">Tipo Contratto</label>
+                                        <select name="contract_type" value={employee.contract_type} onChange={handleChange} className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                                             <option value="full_time">Full Time</option>
                                             <option value="part_time">Part Time</option>
                                             <option value="internship">Stage</option>
@@ -1408,23 +1430,22 @@ export default function EmployeeDetailPage() {
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="block text-sm text-gray-400 mb-1">Scadenza</label>
-                                        <input type="date" name="contract_end" value={employee.contract_end ? employee.contract_end.split('T')[0] : ''} onChange={handleChange} className="w-full bg-black/20 border border-white/10 rounded px-3 py-2 text-white" />
+                                        <label className="block text-sm text-slate-500 mb-1">Scadenza</label>
+                                        <input type="date" name="contract_end" value={employee.contract_end ? employee.contract_end.split('T')[0] : ''} onChange={handleChange} className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-sm text-gray-400 mb-1">Responsabile (Manager)</label>
+                                    <label className="block text-sm text-slate-500 mb-1">Responsabile (Manager)</label>
                                     <select
                                         name="manager_id"
                                         value={employee.manager_id || ''}
                                         onChange={handleChange}
-                                        className="w-full bg-slate-900 border border-white/10 rounded px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+                                        className="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
-                                        <option value="" className="bg-slate-900 text-gray-400">-- Nessuno --</option>
+                                        <option value="">-- Nessuno --</option>
                                         {allEmployees
                                             .filter(emp => {
                                                 const role = (emp.current_role || '').toLowerCase();
-                                                const dept = (emp.department_name || '').toLowerCase();
                                                 // Keywords for management positions
                                                 // Stricter filter: only Coordinators and Top Management
                                                 const managerKeywords = ['coordinatore', 'amministratore', 'direttore', 'admin'];
@@ -1432,24 +1453,24 @@ export default function EmployeeDetailPage() {
                                                 return managerKeywords.some(k => role.includes(k));
                                             })
                                             .map(emp => (
-                                                <option key={emp.id} value={emp.id} className="bg-slate-900 text-white">
+                                                <option key={emp.id} value={emp.id}>
                                                     {emp.last_name} {emp.first_name} ({emp.current_role || 'N/D'})
                                                 </option>
                                             ))}
                                     </select>
                                 </div>
                                 <div className="flex items-center gap-2 mt-6">
-                                    <input type="checkbox" name="is_active" checked={employee.is_active} onChange={handleChange} className="w-4 h-4 rounded border-gray-600 bg-gray-700" />
-                                    <span className="text-white">Dipendente Attivo</span>
+                                    <input type="checkbox" name="is_active" checked={employee.is_active} onChange={handleChange} className="w-4 h-4 rounded border-slate-300 bg-white text-blue-600 focus:ring-blue-500" />
+                                    <span className="text-slate-800">Dipendente Attivo</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="flex justify-end pt-6 border-t border-white/10">
+                        <div className="flex justify-end pt-6 border-t border-slate-200">
                             <button
                                 type="submit"
                                 disabled={saving}
-                                className="px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-lg shadow-lg transition disabled:opacity-50"
+                                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-sm transition disabled:opacity-50 cursor-pointer"
                             >
                                 {saving ? 'Salvataggio...' : 'Salva Modifiche'}
                             </button>

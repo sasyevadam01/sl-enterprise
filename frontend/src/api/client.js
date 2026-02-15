@@ -50,6 +50,9 @@ export const authApi = {
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
     }),
   getMe: () => client.get("/users/me"),
+  // PIN Security
+  setupPin: (pin) => client.post("/auth/setup-pin", { pin }),
+  verifyPin: (pin) => client.post("/auth/verify-pin", { pin }),
 };
 
 // USERS
@@ -63,6 +66,9 @@ export const usersApi = {
   // Live Status
   sendHeartbeat: () => client.post("/users/heartbeat"),
   getOnlineUsers: () => client.get("/users/online"),
+  // PIN Management (Admin)
+  resetPin: (id) => client.patch(`/users/${id}/reset-pin`),
+  setPin: (id, pin) => client.patch(`/users/${id}/set-pin`, { pin }),
 };
 
 // ... other APIs ...

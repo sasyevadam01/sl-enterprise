@@ -45,7 +45,7 @@ export default function OrderDashboardPage() {
             await pickingApi.updateStatus(orderId, 'completed');
             toast.success('Ordine archiviato');
             loadOrders();
-        } catch (err) {
+        } catch {
             toast.error('Errore archiviazione');
         }
     };
@@ -56,7 +56,7 @@ export default function OrderDashboardPage() {
             await pickingApi.acknowledge(orderId);
             toast.success('Rimosso dalla lista');
             loadOrders();
-        } catch (err) {
+        } catch {
             toast.error('Errore operazione');
         }
     };
@@ -73,7 +73,7 @@ export default function OrderDashboardPage() {
             toast.success('Ordine annullato con successo');
             loadOrders();
             setCancelModal({ isOpen: false, order: null });
-        } catch (err) {
+        } catch {
             toast.error('Errore annullamento');
         }
     };
@@ -95,21 +95,21 @@ export default function OrderDashboardPage() {
 
     const getStatusBadge = (status) => {
         const styles = {
-            pending: 'bg-gray-500/30 text-gray-300',
-            processing: 'bg-yellow-500/30 text-yellow-300',
-            delivered: 'bg-green-500/30 text-green-300 line-through',
-            completed: 'bg-slate-600/30 text-slate-400 line-through',
-            cancelled: 'bg-red-500/30 text-red-300 line-through',
+            pending: 'bg-slate-100 text-slate-600 ring-1 ring-slate-200',
+            processing: 'bg-amber-100 text-amber-700 ring-1 ring-amber-200',
+            delivered: 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200',
+            completed: 'bg-slate-100 text-slate-400 line-through',
+            cancelled: 'bg-red-100 text-red-600 ring-1 ring-red-200 line-through',
         };
         const labels = {
-            pending: '⏳ In Attesa',
-            processing: '🔄 In Lavorazione',
-            delivered: '✅ Consegnato',
-            completed: '📁 Archiviato',
-            cancelled: '❌ Annullato',
+            pending: 'In Attesa',
+            processing: 'In Lavorazione',
+            delivered: 'Consegnato',
+            completed: 'Archiviato',
+            cancelled: 'Annullato',
         };
         return (
-            <span className={`px-2 py-1 rounded-lg text-xs font-bold ${styles[status] || styles.pending}`}>
+            <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${styles[status] || styles.pending}`}>
                 {labels[status] || status}
             </span>
         );
@@ -126,96 +126,93 @@ export default function OrderDashboardPage() {
     const rejectedOrders = orders.filter(o => o.status === 'cancelled' && o.processed_by_id); // Rejected by Supply
 
     return (
-        <div className="min-h-screen p-4 pb-24">
+        <div className="min-h-screen bg-slate-50 p-4 pb-24">
             {/* Header */}
-            <div className="mb-6">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mb-6">
                 <div className="flex items-center gap-3 mb-1">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                    <div className="w-11 h-11 rounded-2xl bg-blue-600 flex items-center justify-center shadow-sm">
                         <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                         </svg>
                     </div>
-                    <h1 className="text-2xl font-bold text-white">Richiesta Blocchi</h1>
+                    <div>
+                        <h1 className="text-xl font-bold text-slate-900">Richiesta Blocchi</h1>
+                        <p className="text-slate-400 text-xs">Ciao {user?.full_name?.split(' ')[0] || 'Operatore'}! I tuoi ordini:</p>
+                    </div>
                 </div>
-                <p className="text-gray-400 text-sm mt-1 ml-13">Ciao {user?.full_name?.split(' ')[0] || 'Operatore'}! I tuoi ordini:</p>
             </div>
 
             {/* Loading */}
             {loading && (
                 <div className="flex justify-center py-10">
-                    <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-emerald-400"></div>
+                    <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
                 </div>
             )}
 
             {/* Empty State */}
             {!loading && activeOrders.length === 0 && deliveredOrders.length === 0 && (
-                <div className="master-card p-8 text-center">
-                    <svg className="w-16 h-16 text-gray-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="bg-white rounded-2xl border border-dashed border-slate-200 shadow-sm p-8 text-center">
+                    <svg className="w-16 h-16 text-slate-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                     </svg>
-                    <p className="text-white font-bold">Nessun ordine attivo</p>
-                    <p className="text-sm text-gray-400 mt-2">Premi il bottone + per richiedere un blocco</p>
+                    <p className="text-slate-800 font-bold">Nessun ordine attivo</p>
+                    <p className="text-sm text-slate-400 mt-2">Premi il bottone + per richiedere un blocco</p>
                 </div>
             )}
 
             {/* Active Orders List */}
             {activeOrders.length > 0 && (
                 <div className="mb-6">
-                    <h2 className="text-sm font-bold text-gray-400 uppercase mb-3">Ordini Attivi</h2>
+                    <h2 className="text-sm font-bold text-blue-600 uppercase mb-3">Ordini Attivi</h2>
                     <div className="space-y-3">
                         {activeOrders.map(order => (
                             <div
                                 key={order.id}
-                                className={`master-card p-4 relative overflow-hidden transition-all duration-300 ${order.is_urgent
-                                    ? 'ring-2 ring-red-500/70 shadow-lg shadow-red-500/20'
+                                className={`bg-white rounded-2xl border shadow-sm p-4 relative overflow-hidden transition-all duration-300 ${order.is_urgent
+                                    ? 'border-red-300 ring-2 ring-red-200 shadow-red-100'
                                     : order.status === 'processing'
-                                        ? 'ring-2 ring-yellow-500/50'
-                                        : ''
+                                        ? 'border-amber-300 ring-1 ring-amber-200'
+                                        : 'border-slate-200'
                                     }`}
                             >
                                 {/* Urgent Badge */}
                                 {order.is_urgent && (
-                                    <div className="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-bl-lg">
-                                        🔥 URGENTE
+                                    <div className="absolute top-0 right-0 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-bl-xl">
+                                        URGENTE
                                     </div>
                                 )}
 
                                 <div className="flex justify-between items-start mb-2">
                                     <div>
-                                        <span className="text-lg font-bold text-white">
+                                        <span className="text-lg font-bold text-slate-900">
                                             {order.request_type === 'memory'
                                                 ? order.material_label
                                                 : `${order.density_label} ${order.color_label}`}
                                         </span>
-                                        <span className="text-gray-400 text-sm ml-2">x{order.quantity}</span>
+                                        <span className="text-slate-400 text-sm ml-2">x{order.quantity}</span>
                                     </div>
                                     {getStatusBadge(order.status)}
                                 </div>
-                                <div className="text-sm text-gray-400 space-y-1">
-                                    <p>{order.dimensions} {order.custom_height ? `(H: ${order.custom_height}cm)` : ''}</p>
-                                    <p>{order.is_trimmed ? 'Rifilare' : 'Non Rifilato'}</p>
-                                    {order.supplier_label && <p>{order.supplier_label}</p>}
-                                    {order.client_ref && <p>Rif: {order.client_ref}</p>}
-                                    <p className="text-xs text-gray-500">Ore {formatTime(order.created_at)}</p>
+                                <div className="text-sm text-slate-500 space-y-1">
+                                    <p className="text-slate-700 font-medium">{order.dimensions} {order.custom_height ? `(H: ${order.custom_height}cm)` : ''}</p>
+                                    <p className={order.is_trimmed ? 'text-orange-600 font-bold' : 'text-slate-400'}>{order.is_trimmed ? 'Rifilare' : 'Non Rifilato'}</p>
+                                    {order.supplier_label && <p className="text-blue-600">{order.supplier_label}</p>}
+                                    {order.client_ref && <p className="text-slate-600">Rif: {order.client_ref}</p>}
+                                    <p className="text-xs text-slate-400">Ore {formatTime(order.created_at)}</p>
                                 </div>
 
                                 {/* Action Buttons */}
                                 <div className="mt-3 flex gap-2">
-                                    {/* Urgency Toggle Button - Custom Red Style */}
+                                    {/* Urgency Toggle Button */}
                                     {(order.status === 'pending' || order.status === 'processing') && (
                                         <button
                                             onClick={() => order.is_urgent ? handleToggleUrgency(order.id, true) : openUrgencyModal(order)}
-                                            className={`urgency-btn group relative flex-1 py-2 px-4 rounded-lg font-semibold text-sm overflow-hidden transition-all duration-300 ${order.is_urgent
-                                                ? 'bg-red-500 text-white'
-                                                : 'border-2 border-red-500 text-red-400 hover:text-white'
+                                            className={`flex-1 py-2.5 px-4 rounded-xl font-semibold text-sm transition-all cursor-pointer active:scale-[0.98] ${order.is_urgent
+                                                ? 'bg-red-600 text-white shadow-sm'
+                                                : 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100'
                                                 }`}
                                         >
-                                            {/* Animated background circles */}
-                                            <span className="absolute left-0 w-16 h-16 -translate-x-12 bg-red-500 opacity-50 rounded-full transition-transform duration-500 group-hover:translate-x-0"></span>
-                                            <span className="absolute right-0 w-16 h-16 translate-x-12 bg-red-500 opacity-50 rounded-full transition-transform duration-500 group-hover:translate-x-0"></span>
-                                            <span className="relative z-10 flex items-center justify-center gap-2">
-                                                {order.is_urgent ? '✓ Urgente' : '🔥 Richiedi Urgenza'}
-                                            </span>
+                                            {order.is_urgent ? 'Urgente' : 'Richiedi Urgenza'}
                                         </button>
                                     )}
 
@@ -223,7 +220,7 @@ export default function OrderDashboardPage() {
                                     {order.status === 'pending' && (
                                         <button
                                             onClick={() => openCancelModal(order)}
-                                            className="py-2 px-4 bg-gray-500/10 text-gray-400 rounded-lg text-sm font-medium hover:bg-gray-500/20 transition-colors border border-gray-500/20"
+                                            className="py-2.5 px-4 bg-slate-50 text-slate-500 rounded-xl text-sm font-medium hover:bg-slate-100 transition-colors border border-slate-200 cursor-pointer"
                                         >
                                             Annulla
                                         </button>
@@ -238,39 +235,39 @@ export default function OrderDashboardPage() {
             {/* REJECTED Orders */}
             {rejectedOrders.length > 0 && (
                 <div className="mb-6">
-                    <h2 className="text-sm font-bold text-red-400 uppercase mb-3 flex items-center gap-2">
+                    <h2 className="text-sm font-bold text-red-600 uppercase mb-3 flex items-center gap-2">
                         Richieste Rifiutate
                     </h2>
                     <div className="space-y-3">
                         {rejectedOrders.map(order => (
                             <div
                                 key={order.id}
-                                className="bg-red-900/20 rounded-xl p-4 border border-red-500/30"
+                                className="bg-red-50 rounded-2xl p-4 border-2 border-red-200"
                             >
                                 <div className="flex justify-between items-start mb-2">
                                     <div>
-                                        <span className="text-lg font-bold text-white">
+                                        <span className="text-lg font-bold text-slate-900">
                                             {order.request_type === 'memory'
                                                 ? order.material_label
                                                 : `${order.density_label} ${order.color_label}`}
                                         </span>
-                                        <span className="text-gray-400 text-sm ml-2">x{order.quantity}</span>
+                                        <span className="text-slate-400 text-sm ml-2">x{order.quantity}</span>
                                     </div>
-                                    <span className="px-2 py-1 rounded-lg text-xs font-bold bg-red-500/30 text-red-300">
+                                    <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-red-100 text-red-700 ring-1 ring-red-200">
                                         RIFIUTATO
                                     </span>
                                 </div>
 
-                                <div className="text-sm text-gray-400 mb-4">
-                                    <div className="bg-red-500/10 p-3 rounded-lg border border-red-500/20">
-                                        <p className="text-xs text-red-400 font-bold mb-1 uppercase">Motivazione:</p>
-                                        <p className="text-white italic">"{order.notes}"</p>
+                                <div className="text-sm text-slate-500 mb-4">
+                                    <div className="bg-red-100 p-3 rounded-lg border border-red-200">
+                                        <p className="text-xs text-red-600 font-bold mb-1 uppercase">Motivazione:</p>
+                                        <p className="text-red-800 italic">"{order.notes}"</p>
                                     </div>
                                 </div>
 
                                 <button
                                     onClick={() => handleAcknowledge(order.id)}
-                                    className="w-full py-3 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-xl font-bold border border-red-500/30 transition-colors flex items-center justify-center gap-2"
+                                    className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold shadow-sm transition-all active:scale-[0.98] cursor-pointer"
                                 >
                                     OK, HO CAPITO
                                 </button>
@@ -283,38 +280,38 @@ export default function OrderDashboardPage() {
             {/* Delivered Orders */}
             {deliveredOrders.length > 0 && (
                 <div className="mb-6">
-                    <h2 className="text-sm font-bold text-green-400 uppercase mb-3">Pronti per conferma</h2>
+                    <h2 className="text-sm font-bold text-emerald-600 uppercase mb-3">Pronti per conferma</h2>
                     <div className="space-y-2">
                         {deliveredOrders.map(order => (
                             <div
                                 key={order.id}
                                 onClick={() => handleArchive(order.id)}
-                                className="bg-green-900/20 rounded-xl p-3 border border-green-500/20 cursor-pointer hover:bg-green-900/40 transition-all"
+                                className="bg-emerald-50 rounded-2xl p-4 border-2 border-emerald-200 cursor-pointer hover:border-emerald-400 hover:shadow-md transition-all"
                             >
                                 <div className="flex flex-col gap-2">
                                     <div className="flex justify-between items-start">
                                         <div>
-                                            <span className="text-lg font-bold text-white block">
+                                            <span className="text-lg font-bold text-slate-900 block">
                                                 {order.request_type === 'memory'
                                                     ? order.material_label
                                                     : `${order.density_label} ${order.color_label}`}
                                             </span>
-                                            <div className="text-sm text-green-300/80 space-y-0.5 mt-1">
+                                            <div className="text-sm text-slate-500 space-y-0.5 mt-1">
                                                 <p>{order.dimensions} {order.custom_height ? `(H: ${order.custom_height}cm)` : ''}</p>
-                                                {order.client_ref && <p className="font-bold text-white">Rif: {order.client_ref}</p>}
-                                                {order.supplier_label && <p>{order.supplier_label}</p>}
-                                                <p className="text-xs opacity-70">{order.is_trimmed ? 'Rifilare' : 'Non Rifilato'}</p>
+                                                {order.client_ref && <p className="font-bold text-slate-800">Rif: {order.client_ref}</p>}
+                                                {order.supplier_label && <p className="text-blue-600">{order.supplier_label}</p>}
+                                                <p className="text-xs text-slate-400">{order.is_trimmed ? 'Rifilare' : 'Non Rifilato'}</p>
                                             </div>
                                         </div>
                                         <button
                                             onClick={(e) => { e.stopPropagation(); handleArchive(order.id); }}
-                                            className="px-4 py-2 bg-green-500 hover:bg-green-400 text-slate-900 rounded-lg text-sm font-bold shadow-lg shadow-green-500/20 transition-all flex items-center gap-2"
+                                            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold shadow-sm transition-all active:scale-[0.98] cursor-pointer"
                                         >
                                             Conferma Ricezione
                                         </button>
                                     </div>
                                     {order.notes && (
-                                        <div className="text-xs text-gray-400 italic border-t border-white/5 pt-2 mt-1">
+                                        <div className="text-xs text-slate-400 italic border-t border-slate-100 pt-2 mt-1">
                                             "Note: {order.notes}"
                                         </div>
                                     )}
@@ -327,22 +324,22 @@ export default function OrderDashboardPage() {
 
             {/* Completed Orders (History) */}
             {completedOrders.length > 0 && (
-                <div className="opacity-60 grayscale hover:grayscale-0 transition-all duration-300">
-                    <h2 className="text-xs font-bold text-gray-500 uppercase mb-3">Storico Recente (Archiviati)</h2>
-                    <div className="space-y-2">
+                <div className="mt-8">
+                    <h2 className="text-xs font-bold text-slate-400 uppercase mb-3">Storico Recente (Archiviati)</h2>
+                    <div className="space-y-1.5">
                         {completedOrders.map(order => (
                             <div
                                 key={order.id}
-                                className="bg-slate-800/50 rounded-xl p-3 border border-white/5"
+                                className="bg-white rounded-xl p-3 border border-slate-100"
                             >
                                 <div className="flex justify-between items-center">
-                                    <span className="text-gray-400 line-through text-sm">
+                                    <span className="text-slate-400 line-through text-sm">
                                         {order.request_type === 'memory'
                                             ? order.material_label
                                             : `${order.density_label} ${order.color_label}`}
                                         {' '}{order.dimensions}
                                     </span>
-                                    <span className="text-[10px] text-gray-600">
+                                    <span className="text-[10px] text-slate-400">
                                         {formatTime(order.delivered_at || order.processed_at || order.created_at)}
                                     </span>
                                 </div>
@@ -355,25 +352,22 @@ export default function OrderDashboardPage() {
             {/* FAB */}
             <button
                 onClick={() => navigate('/production/orders/new')}
-                className="fixed bottom-6 right-6 w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full shadow-lg shadow-emerald-500/50 flex items-center justify-center text-white text-3xl font-bold hover:scale-110 transition-transform z-40"
+                className="fixed bottom-6 right-6 w-16 h-16 bg-blue-600 hover:bg-blue-700 rounded-full shadow-lg shadow-blue-500/30 flex items-center justify-center text-white text-3xl font-bold hover:scale-110 transition-all z-40 cursor-pointer"
             >
                 +
             </button>
 
-            {/* PREMIUM CANCEL MODAL */}
+            {/* CANCEL MODAL */}
             {cancelModal.isOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    {/* Backdrop */}
                     <div
-                        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+                        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
                         onClick={() => setCancelModal({ isOpen: false, order: null })}
                     />
 
-                    {/* Modal Content */}
-                    <div className="relative master-card shadow-2xl w-full max-w-md overflow-hidden transform transition-all scale-100 animate-in fade-in zoom-in duration-200">
-                        {/* Header */}
-                        <div className="bg-gradient-to-r from-red-600 to-red-800 p-6 text-center">
-                            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3 backdrop-blur-md">
+                    <div className="relative bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden">
+                        <div className="bg-red-600 p-6 text-center">
+                            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
                                 <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                                 </svg>
@@ -382,22 +376,20 @@ export default function OrderDashboardPage() {
                             <p className="text-red-100 text-sm mt-1">Questa azione è irreversibile</p>
                         </div>
 
-                        {/* Body */}
                         <div className="p-6">
-                            <p className="text-gray-300 text-center mb-6">
+                            <p className="text-slate-600 text-center mb-6">
                                 Sei sicuro di voler annullare l'ordine per <br />
-                                <strong className="text-white text-lg">
+                                <strong className="text-slate-900 text-lg">
                                     {cancelModal.order.request_type === 'memory'
                                         ? cancelModal.order.material_label
                                         : `${cancelModal.order.density_label} ${cancelModal.order.color_label}`}
                                 </strong>?
                             </p>
 
-                            {/* Reason Input */}
                             <div className="mb-6">
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Motivo (Opzionale)</label>
+                                <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Motivo (Opzionale)</label>
                                 <textarea
-                                    className="w-full bg-slate-900 border border-white/10 rounded-lg p-3 text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
                                     rows="1"
                                     placeholder="Es. Errore misura..."
                                     value={cancelReason}
@@ -405,17 +397,16 @@ export default function OrderDashboardPage() {
                                 />
                             </div>
 
-                            {/* Actions */}
                             <div className="grid grid-cols-2 gap-3">
                                 <button
                                     onClick={() => setCancelModal({ isOpen: false, order: null })}
-                                    className="py-3 px-4 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-bold transition-colors"
+                                    className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition-colors cursor-pointer"
                                 >
                                     Annulla
                                 </button>
                                 <button
                                     onClick={confirmCancel}
-                                    className="py-3 px-4 bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white rounded-xl font-bold shadow-lg shadow-red-500/20 transition-all flex items-center justify-center gap-2"
+                                    className="py-3 px-4 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold shadow-sm transition-all cursor-pointer"
                                 >
                                     Conferma
                                 </button>
@@ -427,41 +418,40 @@ export default function OrderDashboardPage() {
 
             {/* Urgency Confirmation Modal */}
             {urgencyModal.isOpen && urgencyModal.order && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-                    <div className="bg-slate-900 rounded-2xl w-full max-w-sm border border-red-500/30 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-                        {/* Header */}
-                        <div className="bg-gradient-to-r from-red-600 to-orange-600 p-4 text-center">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl w-full max-w-sm border border-slate-200 shadow-2xl overflow-hidden">
+                        <div className="bg-red-600 p-5 text-center">
                             <div className="w-14 h-14 bg-white/20 rounded-full mx-auto mb-2 flex items-center justify-center">
-                                <span className="text-3xl">🔥</span>
+                                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
                             </div>
                             <h3 className="text-xl font-bold text-white">Richiedi Urgenza?</h3>
                             <p className="text-red-100 text-sm mt-1">Il magazziniere verrà avvisato</p>
                         </div>
 
-                        {/* Body */}
                         <div className="p-6">
-                            <p className="text-gray-300 text-center mb-6">
-                                Confermi di voler marcare come <strong className="text-red-400">URGENTE</strong> l'ordine per<br />
-                                <strong className="text-white text-lg">
+                            <p className="text-slate-600 text-center mb-6">
+                                Confermi di voler marcare come <strong className="text-red-600">URGENTE</strong> l'ordine per<br />
+                                <strong className="text-slate-900 text-lg">
                                     {urgencyModal.order.request_type === 'memory'
                                         ? urgencyModal.order.material_label
                                         : `${urgencyModal.order.density_label} ${urgencyModal.order.color_label}`}
                                 </strong>?
                             </p>
 
-                            {/* Actions */}
                             <div className="grid grid-cols-2 gap-3">
                                 <button
                                     onClick={() => setUrgencyModal({ isOpen: false, order: null })}
-                                    className="py-3 px-4 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-bold transition-colors"
+                                    className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition-colors cursor-pointer"
                                 >
                                     Annulla
                                 </button>
                                 <button
                                     onClick={() => handleToggleUrgency(urgencyModal.order.id, false)}
-                                    className="py-3 px-4 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white rounded-xl font-bold shadow-lg shadow-red-500/20 transition-all flex items-center justify-center gap-2"
+                                    className="py-3 px-4 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold shadow-sm transition-all cursor-pointer"
                                 >
-                                    🔥 Conferma
+                                    Conferma
                                 </button>
                             </div>
                         </div>

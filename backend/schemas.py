@@ -64,6 +64,10 @@ class UserResponse(UserBase):
     employee_id: Optional[int] = None
     default_home: Optional[str] = None
     
+    # PIN Security
+    has_pin: bool = False
+    pin_required: bool = True
+    
     # Location Info
     last_lat: Optional[float] = None
     last_lon: Optional[float] = None
@@ -82,6 +86,21 @@ class UserLogin(BaseModel):
     """Schema per login."""
     username: str
     password: str
+
+
+class PinSetup(BaseModel):
+    """Schema per impostazione PIN a 4 cifre."""
+    pin: str
+
+
+class PinVerify(BaseModel):
+    """Schema per verifica PIN."""
+    pin: str
+
+
+class PinAdminSet(BaseModel):
+    """Schema per admin che imposta PIN di un utente."""
+    pin: str
 
 
 # ============================================================

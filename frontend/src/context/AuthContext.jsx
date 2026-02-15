@@ -1,6 +1,6 @@
 /**
  * SL Enterprise - Auth Context
- * Gestione stato autenticazione globale
+ * Gestione stato autenticazione globale con PIN security
  */
 import { createContext, useContext, useState, useEffect } from 'react';
 import { authApi } from '../api/client';
@@ -11,16 +11,28 @@ export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [pinStatus, setPinStatus] = useState(null); // { has_pin, pin_required }
+    const [pinVerified, setPinVerified] = useState(false);
 
-    // Carica utente da localStorage all'avvio
     // Carica utente da localStorage all'avvio
     useEffect(() => {
         const token = localStorage.getItem('token');
         const savedUser = localStorage.getItem('user');
+        const savedPinVerified = localStorage.getItem('pinVerified');
 
         if (token && savedUser) {
             try {
-                setUser(JSON.parse(savedUser));
+                const parsed = JSON.parse(savedUser);
+                setUser(parsed);
+                // Se il PIN era già verificato nella sessione corrente
+                if (savedPinVerified === 'true') {
+                    setPinVerified(true);
+                }
+                // Carica stato PIN dal profilo utente salvato
+                setPinStatus({
+                    has_pin: parsed.has_pin || false,
+                    pin_required: parsed.pin_required !== false // default true
+                });
             } catch (e) {
                 console.error("AuthContext: Failed to parse user JSON", e);
             }
@@ -34,12 +46,27 @@ export function AuthProvider({ children }) {
             const data = await authApi.login(username, password);
             localStorage.setItem('token', data.access_token);
 
+            // Salva stato PIN dalla risposta del login
+            const pinInfo = {
+                has_pin: data.has_pin || false,
+                pin_required: data.pin_required !== false
+            };
+            setPinStatus(pinInfo);
+            setPinVerified(false);
+            localStorage.removeItem('pinVerified');
+
             // Ottieni dati utente
             const userData = await authApi.getMe();
+            userData.has_pin = pinInfo.has_pin;
+            userData.pin_required = pinInfo.pin_required;
             localStorage.setItem('user', JSON.stringify(userData));
             setUser(userData);
 
-            return { success: true };
+            return {
+                success: true,
+                has_pin: pinInfo.has_pin,
+                pin_required: pinInfo.pin_required
+            };
         } catch (err) {
             const message = err.response?.data?.detail || 'Errore di login';
             setError(message);
@@ -47,10 +74,29 @@ export function AuthProvider({ children }) {
         }
     };
 
+    const confirmPinVerified = () => {
+        setPinVerified(true);
+        localStorage.setItem('pinVerified', 'true');
+        // Aggiorna anche has_pin nel pinStatus (dopo setup)
+        setPinStatus(prev => {
+            const updated = { ...prev, has_pin: true };
+            // Aggiorna anche il localStorage user
+            try {
+                const userData = JSON.parse(localStorage.getItem('user') || '{}');
+                userData.has_pin = true;
+                localStorage.setItem('user', JSON.stringify(userData));
+            } catch { /* ignore */ }
+            return updated;
+        });
+    };
+
     const logout = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        localStorage.removeItem('pinVerified');
         setUser(null);
+        setPinVerified(false);
+        setPinStatus(null);
     };
 
     const isAdmin = () => {
@@ -64,6 +110,22 @@ export function AuthProvider({ children }) {
         return user?.permissions?.includes(code) || false;
     };
 
+    // PIN è necessario se pin_required è true
+    const needsPin = () => {
+        if (!pinStatus) return false;
+        return pinStatus.pin_required === true;
+    };
+
+    // PIN deve essere configurato (primo accesso)
+    const needsPinSetup = () => {
+        return needsPin() && pinStatus && !pinStatus.has_pin;
+    };
+
+    // PIN deve essere verificato (accessi successivi)
+    const needsPinVerify = () => {
+        return needsPin() && pinStatus && pinStatus.has_pin && !pinVerified;
+    };
+
     const value = {
         user,
         loading,
@@ -73,6 +135,13 @@ export function AuthProvider({ children }) {
         isAdmin,
         hasPermission,
         isAuthenticated: !!user,
+        // PIN
+        pinStatus,
+        pinVerified,
+        confirmPinVerified,
+        needsPin,
+        needsPinSetup,
+        needsPinVerify,
     };
 
     return (

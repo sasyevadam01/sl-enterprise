@@ -1,7 +1,11 @@
-import React, { useState, useEffect } from 'react';
+/**
+ * CommandCenter — Dashboard Header
+ * v5.1 Premium Enterprise with Color Accents
+ */
+import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { it } from 'date-fns/locale';
-import { motion } from 'framer-motion';
+import { Clock, Users, CalendarOff, Sun, Moon, Sunset } from 'lucide-react';
 
 export default function CommandCenter({ stats, user }) {
     const [currentTime, setCurrentTime] = useState(new Date());
@@ -13,79 +17,88 @@ export default function CommandCenter({ stats, user }) {
 
     const hour = currentTime.getHours();
 
-    // Determine actual shift
-    let shiftInfo = { name: 'NOTTE', time: '22:00-06:00', emoji: '🌙', accent: 'purple' };
+    let shiftInfo = { name: 'Notte', time: '22:00 – 06:00', icon: Moon, color: 'text-indigo-600', bg: 'bg-indigo-50', ring: 'ring-indigo-100' };
     if (hour >= 6 && hour < 14) {
-        shiftInfo = { name: 'MATTINA', time: '06:00-14:00', emoji: '☀️', accent: 'cyan' };
+        shiftInfo = { name: 'Mattina', time: '06:00 – 14:00', icon: Sun, color: 'text-amber-600', bg: 'bg-amber-50', ring: 'ring-amber-100' };
     } else if (hour >= 14 && hour < 22) {
-        shiftInfo = { name: 'POMERIGGIO', time: '14:00-22:00', emoji: '🌅', accent: 'orange' };
+        shiftInfo = { name: 'Pomeriggio', time: '14:00 – 22:00', icon: Sunset, color: 'text-orange-600', bg: 'bg-orange-50', ring: 'ring-orange-100' };
     }
 
-    return (
-        <div className="master-card p-6 relative overflow-hidden">
-            <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+    const ShiftIcon = shiftInfo.icon;
+    const greeting = hour >= 6 && hour < 14 ? 'Buongiorno' : hour >= 14 && hour < 22 ? 'Buon pomeriggio' : 'Buonasera';
 
-                {/* Left: User & Time - Clean Text */}
+    return (
+        <div className="dashboard-card bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            {/* Brand accent top bar */}
+            <div className="h-1" style={{ background: 'linear-gradient(90deg, #2D8C0E, #35A012 40%, #E6620F)' }} />
+
+            <div className="p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+                {/* Left: Greeting */}
                 <div className="flex items-center gap-4">
-                    <div className="text-4xl">{hour >= 6 && hour < 14 ? '👋' : hour >= 14 && hour < 22 ? '✌️' : '🌙'}</div>
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-brand-green/10 to-brand-green/5 flex items-center justify-center ring-1 ring-brand-green/20">
+                        <span className="text-xl font-bold text-brand-green">
+                            {user?.full_name?.charAt(0) || 'U'}
+                        </span>
+                    </div>
                     <div>
-                        <h1 className="text-2xl font-bold text-white tracking-tight">
-                            Ciao, <span className="neon-emerald">{user?.full_name?.split(' ')[0] || 'Manager'}</span>
+                        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+                            {greeting}, {user?.full_name?.split(' ')[0] || 'Manager'}
                         </h1>
-                        <p className="text-zinc-500 flex items-center gap-2 text-sm mt-1">
+                        <p className="text-slate-500 flex items-center gap-2 text-sm mt-1">
                             <span className="capitalize">{format(currentTime, "EEEE d MMMM", { locale: it })}</span>
-                            <span className="w-1 h-1 rounded-full bg-zinc-600"></span>
-                            <span className="font-mono neon-cyan text-xs">{format(currentTime, "HH:mm:ss")}</span>
+                            <span className="w-1 h-1 rounded-full bg-slate-300" />
+                            <span className="font-mono text-slate-400 text-xs tabular-nums">{format(currentTime, "HH:mm:ss")}</span>
                         </p>
                     </div>
                 </div>
 
-                {/* Center: Shift Badge - Pill Style */}
-                <div className="flex-1 flex justify-center w-full md:w-auto">
-                    <div className={`master-card px-5 py-3 flex items-center gap-4`}>
-                        <span className="text-2xl">{shiftInfo.emoji}</span>
-                        <div>
-                            <p className="text-[10px] uppercase tracking-widest text-zinc-500 font-semibold">Turno Attuale</p>
-                            <h2 className={`text-xl font-black tracking-wider neon-${shiftInfo.accent}`}>{shiftInfo.name}</h2>
-                        </div>
-                        <div className="h-8 w-[1px] bg-white/10"></div>
-                        <div className="text-right">
-                            <p className="text-xs text-zinc-400 font-mono">{shiftInfo.time}</p>
-                            <div className="flex items-center justify-end gap-1.5 mt-1">
-                                <span className="status-dot status-low"></span>
-                                <span className="text-[10px] font-bold text-emerald-400 uppercase">Live</span>
-                            </div>
+                {/* Center: Shift Badge */}
+                <div className={`flex items-center gap-3 px-5 py-3 rounded-xl ${shiftInfo.bg} ring-1 ${shiftInfo.ring}`}>
+                    <div className={`w-9 h-9 rounded-lg ${shiftInfo.bg} flex items-center justify-center`}>
+                        <ShiftIcon className={`w-5 h-5 ${shiftInfo.color}`} />
+                    </div>
+                    <div>
+                        <p className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold">Turno Attuale</p>
+                        <p className={`text-base font-bold ${shiftInfo.color}`}>{shiftInfo.name}</p>
+                    </div>
+                    <div className="h-8 w-px bg-slate-200 mx-1" />
+                    <div className="text-right">
+                        <p className="text-xs text-slate-500 font-mono">{shiftInfo.time}</p>
+                        <div className="flex items-center justify-end gap-1.5 mt-0.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                            <span className="text-[10px] font-semibold text-green-600 uppercase">Live</span>
                         </div>
                     </div>
                 </div>
 
-                {/* Right: Quick Stats - Neon Numbers */}
-                <div className="flex gap-3 w-full md:w-auto justify-end">
-                    <StatPill
-                        value={stats.totalEmployees || 0}
-                        label="Dipendenti"
-                        neonClass="neon-cyan"
-                    />
-                    <StatPill
-                        value={stats.permessiOggi || 0}
-                        label="Permessi Oggi"
-                        neonClass={stats.permessiOggi > 0 ? "neon-orange" : "text-zinc-500"}
-                        showDot={stats.permessiOggi > 0}
-                    />
+                {/* Right: Stats */}
+                <div className="flex gap-3">
+                    <StatCard value={stats.totalEmployees || 0} label="Dipendenti" icon={Users} color="green" />
+                    <StatCard value={stats.permessiOggi || 0} label="Permessi Oggi" icon={CalendarOff}
+                        color={stats.permessiOggi > 0 ? 'orange' : 'slate'} />
                 </div>
             </div>
         </div>
     );
 }
 
-function StatPill({ value, label, neonClass, showDot }) {
+const colorMap = {
+    green: { iconBg: 'bg-green-100', iconText: 'text-green-600', valueTxt: 'text-green-700', cardBg: 'bg-green-50/50', ring: 'ring-green-100' },
+    orange: { iconBg: 'bg-orange-100', iconText: 'text-orange-600', valueTxt: 'text-orange-700', cardBg: 'bg-orange-50/50', ring: 'ring-orange-100' },
+    slate: { iconBg: 'bg-slate-100', iconText: 'text-slate-500', valueTxt: 'text-slate-800', cardBg: 'bg-slate-50/50', ring: 'ring-slate-100' },
+};
+
+function StatCard({ value, label, icon: Icon, color = 'slate' }) {
+    const c = colorMap[color] || colorMap.slate;
     return (
-        <div className="master-card flex flex-col items-center justify-center min-w-[90px] px-4 py-3">
+        <div className={`flex flex-col items-center justify-center min-w-[90px] px-4 py-3 rounded-xl ${c.cardBg} ring-1 ${c.ring} transition-all duration-150 hover:scale-105 hover:shadow-md cursor-default`}>
             <div className="flex items-center gap-2">
-                {showDot && <span className="status-dot status-medium"></span>}
-                <span className={`text-2xl font-bold ${neonClass}`}>{value}</span>
+                <div className={`w-6 h-6 rounded-md ${c.iconBg} flex items-center justify-center`}>
+                    <Icon className={`w-3.5 h-3.5 ${c.iconText}`} />
+                </div>
+                <span className={`text-2xl font-bold tabular-nums ${c.valueTxt}`}>{value}</span>
             </div>
-            <span className="text-[10px] text-zinc-500 uppercase tracking-wide mt-1">{label}</span>
+            <span className="text-[10px] text-slate-500 uppercase tracking-wide mt-1 font-medium">{label}</span>
         </div>
     );
 }

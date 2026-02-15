@@ -1,19 +1,21 @@
 """
 SL Enterprise - Auth Router
-Endpoints per login e registrazione.
+Endpoints per login, registrazione e PIN security.
 """
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import timedelta
+import re
 
 from database import get_db, User, AuditLog, create_tables
-from schemas import Token, UserCreate, UserResponse, MessageResponse
+from schemas import Token, UserCreate, UserResponse, MessageResponse, PinSetup, PinVerify
 from security import (
     verify_password, 
     get_password_hash, 
     create_access_token,
-    ACCESS_TOKEN_EXPIRE_MINUTES
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+    get_current_user
 )
 
 router = APIRouter(prefix="/auth", tags=["Autenticazione"])
@@ -23,7 +25,7 @@ router = APIRouter(prefix="/auth", tags=["Autenticazione"])
 # ENDPOINTS
 # ============================================================
 
-@router.post("/token", response_model=Token, summary="Login")
+@router.post("/token", summary="Login")
 async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     request: Request = None,
@@ -34,6 +36,8 @@ async def login(
     
     - **username**: Nome utente
     - **password**: Password
+    
+    Risposta include `has_pin` e `pin_required` per gestire il flusso PIN.
     """
     # Cerca utente
     user = db.query(User).filter(User.username == form_data.username).first()
@@ -77,7 +81,100 @@ async def login(
     db.add(log)
     db.commit()
     
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {
+        "access_token": access_token, 
+        "token_type": "bearer",
+        "has_pin": user.pin_hash is not None,
+        "pin_required": user.pin_required if user.pin_required is not None else True
+    }
+
+
+@router.post("/setup-pin", response_model=MessageResponse, summary="Imposta PIN")
+async def setup_pin(
+    pin_data: PinSetup,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Imposta il PIN a 4 cifre per l'utente corrente (primo accesso).
+    
+    - **pin**: PIN a 4 cifre numeriche
+    """
+    # Validazione PIN: esattamente 4 cifre
+    if not re.match(r'^\d{4}$', pin_data.pin):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Il PIN deve essere esattamente 4 cifre numeriche"
+        )
+    
+    # Re-query utente dalla sessione corrente per evitare problemi di sessione
+    user = db.query(User).filter(User.id == current_user.id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Utente non trovato")
+    
+    # Hash del PIN con bcrypt (stessa funzione delle password)
+    user.pin_hash = get_password_hash(pin_data.pin)
+    
+    # Log
+    log = AuditLog(
+        user_id=user.id,
+        action="PIN_SETUP",
+        details="PIN configurato con successo"
+    )
+    db.add(log)
+    db.commit()
+    
+    return {"message": "PIN configurato con successo!", "success": True}
+
+
+@router.post("/verify-pin", response_model=MessageResponse, summary="Verifica PIN")
+async def verify_pin(
+    pin_data: PinVerify,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Verifica il PIN a 4 cifre dopo il login con password.
+    
+    - **pin**: PIN a 4 cifre
+    """
+    # Re-query utente dalla sessione corrente
+    user = db.query(User).filter(User.id == current_user.id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Utente non trovato")
+    
+    if not user.pin_hash:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="PIN non configurato. Usa /auth/setup-pin"
+        )
+    
+    # Verifica PIN
+    if not verify_password(pin_data.pin, user.pin_hash):
+        # Log tentativo fallito
+        log = AuditLog(
+            user_id=user.id,
+            action="PIN_VERIFY_FAILED",
+            details="PIN errato"
+        )
+        db.add(log)
+        db.commit()
+        
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="PIN non corretto"
+        )
+    
+    # Log verifica riuscita
+    log = AuditLog(
+        user_id=user.id,
+        action="PIN_VERIFY_SUCCESS",
+        details="PIN verificato"
+    )
+    db.add(log)
+    db.commit()
+    
+    return {"message": "PIN verificato con successo!", "success": True}
 
 
 @router.post("/register", response_model=UserResponse, summary="Registra Super Admin")

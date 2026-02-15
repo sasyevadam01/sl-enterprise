@@ -1,6 +1,6 @@
 /**
  * SL Enterprise - Sidebar Layout
- * v3.0 Premium Minimalist Design
+ * v5.0 — Dark Sidebar with Brand Green Accents
  */
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -184,42 +184,42 @@ function SidebarItem({ item, isOpen, pendingCounts, onItemClick, onResetBadge })
                 <button
                     onClick={() => setExpanded(!expanded)}
                     className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl transition-all duration-200 group
-                        ${expanded ? 'bg-white/[0.03]' : 'hover:bg-white/[0.03]'}`}
+                        ${expanded ? 'bg-brand-green/10' : 'hover:bg-brand-green/10'}`}
                 >
                     <span className="flex items-center gap-3">
-                        <span className={`relative text-zinc-400 group-hover:text-zinc-200 transition-colors ${item.isAnimated ? 'text-emerald-400' : ''}`}>
+                        <span className={`relative text-slate-500 group-hover:text-brand-green transition-colors ${item.isAnimated ? 'text-brand-green' : ''}`}>
                             {item.isAnimated && (
-                                <span className="absolute inset-0 rounded-full bg-emerald-500/20 blur-md animate-pulse" />
+                                <span className="absolute inset-0 rounded-full bg-brand-green/10 blur-md" />
                             )}
                             <span className="relative">
                                 {getIcon(item.icon)}
                             </span>
                             {(item.title === 'HR Suite' || item.title === 'Coordinator Suite') && (pendingCounts.events + pendingCounts.leaves) > 0 && (
-                                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-zinc-950" />
+                                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-brand-orange rounded-full border-2 border-sidebar" />
                             )}
                             {(item.title === 'Live Production') && (pendingCounts.productionSupply + (pendingCounts.logisticsPending || 0)) > 0 && (
-                                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-zinc-950" />
+                                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-brand-orange rounded-full border-2 border-sidebar" />
                             )}
                         </span>
                         {isOpen && (
                             <span className={`text-sm font-medium transition-colors
-                                ${item.isAnimated ? 'text-emerald-400' : 'text-zinc-300 group-hover:text-white'}`}>
+                                ${item.isAnimated ? 'text-brand-green' : 'text-slate-800 group-hover:text-brand-green'}`}>
                                 {item.title}
                             </span>
                         )}
                     </span>
                     {isOpen && (
-                        <ChevronDown className={`w-4 h-4 text-zinc-500 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} />
+                        <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} />
                     )}
                 </button>
                 {expanded && isOpen && (
-                    <div className="ml-4 mt-1 pl-4 border-l border-zinc-800 space-y-0.5">
+                    <div className="ml-4 mt-1 pl-4 border-l border-slate-200 space-y-0.5">
                         {item.children.map((child, idx) => {
                             // Handle divider items
                             if (child.type === 'divider') {
                                 return (
                                     <div key={`divider-${idx}`} className="py-3">
-                                        <span className="text-[9px] uppercase tracking-[0.15em] text-zinc-600 font-medium">
+                                        <span className="text-[9px] uppercase tracking-[0.15em] text-slate-400 font-medium">
                                             {child.label}
                                         </span>
                                     </div>
@@ -237,16 +237,16 @@ function SidebarItem({ item, isOpen, pendingCounts, onItemClick, onResetBadge })
                                     }}
                                     className={`flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg transition-all duration-200
                                         ${isChildActive
-                                            ? 'bg-emerald-500/10 text-emerald-400 border-l-2 border-emerald-500 -ml-[2px] pl-[14px]'
-                                            : 'text-zinc-400 hover:bg-white/[0.03] hover:text-zinc-200'
+                                            ? 'bg-brand-green/10 text-brand-green font-semibold border-l-2 border-brand-green -ml-[2px] pl-[14px]'
+                                            : 'text-slate-600 hover:bg-brand-green/10 hover:text-brand-green'
                                         }`}
                                 >
-                                    <span className={`${isChildActive ? 'text-emerald-400' : 'text-zinc-500'}`}>
+                                    <span className={`${isChildActive ? 'text-brand-green' : 'text-slate-400'}`}>
                                         {getIcon(child.icon, "w-4 h-4")}
                                     </span>
                                     <span className="flex-1">{child.title}</span>
                                     {child.path === '/hr/approvals' && (pendingCounts.leaves + pendingCounts.events) > 0 && (
-                                        <span className="bg-red-500/20 text-red-400 text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
+                                        <span className="bg-brand-orange/20 text-brand-orange text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
                                             {pendingCounts.leaves + pendingCounts.events}
                                         </span>
                                     )}
@@ -255,14 +255,14 @@ function SidebarItem({ item, isOpen, pendingCounts, onItemClick, onResetBadge })
                                         (() => {
                                             const count = Math.max(0, (pendingCounts.productionSupply || 0) - (pendingCounts.acknowledgedSupply || 0));
                                             return count > 0 ? (
-                                                <span className="bg-red-500/20 text-red-400 text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
+                                                <span className="bg-brand-orange/20 text-brand-orange text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
                                                     {count}
                                                 </span>
                                             ) : null;
                                         })()
                                     )}
                                     {child.path === '/logistics/pool' && pendingCounts.logisticsPending > 0 && (
-                                        <span className="bg-red-500/20 text-red-400 text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
+                                        <span className="bg-brand-orange/20 text-brand-orange text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
                                             {pendingCounts.logisticsPending}
                                         </span>
                                     )}
@@ -287,35 +287,35 @@ function SidebarItem({ item, isOpen, pendingCounts, onItemClick, onResetBadge })
             onClick={onItemClick}
             className={`flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all duration-200
                 ${isActive
-                    ? 'bg-emerald-500/10 text-emerald-400 border-l-2 border-emerald-500'
-                    : 'text-zinc-400 hover:bg-white/[0.03] hover:text-zinc-200 border-l-2 border-transparent'
+                    ? 'bg-brand-green/10 text-brand-green font-semibold border-l-2 border-brand-green'
+                    : 'text-slate-600 hover:bg-brand-green/10 hover:text-brand-green border-l-2 border-transparent'
                 }`}
         >
-            <span className={`relative ${isActive ? 'text-emerald-400' : 'text-zinc-400'}`}>
+            <span className={`relative ${isActive ? 'text-brand-green' : 'text-slate-400'}`}>
                 {getIcon(item.icon)}
                 {item.path === '/dashboard' && (pendingCounts.events + pendingCounts.leaves) > 0 && !isOpen && (
-                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-zinc-950" />
+                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-brand-orange rounded-full border-2 border-sidebar" />
                 )}
                 {item.path === '/chat' && pendingCounts.chat > 0 && !isOpen && (
-                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-zinc-950" />
+                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-brand-orange rounded-full border-2 border-sidebar" />
                 )}
                 {item.path === '/production/blocks' && badgeCount > 0 && !isOpen && (
-                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-zinc-950" />
+                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-brand-orange rounded-full border-2 border-sidebar" />
                 )}
             </span>
             {isOpen && <span className="text-sm font-medium">{item.title}</span>}
             {isOpen && item.path === '/chat' && pendingCounts.chat > 0 && (
-                <span className="ml-auto bg-red-500/20 text-red-400 text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
+                <span className="ml-auto bg-brand-orange/20 text-brand-orange text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
                     {pendingCounts.chat}
                 </span>
             )}
             {isOpen && item.path === '/production/blocks' && badgeCount > 0 && (
-                <span className="ml-auto bg-red-500/20 text-red-400 text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
+                <span className="ml-auto bg-brand-orange/20 text-brand-orange text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
                     {badgeCount}
                 </span>
             )}
             {isOpen && item.path === '/logistics/pool' && pendingCounts.logisticsPending > 0 && (
-                <span className="ml-auto bg-red-500/20 text-red-400 text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
+                <span className="ml-auto bg-brand-orange/20 text-brand-orange text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
                     {pendingCounts.logisticsPending}
                 </span>
             )}
@@ -330,9 +330,12 @@ function RealTimeClock() {
         return () => clearInterval(timer);
     }, []);
     return (
-        <span className="text-[10px] text-zinc-600 font-mono tracking-wider">
-            {time.toLocaleTimeString('it-IT')}
-        </span>
+        <div className="mt-2.5 flex items-center justify-center gap-1.5 bg-slate-100 border border-slate-200 rounded-full px-3 py-1 shadow-sm">
+            <span className="w-1.5 h-1.5 rounded-full bg-brand-green shadow-[0_0_4px_rgba(45,140,14,0.5)] animate-pulse" />
+            <span className="text-[11px] text-slate-600 font-mono tabular-nums tracking-wider">
+                {time.toLocaleTimeString('it-IT')}
+            </span>
+        </div>
     );
 }
 
@@ -342,7 +345,7 @@ export default function Sidebar({ isOpen, onToggle, mobileOpen, setMobileOpen })
     const [pendingCounts, setPendingCounts] = useState({ events: 0, leaves: 0, chat: 0 });
 
     useEffect(() => {
-        console.log("🚀 SL ENTERPRISE SIDEBAR v3.0 LOADED - Premium Minimal");
+        console.log("🚀 SL ENTERPRISE SIDEBAR v5.0 LOADED - Light Enterprise");
     }, []);
 
     // Get menu items based on permissions (not hardcoded roles)
@@ -411,31 +414,67 @@ export default function Sidebar({ isOpen, onToggle, mobileOpen, setMobileOpen })
     if (!user) return null;
 
     return (
-        <aside className={`fixed left-0 top-0 h-screen bg-zinc-950 border-r border-white/5 transition-all duration-300 z-50 flex flex-col
+        <aside className={`fixed left-0 top-0 h-screen bg-white border-r border-slate-200 transition-all duration-300 z-50 flex flex-col
             ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
             ${isOpen ? 'md:w-64' : 'md:w-20'} 
             w-64`}>
-            {/* Header */}
-            <div className="flex items-center justify-between p-5 border-b border-white/5">
+            {/* Header — Company Logo */}
+            <div className="flex items-center justify-between p-5 border-b border-slate-200">
                 <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                        <span className="text-white font-bold text-sm">SL</span>
-                    </div>
-                    {isOpen && (
-                        <div className="flex flex-col">
-                            <span className="text-base font-semibold text-white tracking-tight">Enterprise</span>
+                    {(isOpen || mobileOpen) ? (
+                        <div className="flex flex-col items-center w-full">
+                            <div
+                                className="relative cursor-pointer group transition-all duration-200 ease-out"
+                                style={{
+                                    transform: 'translateY(0px)',
+                                }}
+                                onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0px)'; }}
+                                onMouseDown={(e) => { e.currentTarget.style.transform = 'translateY(1px)'; }}
+                                onMouseUp={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                            >
+                                <div
+                                    className="px-4 py-2 rounded-xl transition-shadow duration-200"
+                                    style={{
+                                        background: 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)',
+                                        boxShadow: `
+                                            0 1px 0 0 rgba(255,255,255,0.9) inset,
+                                            0 -1px 0 0 rgba(0,0,0,0.04) inset,
+                                            0 4px 8px -2px rgba(0,0,0,0.12),
+                                            0 2px 4px -1px rgba(0,0,0,0.06),
+                                            0 -1px 2px 0 rgba(45,140,14,0.08)
+                                        `,
+                                        border: '1px solid rgba(0,0,0,0.08)',
+                                    }}
+                                >
+                                    <img
+                                        src="/logo-siervoplast.png"
+                                        alt="Siervo Plast"
+                                        className="h-9 object-contain relative z-10"
+                                        style={{
+                                            filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.08))',
+                                        }}
+                                    />
+                                </div>
+                                {/* Subtle green accent line under logo */}
+                                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2/3 h-[2px] bg-gradient-to-r from-transparent via-brand-green/40 to-transparent rounded-full" />
+                            </div>
                             <RealTimeClock />
+                        </div>
+                    ) : (
+                        <div className="w-9 h-9 bg-brand-green rounded-xl flex items-center justify-center shadow-sm">
+                            <span className="text-white font-bold text-sm">SL</span>
                         </div>
                     )}
                 </div>
 
                 {/* Desktop Toggle */}
-                <button onClick={onToggle} className="hidden md:flex p-2 text-zinc-500 hover:text-zinc-300 rounded-lg hover:bg-white/5 transition-all duration-200">
+                <button onClick={onToggle} className="hidden md:flex p-2 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-all duration-200">
                     <ChevronRight className={`w-5 h-5 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 {/* Mobile Close Button */}
-                <button onClick={() => setMobileOpen(false)} className="md:hidden p-2 text-zinc-500 hover:text-zinc-300 transition-all duration-200">
+                <button onClick={() => setMobileOpen(false)} className="md:hidden p-2 text-slate-400 hover:text-slate-700 transition-all duration-200">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -498,27 +537,24 @@ export default function Sidebar({ isOpen, onToggle, mobileOpen, setMobileOpen })
             </nav>
 
             {/* User Footer */}
-            <div className={`p-4 border-t border-white/5 md:pb-4 pb-24 bg-zinc-950 flex-none`}>
+            <div className={`p-4 border-t border-slate-200 md:pb-4 pb-24 bg-white flex-none`}>
                 {(isOpen || mobileOpen) && user && (
                     <div className="flex items-center gap-3 mb-3">
-                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-zinc-700 to-zinc-800 flex items-center justify-center shadow-inner">
-                            <span className="text-sm font-medium text-zinc-300">
+                        <div className="w-9 h-9 rounded-xl bg-brand-green/15 flex items-center justify-center">
+                            <span className="text-sm font-medium text-brand-green">
                                 {user.full_name?.charAt(0)?.toUpperCase()}
                             </span>
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-zinc-200 truncate">{user.full_name}</p>
-                            <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider">{user.role_label || user.role}</p>
+                            <p className="text-sm font-medium text-slate-800 truncate">{user.full_name}</p>
+                            <p className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">{user.role_label || user.role}</p>
                         </div>
-                        <button className="p-2 text-zinc-500 hover:text-zinc-300 rounded-lg hover:bg-white/5 transition-all duration-200">
-                            <Settings className="w-4 h-4" />
-                        </button>
                     </div>
                 )}
                 <div className={`flex items-center gap-2 ${!isOpen && !mobileOpen ? 'flex-col' : 'flex-row'}`}>
                     <button
                         onClick={handleLogout}
-                        className="flex-1 w-full flex items-center justify-center gap-3 px-4 py-3 text-red-400 hover:bg-red-500/10 rounded-xl transition-all duration-200"
+                        className="flex-1 w-full flex items-center justify-center gap-3 px-4 py-3 text-red-500 hover:bg-red-50 rounded-xl transition-all duration-200"
                         title="Esci"
                     >
                         <LogOut className="w-5 h-5" />
@@ -529,6 +565,6 @@ export default function Sidebar({ isOpen, onToggle, mobileOpen, setMobileOpen })
                     <OnlineUsersWidget variant="sidebar" />
                 </div>
             </div>
-        </aside>
+        </aside >
     );
 }

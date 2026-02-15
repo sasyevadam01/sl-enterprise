@@ -16,9 +16,9 @@ import { useUI } from "../../components/ui/CustomUI";
 
 // --- UTILS ---
 const getPriorityColor = (p) => {
-  if (p >= 8) return "bg-red-500 text-white animate-pulse"; // Emergency
-  if (p >= 5) return "bg-yellow-500 text-black"; // Medium
-  return "bg-green-500 text-white"; // Low
+  if (p >= 8) return "bg-red-100 text-red-700 ring-1 ring-red-200"; // Emergency
+  if (p >= 5) return "bg-amber-100 text-amber-700 ring-1 ring-amber-200"; // Medium
+  return "bg-slate-100 text-slate-600 ring-1 ring-slate-200"; // Low
 };
 
 const formatDate = (d) => {
@@ -40,6 +40,13 @@ const calculateChecklistProgress = (items) => {
   return [done, total, Math.round((done / total) * 100)];
 };
 
+const statusConfig = {
+  pending: { label: 'Da Fare', cls: 'bg-slate-100 text-slate-600' },
+  acknowledged: { label: 'Visto', cls: 'bg-amber-100 text-amber-700' },
+  in_progress: { label: 'In Corso', cls: 'bg-blue-100 text-blue-700' },
+  completed: { label: 'Completato', cls: 'bg-emerald-100 text-emerald-700' },
+};
+
 const TaskItem = ({
   task,
   onAction,
@@ -50,7 +57,7 @@ const TaskItem = ({
   onInteract,
 }) => {
   const [expanded, setExpanded] = useState(false);
-  const [doneChecks, totalChecks, checkProgress] = calculateChecklistProgress(
+  const [doneChecks, totalChecks] = calculateChecklistProgress(
     task.checklist,
   );
 
@@ -71,234 +78,139 @@ const TaskItem = ({
 
   const isAssignee = task.assigned_to === currentUserId;
   const canAct = isManager || isAssignee;
+  const st = statusConfig[task.status] || statusConfig.pending;
+  const isOverdue = task.deadline && new Date(task.deadline) < new Date() && task.status !== 'completed';
 
   return (
-    <div
-      className={`group bg-slate-800 rounded-xl border-l-4 overflow-hidden mb-3 hover:bg-slate-750 transition-all ${task.status === "completed"
-        ? "border-green-500 opacity-60"
-        : task.priority >= 8
-          ? "border-red-600 shadow-lg shadow-red-900/20"
-          : "border-blue-500"
-        }`}
-    >
-      {/* MAIN ROW */}
+    <div className={`border-b border-slate-100 last:border-b-0 ${task.status === 'completed' ? 'opacity-50' : ''}`}>
+      {/* ── Main Row ── */}
       <div
-        className="p-4 flex items-center gap-4 cursor-pointer"
+        className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors cursor-pointer group"
         onClick={() => setExpanded(!expanded)}
       >
-        {/* Priority */}
-        <div className="flex flex-col items-center gap-1 mr-2">
-          <div
-            className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg ${getPriorityColor(task.priority)}`}
-          >
-            {task.priority}
+        {/* Priority Badge */}
+        <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${getPriorityColor(task.priority)}`}>
+          {task.priority}
+        </div>
+
+        {/* Title + Assignee */}
+        <div className="flex-grow min-w-0">
+          <div className="flex items-center gap-2">
+            <span className={`font-semibold text-sm truncate ${task.status === 'completed' ? 'line-through text-slate-400' : 'text-slate-900'}`}>
+              {task.title}
+            </span>
+            {task.recurrence !== 'none' && (
+              <span className="text-[10px] bg-purple-100 text-purple-600 px-1.5 py-0.5 rounded font-medium">RIC</span>
+            )}
+            {totalChecks > 0 && (
+              <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-medium">
+                {doneChecks}/{totalChecks}
+              </span>
+            )}
+            {task.attachments?.length > 0 && (
+              <span className="text-[10px] bg-blue-50 text-blue-500 px-1.5 py-0.5 rounded font-medium">
+                {task.attachments.length} file
+              </span>
+            )}
           </div>
-          <span className="text-[10px] text-gray-500 font-bold uppercase tracking-tighter">
-            Urgenza
+          <div className="text-xs text-slate-400 truncate mt-0.5">
+            {task.assignee_name || 'Non assegnato'}
+          </div>
+        </div>
+
+        {/* Deadline */}
+        <div className="flex-shrink-0 w-28 text-right hidden md:block">
+          <span className={`text-xs ${isOverdue ? 'text-red-600 font-bold' : 'text-slate-400'}`}>
+            {formatDate(task.deadline)}
           </span>
         </div>
 
-        {/* Content */}
-        <div className="flex-grow min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <h4
-              className={`text-lg font-semibold truncate ${task.status === "completed" ? "line-through text-gray-500" : "text-white"}`}
-            >
-              {task.title}
-            </h4>
-            {task.status === "in_progress" && (
-              <span className="text-xs bg-blue-500/20 text-blue-400 px-2 rounded">
-                In Corso
-              </span>
-            )}
-            {task.status === "acknowledged" && (
-              <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 rounded">
-                Visto
-              </span>
-            )}
-            {task.recurrence !== "none" && (
-              <span className="text-xs bg-purple-500/20 text-purple-400 px-2 rounded">
-                🔄 {task.recurrence}
-              </span>
-            )}
-          </div>
-
-          {/* Enhanced Assignee Badge */}
-          <div className="flex items-center gap-3 mt-2">
-            <div className="flex items-center gap-2 bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 px-3 py-1.5 rounded-lg">
-              <span className="text-lg">👤</span>
-              <div className="flex flex-col">
-                <span className="text-[10px] text-gray-400 uppercase tracking-wide">Assegnato a</span>
-                <span className="text-sm font-semibold text-white">{task.assignee_name || "Non assegnato"}</span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 text-xs text-gray-400">
-              <span>
-                📅{" "}
-                <span
-                  className={
-                    task.deadline && new Date(task.deadline) < new Date()
-                      ? "text-red-400 font-bold"
-                      : ""
-                  }
-                >
-                  {formatDate(task.deadline)}
-                </span>
-              </span>
-              {totalChecks > 0 && (
-                <span>
-                  ✅ {doneChecks}/{totalChecks} ({checkProgress}%)
-                </span>
-              )}
-              {/* Attachment Badge */}
-              {task.attachments && task.attachments.length > 0 && (
-                <span className="flex items-center gap-1 bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">
-                  📎 {task.attachments.length}
-                </span>
-              )}
-            </div>
-          </div>
+        {/* Status Pill */}
+        <div className="flex-shrink-0 w-24 text-center hidden sm:block">
+          <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${st.cls}`}>
+            {st.label}
+          </span>
         </div>
 
         {/* Actions */}
         <div
-          className="flex-shrink-0 flex items-center gap-2"
+          className="flex-shrink-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
           onClick={(e) => e.stopPropagation()}
         >
-          {task.status === "pending" && canAct && (
-            <button
-              onClick={() => handleAction("acknowledged")}
-              className="px-3 py-1 bg-yellow-600/20 text-yellow-400 text-sm rounded hover:bg-yellow-600/40"
-            >
-              👁️ Visto
+          {task.status === 'pending' && canAct && (
+            <button onClick={() => handleAction('acknowledged')} className="p-1.5 rounded-md hover:bg-amber-50 text-amber-600 transition cursor-pointer" title="Segna come Visto">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
             </button>
           )}
-          {(task.status === "pending" || task.status === "acknowledged") &&
-            canAct && (
-              <button
-                onClick={() => handleAction("in_progress")}
-                className="px-3 py-1 bg-blue-600/20 text-blue-400 text-sm rounded hover:bg-blue-600/40"
-              >
-                ▶️ Inizia
-              </button>
-            )}
-          {task.status === "in_progress" && canAct && (
-            <button
-              onClick={() => handleAction("completed")}
-              className="px-3 py-1 bg-green-600/20 text-green-400 text-sm rounded hover:bg-green-600/40"
-            >
-              ✅ Finito
+          {(task.status === 'pending' || task.status === 'acknowledged') && canAct && (
+            <button onClick={() => handleAction('in_progress')} className="p-1.5 rounded-md hover:bg-blue-50 text-blue-600 transition cursor-pointer" title="Inizia">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             </button>
           )}
-          <button
-            onClick={openInteractions}
-            className="p-2 hover:bg-white/10 text-gray-400 hover:text-blue-300 rounded-lg transition"
-            title="Chat & Allegati"
-          >
-            💬
+          {task.status === 'in_progress' && canAct && (
+            <button onClick={() => handleAction('completed')} className="p-1.5 rounded-md hover:bg-emerald-50 text-emerald-600 transition cursor-pointer" title="Completa">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </button>
+          )}
+          <button onClick={openInteractions} className="p-1.5 rounded-md hover:bg-slate-100 text-slate-400 transition cursor-pointer" title="Chat & Allegati">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
           </button>
           {(isManager || canAct) && (
-            <button
-              onClick={() => onEdit(task)}
-              disabled={!!task.locked_by && task.locked_by !== currentUserId}
-              className="p-2 text-gray-400 hover:text-blue-400 transition disabled:opacity-50"
-            >
-              ✏️
+            <button onClick={() => onEdit(task)} disabled={!!task.locked_by && task.locked_by !== currentUserId} className="p-1.5 rounded-md hover:bg-slate-100 text-slate-400 transition disabled:opacity-30 cursor-pointer" title="Modifica">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
             </button>
           )}
           {isManager && (
-            <button
-              onClick={() => onDelete(task.id)}
-              className="p-2 text-gray-500 hover:text-red-400 transition"
-            >
-              🗑️
+            <button onClick={() => onDelete(task.id)} className="p-1.5 rounded-md hover:bg-red-50 text-slate-400 hover:text-red-500 transition cursor-pointer" title="Elimina">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
             </button>
           )}
         </div>
+
+        {/* Expand Arrow */}
+        <svg className={`w-4 h-4 text-slate-300 transition-transform flex-shrink-0 ${expanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
       </div>
 
-      {/* EXPANDED */}
+      {/* ── Expanded Detail ── */}
       {expanded && (
-        <div className="bg-slate-900/30 overflow-hidden border-t border-white/5 transition-all">
-          <div className="p-4 pt-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              <div>
-                <h3 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
-                  {task.title}
-                  {task.category && (
-                    <span className="text-[10px] uppercase tracking-wider bg-white/10 px-2 py-0.5 rounded text-gray-400">
-                      {task.category}
-                    </span>
-                  )}
-                </h3>
-                <div className="flex flex-wrap gap-1 mb-1">
-                  {task.tags?.map((tag, i) => (
-                    <span
-                      key={i}
-                      className="text-[9px] bg-blue-600/10 text-blue-300 px-1.5 py-0.5 rounded border border-blue-500/20"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-                <p className="text-sm text-gray-400 whitespace-pre-wrap">
-                  {task.description || "Nessuna descrizione."}
-                </p>
-
-                <div className="mt-4 text-xs text-gray-500 space-y-1">
-                  <p>
-                    ✍️ Assegnato da: <strong>{task.author_name}</strong> il{" "}
-                    {formatDate(task.created_at)}
-                  </p>
-                  {task.acknowledged_at && (
-                    <p>
-                      👁️ Visto da:{" "}
-                      <strong>{task.acknowledger_name || "N/A"}</strong> il{" "}
-                      {formatDate(task.acknowledged_at)}
-                    </p>
-                  )}
-                  {task.started_at && (
-                    <p>🚀 Iniziato il: {formatDate(task.started_at)}</p>
-                  )}
-                  {task.completed_at && (
-                    <p>
-                      🏁 Completato da: <strong>{task.completer_name}</strong>{" "}
-                      il {formatDate(task.completed_at)}
-                    </p>
-                  )}
-                  {task.reopen_reason && (
-                    <p className="text-orange-400">
-                      ⚠️ Riaperto: {task.reopen_reason}
-                    </p>
-                  )}
-                </div>
-
-                {canAct &&
-                  (task.status === "in_progress" ||
-                    task.status === "completed") && (
-                    <div className="mt-4 pt-3 border-t border-white/5">
-                      <p className="text-xs text-gray-500 mb-2">
-                        Torna allo stato precedente:
-                      </p>
-                      <button
-                        onClick={() => handleAction("pending")}
-                        className="px-3 py-1 bg-orange-600/20 text-orange-400 text-sm rounded hover:bg-orange-600/40"
-                      >
-                        ⏪ Riporta a "Da Fare"
-                      </button>
-                    </div>
-                  )}
+        <div className="bg-slate-50 border-t border-slate-100 px-4 py-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <h3 className="text-sm font-bold text-slate-800 mb-1 flex items-center gap-2">
+                {task.title}
+                {task.category && (
+                  <span className="text-[10px] uppercase tracking-wider bg-slate-200 px-2 py-0.5 rounded text-slate-500">{task.category}</span>
+                )}
+              </h3>
+              <div className="flex flex-wrap gap-1 mb-2">
+                {task.tags?.map((tag, i) => (
+                  <span key={i} className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-200">#{tag}</span>
+                ))}
               </div>
-              <div>
-                <ChecklistRenderer
-                  items={task.checklist}
-                  onToggle={(idx) =>
-                    toggleChecklist(idx, !task.checklist[idx].done)
-                  }
-                  readOnly={!canAct || task.status === "completed"}
-                />
+              <p className="text-sm text-slate-500 whitespace-pre-wrap">{task.description || 'Nessuna descrizione.'}</p>
+
+              <div className="mt-3 text-xs text-slate-400 space-y-1">
+                <p>Assegnato da: <strong className="text-slate-600">{task.author_name}</strong> il {formatDate(task.created_at)}</p>
+                {task.acknowledged_at && <p>Visto il: {formatDate(task.acknowledged_at)}</p>}
+                {task.started_at && <p>Iniziato il: {formatDate(task.started_at)}</p>}
+                {task.completed_at && <p>Completato da: <strong className="text-slate-600">{task.completer_name}</strong> il {formatDate(task.completed_at)}</p>}
+                {task.reopen_reason && <p className="text-orange-600">Riaperto: {task.reopen_reason}</p>}
               </div>
+
+              {canAct && (task.status === 'in_progress' || task.status === 'completed') && (
+                <div className="mt-3 pt-3 border-t border-slate-200">
+                  <button onClick={() => handleAction('pending')} className="px-3 py-1.5 bg-orange-50 text-orange-600 border border-orange-200 text-xs rounded-lg hover:bg-orange-100 transition cursor-pointer">
+                    Riporta a "Da Fare"
+                  </button>
+                </div>
+              )}
+            </div>
+            <div>
+              <ChecklistRenderer
+                items={task.checklist}
+                onToggle={(idx) => toggleChecklist(idx, !task.checklist[idx].done)}
+                readOnly={!canAct || task.status === 'completed'}
+              />
             </div>
           </div>
         </div>
@@ -403,6 +315,7 @@ export default function TasksPage() {
       }
     };
     init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Refresh
@@ -420,8 +333,9 @@ export default function TasksPage() {
 
   // Polling for live updates
   useEffect(() => {
-    const interval = setInterval(() => refreshTasks(true), 3000); // 3s polling
+    const interval = setInterval(() => refreshTasks(true), 3000);
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Handlers
@@ -445,7 +359,7 @@ export default function TasksPage() {
         await tasksApi.updateTask(id, data);
       }
       refreshTasks();
-    } catch (err) {
+    } catch {
       toast.error("Errore aggiornamento task");
     }
   };
@@ -465,7 +379,7 @@ export default function TasksPage() {
       await tasksApi.deleteTask(id);
       toast.success("Task eliminato correttamente");
       refreshTasks();
-    } catch (err) {
+    } catch {
       toast.error("Impossibile eliminare il task");
     }
   };
@@ -522,7 +436,7 @@ export default function TasksPage() {
     if (editingTaskId) {
       try {
         await tasksApi.unlockTask(editingTaskId);
-      } catch (e) { }
+      } catch { /* ignore */ }
     }
     setShowModal(false);
     setEditingTaskId(null);
@@ -672,7 +586,7 @@ export default function TasksPage() {
       deadline: deadline,
       category: 'Urgenza'
     }));
-    toast.info('⚡ Modalità URGENTE attivata!');
+    toast.info('Modalità URGENTE attivata');
   };
 
   const addChecklistItem = () => {
@@ -812,46 +726,47 @@ export default function TasksPage() {
   };
 
   if (loading)
-    return <div className="p-10 text-center text-white">Caricamento...</div>;
+    return <div className="p-10 text-center text-slate-500">Caricamento...</div>;
 
   const inputClasses =
-    "w-full bg-slate-700 border border-white/10 rounded-lg p-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all";
-  const labelClasses = "block text-sm font-medium text-gray-400 mb-1";
+    "w-full bg-white border border-slate-300 rounded-lg p-3 text-slate-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all shadow-sm";
+  const labelClasses = "block text-sm font-medium text-slate-600 mb-1";
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-20">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-1">
-            📋 Task Board
+          <h1 className="text-2xl font-extrabold text-slate-900">
+            Task Board
           </h1>
-          <p className="text-gray-400">
+          <p className="text-slate-500 text-sm mt-1">
             Assegna, monitora e completa le attività operative.
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-2">
           {canCreate && (
             <button
               onClick={() => setShowModal(true)}
-              className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-xl font-bold shadow-lg transition flex items-center gap-2"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-semibold shadow-sm transition flex items-center gap-2 text-sm cursor-pointer"
             >
-              <span>+</span> Nuovo Task
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+              Nuovo Task
             </button>
           )}
           <button
             onClick={() => setShowCalendar(!showCalendar)}
-            className={`px-4 py-2 rounded-xl transition border border-white/10 ${showCalendar ? "bg-white/20 text-white" : "bg-slate-800 text-gray-400 hover:text-white"}`}
+            className={`px-3 py-2.5 rounded-lg transition border cursor-pointer ${showCalendar ? 'bg-blue-50 text-blue-600 border-blue-200' : 'bg-white text-slate-400 border-slate-200 hover:text-slate-600'}`}
             title="Calendario Scadenze"
           >
-            📅
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
           </button>
           <button
             onClick={() => setShowGuide(!showGuide)}
-            className={`px-4 py-2 rounded-xl transition border border-white/10 ${showGuide ? "bg-white/20 text-white" : "bg-slate-800 text-gray-400 hover:text-white"}`}
+            className={`px-3 py-2.5 rounded-lg transition border cursor-pointer ${showGuide ? 'bg-blue-50 text-blue-600 border-blue-200' : 'bg-white text-slate-400 border-slate-200 hover:text-slate-600'}`}
             title="Guida Utente"
           >
-            ℹ️
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
           </button>
         </div>
       </div>
@@ -875,7 +790,7 @@ export default function TasksPage() {
           {selectedCalendarDate && (
             <button
               onClick={() => setSelectedCalendarDate(null)}
-              className="text-sm text-gray-400 hover:text-white flex items-center gap-1"
+              className="text-sm text-slate-400 hover:text-slate-700 flex items-center gap-1 cursor-pointer"
             >
               ✕ Rimuovi filtro data
             </button>
@@ -900,22 +815,22 @@ export default function TasksPage() {
           />
 
           {/* Status Filter Pills */}
-          <div className="flex items-center gap-2 bg-slate-800/60 p-1.5 rounded-xl border border-white/5">
+          <div className="flex items-center gap-2 bg-white p-1.5 rounded-xl border border-slate-200 shadow-sm">
             <button
               onClick={() => setFilter("active")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === "active" ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white hover:bg-white/10"}`}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${filter === "active" ? "bg-blue-600 text-white shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"}`}
             >
               Attivi
             </button>
             <button
               onClick={() => setFilter("completed")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === "completed" ? "bg-green-600 text-white" : "text-gray-400 hover:text-white hover:bg-white/10"}`}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${filter === "completed" ? "bg-emerald-600 text-white shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"}`}
             >
               Completati
             </button>
             <button
               onClick={() => setFilter("all")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === "all" ? "bg-slate-600 text-white" : "text-gray-400 hover:text-white hover:bg-white/10"}`}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer ${filter === "all" ? "bg-slate-600 text-white shadow-sm" : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"}`}
             >
               Tutti
             </button>
@@ -924,64 +839,63 @@ export default function TasksPage() {
 
         {/* Quick Filter Chips */}
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs text-gray-500 uppercase tracking-wider mr-1">Filtri:</span>
+          <span className="text-xs text-slate-400 uppercase tracking-wider mr-1">Filtri:</span>
 
           <button
             onClick={() => toggleQuickFilter('mine')}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1.5 ${quickFilters.mine
-              ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
-              : 'bg-slate-800 text-gray-400 hover:text-white border border-white/10'
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1.5 cursor-pointer ${quickFilters.mine
+              ? 'bg-blue-600 text-white shadow-sm'
+              : 'bg-white text-slate-500 hover:text-slate-700 border border-slate-200'
               }`}
           >
-            👤 A me
+            A me
             {quickFilters.mine && <span className="text-xs opacity-70">({myTasks.length})</span>}
           </button>
 
           <button
             onClick={() => toggleQuickFilter('delegated')}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1.5 ${quickFilters.delegated
-              ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
-              : 'bg-slate-800 text-gray-400 hover:text-white border border-white/10'
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1.5 cursor-pointer ${quickFilters.delegated
+              ? 'bg-purple-600 text-white shadow-sm'
+              : 'bg-white text-slate-500 hover:text-slate-700 border border-slate-200'
               }`}
           >
-            ✍️ Delegati
+            Delegati
           </button>
 
           <button
             onClick={() => toggleQuickFilter('today')}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1.5 ${quickFilters.today
-              ? 'bg-yellow-600 text-white shadow-lg shadow-yellow-600/30'
-              : 'bg-slate-800 text-gray-400 hover:text-white border border-white/10'
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1.5 cursor-pointer ${quickFilters.today
+              ? 'bg-amber-500 text-white shadow-sm'
+              : 'bg-white text-slate-500 hover:text-slate-700 border border-slate-200'
               }`}
           >
-            📅 Oggi
+            Oggi
           </button>
 
           <button
             onClick={() => toggleQuickFilter('overdue')}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1.5 ${quickFilters.overdue
-              ? 'bg-orange-600 text-white shadow-lg shadow-orange-600/30'
-              : 'bg-slate-800 text-gray-400 hover:text-white border border-white/10'
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1.5 cursor-pointer ${quickFilters.overdue
+              ? 'bg-orange-500 text-white shadow-sm'
+              : 'bg-white text-slate-500 hover:text-slate-700 border border-slate-200'
               }`}
           >
-            ⚠️ Scaduti
+            Scaduti
           </button>
 
           <button
             onClick={() => toggleQuickFilter('urgent')}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1.5 ${quickFilters.urgent
-              ? 'bg-red-600 text-white shadow-lg shadow-red-600/30'
-              : 'bg-slate-800 text-gray-400 hover:text-white border border-white/10'
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1.5 cursor-pointer ${quickFilters.urgent
+              ? 'bg-red-600 text-white shadow-sm'
+              : 'bg-white text-slate-500 hover:text-slate-700 border border-slate-200'
               }`}
           >
-            🔴 Urgenti
+            Urgenti
           </button>
 
-          {/* Clear all filters */}
           {Object.values(quickFilters).some(v => v) && (
             <button
               onClick={clearQuickFilters}
-              className="px-2 py-1 text-xs text-gray-500 hover:text-white transition"
+              className="px-2 py-1 text-xs text-slate-400 hover:text-slate-700 transition cursor-pointer"
             >
               ✕ Pulisci
             </button>
@@ -990,12 +904,12 @@ export default function TasksPage() {
 
         {/* Active Search/Filter Indicator */}
         {(searchQuery || Object.values(quickFilters).some(v => v)) && (
-          <div className="flex items-center gap-2 text-sm text-gray-400 bg-slate-800/40 px-3 py-2 rounded-lg">
-            <span>🔍 Risultati: <strong className="text-white">{filteredTasks.length}</strong> task trovati</span>
+          <div className="flex items-center gap-2 text-sm text-slate-500 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
+            <span>Risultati: <strong className="text-slate-800">{filteredTasks.length}</strong> task trovati</span>
             {searchQuery && (
-              <span className="bg-white/10 px-2 py-0.5 rounded flex items-center gap-1">
+              <span className="bg-white px-2 py-0.5 rounded border border-slate-200 flex items-center gap-1 text-slate-600">
                 "{searchQuery}"
-                <button onClick={() => setSearchQuery('')} className="text-gray-500 hover:text-white">✕</button>
+                <button onClick={() => setSearchQuery('')} className="text-slate-400 hover:text-slate-700 cursor-pointer">✕</button>
               </span>
             )}
           </div>
@@ -1009,7 +923,6 @@ export default function TasksPage() {
         {filter !== "completed" && (
           <TaskSection
             title="Da Fare"
-            icon="📥"
             count={myTasks.length}
             color="blue"
             emptyMessage="Nessun task assegnato a te"
@@ -1033,7 +946,6 @@ export default function TasksPage() {
         {filter !== "completed" && delegatedTasks.length > 0 && (
           <TaskSection
             title="In Attesa di Altri"
-            icon="📤"
             count={delegatedTasks.length}
             color="purple"
             emptyMessage="Nessun task delegato"
@@ -1057,7 +969,6 @@ export default function TasksPage() {
         {filter !== "completed" && isManager && otherTasks.length > 0 && (
           <TaskSection
             title="Task del Team"
-            icon="👥"
             count={otherTasks.length}
             color="yellow"
             defaultExpanded={false}
@@ -1082,7 +993,6 @@ export default function TasksPage() {
         {(filter === "completed" || filter === "all") && completedTasks.length > 0 && (
           <TaskSection
             title="Completati"
-            icon="✅"
             count={completedTasks.length}
             color="green"
             defaultExpanded={filter === "completed"}
@@ -1105,13 +1015,13 @@ export default function TasksPage() {
 
         {/* Empty State */}
         {filteredTasks.length === 0 && (
-          <div className="text-center py-20 bg-slate-800/20 rounded-2xl border border-dashed border-white/5">
-            <div className="text-5xl mb-4">📭</div>
-            <p className="text-gray-500">Nessun task trovato con i filtri selezionati.</p>
+          <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-slate-200 shadow-sm">
+            <svg className="w-12 h-12 text-slate-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" /></svg>
+            <p className="text-slate-400">Nessun task trovato con i filtri selezionati.</p>
             {(searchQuery || Object.values(quickFilters).some(v => v)) && (
               <button
                 onClick={() => { setSearchQuery(''); clearQuickFilters(); }}
-                className="mt-4 text-blue-400 hover:text-blue-300 text-sm"
+                className="mt-4 text-blue-600 hover:text-blue-700 text-sm cursor-pointer"
               >
                 Pulisci tutti i filtri
               </button>
@@ -1122,30 +1032,30 @@ export default function TasksPage() {
 
       {/* Interaction Modal */}
       {interactionTask && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-gray-900 w-full max-w-5xl h-[85vh] rounded-2xl border border-white/10 flex flex-col shadow-2xl relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white w-full max-w-5xl h-[85vh] rounded-2xl border border-slate-200 flex flex-col shadow-2xl relative">
             {/* Header */}
-            <div className="flex justify-between items-center p-6 border-b border-white/10 bg-white/5 rounded-t-2xl">
+            <div className="flex justify-between items-center p-6 border-b border-slate-200 bg-slate-50 rounded-t-2xl">
               <div>
-                <h2 className="text-2xl text-white font-bold flex items-center gap-3">
+                <h2 className="text-xl text-slate-900 font-bold flex items-center gap-3">
                   {interactionTask.title}
-                  <span className="text-sm font-normal text-gray-400 bg-black/40 px-3 py-1 rounded-full">
+                  <span className="text-sm font-normal text-slate-400 bg-slate-100 px-3 py-1 rounded-full">
                     #{interactionTask.id}
                   </span>
                 </h2>
-                <p className="text-gray-400 text-sm mt-1">
+                <p className="text-slate-500 text-sm mt-1">
                   {interactionTask.description}
                 </p>
               </div>
               <button
                 onClick={() => setInteractionTask(null)}
-                className="p-2 hover:bg-white/10 rounded-full text-gray-400 hover:text-white transition text-xl"
+                className="p-2 hover:bg-slate-100 rounded-full text-slate-400 hover:text-slate-700 transition text-xl cursor-pointer"
               >
                 ✕
               </button>
             </div>
             {/* Body grid */}
-            <div className="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-2 gap-0 lg:divide-x divide-white/10">
+            <div className="flex-1 overflow-hidden grid grid-cols-1 lg:grid-cols-2 gap-0 lg:divide-x divide-slate-200">
               <div className="p-6 overflow-hidden flex flex-col">
                 <TaskComments
                   taskId={interactionTask.id}
@@ -1153,7 +1063,7 @@ export default function TasksPage() {
                   onRefresh={() => refreshSingleTask(interactionTask.id)}
                 />
               </div>
-              <div className="p-6 overflow-hidden flex flex-col bg-black/20">
+              <div className="p-6 overflow-hidden flex flex-col bg-slate-50">
                 <TaskAttachments
                   taskId={interactionTask.id}
                   attachments={interactionTask.attachments}
@@ -1167,31 +1077,31 @@ export default function TasksPage() {
 
       {/* Create Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-white/10 shadow-2xl">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-slate-200 shadow-2xl">
             <form onSubmit={handleSave} className="p-6 space-y-6">
               <div className="flex justify-between items-center mb-6">
                 <div className="flex items-center gap-3">
-                  <h2 className="text-2xl font-bold text-white">
-                    {editingTaskId ? "✏️ Modifica Task" : "✨ Crea Nuovo Task"}
+                  <h2 className="text-xl font-bold text-slate-900">
+                    {editingTaskId ? "Modifica Task" : "Nuovo Task"}
                   </h2>
                   {!editingTaskId && (
                     <button
                       type="button"
                       onClick={setUrgent}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-1 ${newTask.priority === 10
-                        ? 'bg-red-600 text-white animate-pulse'
-                        : 'bg-red-600/20 text-red-400 hover:bg-red-600/40 border border-red-600/50'
+                      className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-1 cursor-pointer ${newTask.priority === 10
+                        ? 'bg-red-600 text-white'
+                        : 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'
                         }`}
                     >
-                      ⚡ URGENTE
+                      URGENTE
                     </button>
                   )}
                 </div>
                 <button
                   type="button"
                   onClick={handleCloseModal}
-                  className="text-gray-400 hover:text-white text-xl p-1"
+                  className="text-slate-400 hover:text-slate-700 text-xl p-1 cursor-pointer"
                 >
                   ✕
                 </button>
@@ -1337,8 +1247,8 @@ export default function TasksPage() {
               </div>
 
               {/* Checklist Builder */}
-              <div className="bg-slate-900/50 p-4 rounded-xl border border-white/5">
-                <label className={`${labelClasses} mb - 2`}>
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <label className={`${labelClasses} mb-2`}>
                   Checklist Operativa (Opzionale)
                 </label>
                 <div className="flex gap-2 mb-3">
@@ -1365,7 +1275,7 @@ export default function TasksPage() {
                   {newTask.checklist?.map((item, idx) => (
                     <div
                       key={idx}
-                      className="flex justify-between items-center bg-slate-800 p-2 rounded border border-white/5 gap-2"
+                      className="flex justify-between items-center bg-white p-2 rounded border border-slate-200 gap-2"
                     >
                       {/* Move arrows */}
                       <div className="flex flex-col gap-0.5">
@@ -1374,8 +1284,8 @@ export default function TasksPage() {
                           onClick={() => moveChecklistUp(idx)}
                           disabled={idx === 0}
                           className={`text-xs px-1 py-0.5 rounded transition ${idx === 0
-                            ? 'text-gray-600 cursor-not-allowed'
-                            : 'text-gray-400 hover:text-white hover:bg-white/10'
+                            ? 'text-slate-300 cursor-not-allowed'
+                            : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
                             }`}
                           title="Sposta su"
                         >
@@ -1386,8 +1296,8 @@ export default function TasksPage() {
                           onClick={() => moveChecklistDown(idx)}
                           disabled={idx >= newTask.checklist.length - 1}
                           className={`text-xs px-1 py-0.5 rounded transition ${idx >= newTask.checklist.length - 1
-                            ? 'text-gray-600 cursor-not-allowed'
-                            : 'text-gray-400 hover:text-white hover:bg-white/10'
+                            ? 'text-slate-300 cursor-not-allowed'
+                            : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
                             }`}
                           title="Sposta giù"
                         >
@@ -1397,8 +1307,8 @@ export default function TasksPage() {
 
                       {/* Item number & text */}
                       <div className="flex items-center gap-2 flex-grow min-w-0">
-                        <span className="text-xs text-gray-500 font-mono">{idx + 1}.</span>
-                        <span className="text-sm text-gray-300 truncate">{item.text}</span>
+                        <span className="text-xs text-slate-400 font-mono">{idx + 1}.</span>
+                        <span className="text-sm text-slate-700 truncate">{item.text}</span>
                       </div>
 
                       {/* Delete button */}
@@ -1420,9 +1330,9 @@ export default function TasksPage() {
               </div>
 
               {/* Attachments Section */}
-              <div className="bg-slate-900/50 p-4 rounded-xl border border-white/5">
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
                 <label className={`${labelClasses} mb-2`}>
-                  📎 Allegati (Opzionale)
+                  Allegati (Opzionale)
                 </label>
                 <div className="flex gap-2 mb-3">
                   <input
@@ -1436,7 +1346,7 @@ export default function TasksPage() {
                   <button
                     type="button"
                     onClick={() => pendingFileInputRef.current?.click()}
-                    className="flex-1 px-4 py-2 bg-blue-600/20 text-blue-400 hover:bg-blue-600/40 rounded-lg text-sm transition flex items-center justify-center gap-2 border border-dashed border-blue-500/30"
+                    className="flex-1 px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-sm transition flex items-center justify-center gap-2 border border-dashed border-blue-300 cursor-pointer"
                   >
                     <span>+</span> Aggiungi File
                   </button>
@@ -1445,17 +1355,12 @@ export default function TasksPage() {
                   {pendingFiles.map((file, idx) => (
                     <div
                       key={idx}
-                      className="flex justify-between items-center bg-slate-800 p-2 rounded border border-white/5"
+                      className="flex justify-between items-center bg-white p-2 rounded border border-slate-200"
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-lg">
-                          {file.type?.includes('image') ? '🖼️' :
-                            file.type?.includes('pdf') ? '📄' :
-                              file.type?.includes('word') ? '📝' :
-                                file.type?.includes('excel') || file.type?.includes('sheet') ? '📊' : '📎'}
-                        </span>
-                        <span className="text-sm text-gray-300 truncate">{file.name}</span>
-                        <span className="text-xs text-gray-500">
+                        <svg className="w-4 h-4 text-slate-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
+                        <span className="text-sm text-slate-700 truncate">{file.name}</span>
+                        <span className="text-xs text-slate-400">
                           ({(file.size / 1024).toFixed(0)} KB)
                         </span>
                       </div>
@@ -1476,17 +1381,17 @@ export default function TasksPage() {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-4 pt-4 border-t border-white/10">
+              <div className="flex justify-end gap-4 pt-4 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="px-6 py-2 text-gray-400 hover:text-white"
+                  className="px-6 py-2 text-slate-500 hover:text-slate-700 cursor-pointer"
                 >
                   Annulla
                 </button>
                 <button
                   type="submit"
-                  className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-2 rounded-xl font-bold shadow-lg"
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-lg font-semibold shadow-sm cursor-pointer"
                 >
                   Salva Task
                 </button>

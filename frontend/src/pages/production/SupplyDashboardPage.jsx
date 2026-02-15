@@ -8,7 +8,7 @@ import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
 
 export default function SupplyDashboardPage() {
-    const { user } = useAuth();
+    const { user: _user } = useAuth();
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -146,14 +146,12 @@ export default function SupplyDashboardPage() {
         return `${secs}s`;
     };
 
-    // SLA Color coding based on wait time
-    // Green: < 5 min | Yellow: 5-10 min | Red: > 10 min
     const getSLAColor = (date) => {
-        if (!date) return 'text-gray-400';
+        if (!date) return 'text-slate-400';
         const mins = Math.floor((Date.now() - new Date(date).getTime()) / 60000);
-        if (mins < 5) return 'text-green-400 bg-green-500/20';
-        if (mins < 10) return 'text-yellow-400 bg-yellow-500/20';
-        return 'text-red-400 bg-red-500/20 animate-pulse';
+        if (mins < 5) return 'text-emerald-700 bg-emerald-50';
+        if (mins < 10) return 'text-amber-700 bg-amber-50';
+        return 'text-red-700 bg-red-50 font-bold';
     };
 
     // --- SECTOR FILTER (Touch-friendly) ---
@@ -185,7 +183,7 @@ export default function SupplyDashboardPage() {
         }
         setAudioAllowed(true);
         playSiren(); // Test sound
-        toast.success("🔊 Sirena Attivata!");
+        toast.success('Sirena Attivata');
     };
 
     const playSiren = () => {
@@ -219,13 +217,13 @@ export default function SupplyDashboardPage() {
                 playSiren();
                 // Vibrate device if supported
                 if (navigator.vibrate) navigator.vibrate([500, 200, 500]);
-                toast('🚨 NUOVA RICHIESTA!', {
-                    icon: '📢',
+                toast('NUOVA RICHIESTA!', {
+                    icon: '!',
                     duration: 5000,
-                    style: { border: '2px solid red', color: 'red', fontWeight: 'bold' }
+                    style: { border: '2px solid #dc2626', color: '#dc2626', fontWeight: 'bold', background: '#fff' }
                 });
             } else {
-                toast('🔇 Nuova richiesta (Audio disattivato)', { icon: '📦' });
+                toast('Nuova richiesta (Audio disattivato)', { icon: '📦' });
             }
         }
         setPrevPendingCount(pendingOrders.length);
@@ -237,33 +235,31 @@ export default function SupplyDashboardPage() {
     // ---------------------------------
 
     return (
-        <div className="min-h-screen carbon-background p-4 pb-24">
+        <div className="min-h-screen bg-slate-50 p-4 pb-24">
             {/* Hero Header Card */}
-            <div className="master-card p-5 mb-6 relative overflow-hidden">
-                {/* Decorative gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-purple-500/5 pointer-events-none" />
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mb-6 relative overflow-hidden">
 
                 <div className="relative z-10">
                     {/* Title row */}
                     <div className="flex justify-between items-center mb-4">
                         <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                            <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center shadow-sm">
                                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                                 </svg>
                             </div>
                             <div>
-                                <h1 className="text-xl font-bold text-white">Lista Prelievi</h1>
-                                <p className="text-xs text-gray-400">Block Supply Dashboard</p>
+                                <h1 className="text-xl font-bold text-slate-900">Lista Prelievi</h1>
+                                <p className="text-xs text-slate-400">Block Supply Dashboard</p>
                             </div>
                         </div>
 
-                        {/* Audio Toggle - Premium Style */}
+                        {/* Audio Toggle */}
                         <button
                             onClick={enableAudio}
-                            className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl transition-all ${audioAllowed
-                                ? 'bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-lg shadow-green-500/30'
-                                : 'bg-zinc-800 text-gray-400 border border-white/10'
+                            className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl transition-all cursor-pointer ${audioAllowed
+                                ? 'bg-emerald-600 text-white shadow-sm'
+                                : 'bg-slate-100 text-slate-400 border border-slate-200'
                                 }`}
                             title={audioAllowed ? "Sirena Attiva" : "Tocca per attivare Sirena"}
                         >
@@ -282,19 +278,19 @@ export default function SupplyDashboardPage() {
                     {/* KPI Counters Row */}
                     <div className="grid grid-cols-3 gap-3">
                         {/* Pending */}
-                        <div className="bg-zinc-800/50 rounded-xl p-3 text-center border border-white/5">
-                            <div className="text-2xl font-bold neon-orange">{pendingOrders.length}</div>
-                            <div className="text-[10px] text-gray-400 uppercase tracking-wider">In Attesa</div>
+                        <div className="bg-amber-50 rounded-xl p-3 text-center border border-amber-200">
+                            <div className="text-2xl font-bold text-amber-700">{pendingOrders.length}</div>
+                            <div className="text-[10px] text-amber-600 uppercase tracking-wider font-medium">In Attesa</div>
                         </div>
                         {/* Processing */}
-                        <div className="bg-zinc-800/50 rounded-xl p-3 text-center border border-yellow-500/20">
-                            <div className="text-2xl font-bold text-yellow-400" style={{ textShadow: '0 0 10px rgba(250,204,21,0.4)' }}>{processingOrders.length}</div>
-                            <div className="text-[10px] text-gray-400 uppercase tracking-wider">In Corso</div>
+                        <div className="bg-blue-50 rounded-xl p-3 text-center border border-blue-200">
+                            <div className="text-2xl font-bold text-blue-700">{processingOrders.length}</div>
+                            <div className="text-[10px] text-blue-600 uppercase tracking-wider font-medium">In Corso</div>
                         </div>
                         {/* Cancelled */}
-                        <div className="bg-zinc-800/50 rounded-xl p-3 text-center border border-white/5">
-                            <div className="text-2xl font-bold text-red-400">{cancelledOrders.length}</div>
-                            <div className="text-[10px] text-gray-400 uppercase tracking-wider">Bloccati</div>
+                        <div className="bg-red-50 rounded-xl p-3 text-center border border-red-200">
+                            <div className="text-2xl font-bold text-red-700">{cancelledOrders.length}</div>
+                            <div className="text-[10px] text-red-600 uppercase tracking-wider font-medium">Bloccati</div>
                         </div>
                     </div>
 
@@ -302,27 +298,27 @@ export default function SupplyDashboardPage() {
                     <div className="flex gap-2 mt-4">
                         <button
                             onClick={() => setSectorFilter('all')}
-                            className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 ${sectorFilter === 'all'
-                                ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/30'
-                                : 'bg-zinc-800 text-gray-400 border border-white/10'
+                            className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 cursor-pointer ${sectorFilter === 'all'
+                                ? 'bg-blue-600 text-white shadow-sm'
+                                : 'bg-slate-100 text-slate-500 border border-slate-200'
                                 }`}
                         >
                             Tutti ({allPendingOrders.length})
                         </button>
                         <button
                             onClick={() => setSectorFilter('Pantografo')}
-                            className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 ${sectorFilter === 'Pantografo'
-                                ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/30'
-                                : 'bg-zinc-800 text-gray-400 border border-white/10'
+                            className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 cursor-pointer ${sectorFilter === 'Pantografo'
+                                ? 'bg-cyan-600 text-white shadow-sm'
+                                : 'bg-slate-100 text-slate-500 border border-slate-200'
                                 }`}
                         >
                             Pantografo
                         </button>
                         <button
                             onClick={() => setSectorFilter('Giostra')}
-                            className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 ${sectorFilter === 'Giostra'
-                                ? 'bg-gradient-to-r from-purple-500 to-pink-600 text-white shadow-lg shadow-purple-500/30'
-                                : 'bg-zinc-800 text-gray-400 border border-white/10'
+                            className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 cursor-pointer ${sectorFilter === 'Giostra'
+                                ? 'bg-purple-600 text-white shadow-sm'
+                                : 'bg-slate-100 text-slate-500 border border-slate-200'
                                 }`}
                         >
                             Giostra
@@ -334,25 +330,25 @@ export default function SupplyDashboardPage() {
             {/* Loading */}
             {loading && (
                 <div className="flex justify-center py-10">
-                    <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-emerald-400"></div>
+                    <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
                 </div>
             )}
 
-            {/* Empty State - Premium */}
+            {/* Empty State */}
             {!loading && orders.length === 0 && (
-                <div className="master-card p-8 text-center">
-                    <svg className="w-16 h-16 text-yellow-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-8 text-center">
+                    <svg className="w-16 h-16 text-emerald-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <p className="text-xl font-bold text-white mb-2">Nessun prelievo in coda!</p>
-                    <p className="text-sm text-gray-400">Ottimo lavoro, rilassati un attimo</p>
+                    <p className="text-xl font-bold text-slate-800 mb-2">Nessun prelievo in coda!</p>
+                    <p className="text-sm text-slate-400">Ottimo lavoro, rilassati un attimo</p>
                 </div>
             )}
 
             {/* Processing Orders (My Current Work) */}
             {processingOrders.length > 0 && (
                 <div className="mb-6">
-                    <h2 className="text-sm font-bold text-yellow-400 uppercase mb-3 flex items-center gap-2">
+                    <h2 className="text-sm font-bold text-blue-600 uppercase mb-3 flex items-center gap-2">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                         </svg>
@@ -362,52 +358,52 @@ export default function SupplyDashboardPage() {
                         {processingOrders.map(order => (
                             <div
                                 key={order.id}
-                                className="master-card p-4 border-2 border-yellow-500/40 relative overflow-hidden"
+                                className="bg-white rounded-2xl border-2 border-blue-200 p-4 relative overflow-hidden shadow-sm"
                             >
                                 {/* Color indicator strip */}
                                 <div
-                                    className="absolute left-0 top-0 bottom-0 w-2 rounded-l-xl"
-                                    style={{ backgroundColor: order.material_color || order.color_value || '#f59e0b' }}
+                                    className="absolute left-0 top-0 bottom-0 w-2 rounded-l-2xl"
+                                    style={{ backgroundColor: order.material_color || order.color_value || '#3b82f6' }}
                                 />
 
                                 {/* Header with material name and timer */}
                                 <div className="flex justify-between items-start mb-3 pl-3">
                                     <div className="flex items-center gap-2">
-                                        <span className="text-lg font-bold text-white">
+                                        <span className="text-lg font-bold text-slate-900">
                                             {order.request_type === 'memory'
                                                 ? order.material_label
                                                 : `${order.density_label} ${order.color_label}`}
                                         </span>
                                         {order.target_sector && (
                                             <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase border ${order.target_sector === 'Pantografo'
-                                                ? 'bg-cyan-900/30 text-cyan-400 border-cyan-500/30'
-                                                : 'bg-purple-900/30 text-purple-400 border-purple-500/30'
+                                                ? 'bg-cyan-50 text-cyan-700 border-cyan-200'
+                                                : 'bg-purple-50 text-purple-700 border-purple-200'
                                                 }`}>
                                                 {order.target_sector.substring(0, 1)}
                                             </span>
                                         )}
-                                        <span className="text-yellow-400 font-bold">×{order.quantity}</span>
+                                        <span className="text-blue-600 font-bold">×{order.quantity}</span>
                                     </div>
-                                    <span className="text-xs text-yellow-400 bg-yellow-500/20 px-2 py-1 rounded-lg font-mono">
+                                    <span className="text-xs text-blue-700 bg-blue-50 px-2 py-1 rounded-lg font-mono border border-blue-200">
                                         {getTimeSince(order.processed_at)}
                                     </span>
                                 </div>
 
                                 {/* Info grid - single column for mobile */}
-                                <div className="text-sm text-gray-300 mb-4 pl-3 space-y-1">
-                                    <p><strong className="text-white">{order.dimensions}</strong> {order.custom_height ? `(H: ${order.custom_height}cm)` : ''}</p>
-                                    <p className={order.is_trimmed ? 'text-orange-400 font-bold' : 'text-gray-500'}>
+                                <div className="text-sm text-slate-500 mb-4 pl-3 space-y-1">
+                                    <p><strong className="text-slate-800">{order.dimensions}</strong> {order.custom_height ? `(H: ${order.custom_height}cm)` : ''}</p>
+                                    <p className={order.is_trimmed ? 'text-orange-600 font-bold' : 'text-slate-400'}>
                                         {order.is_trimmed ? 'RIFILARE!' : 'Non Rifilato'}
                                     </p>
-                                    {order.supplier_label && <p className="text-blue-400">{order.supplier_label}</p>}
-                                    {order.client_ref && <p>{order.client_ref}</p>}
-                                    <p className="text-xs text-gray-500">Da: {order.creator_name} • Ore {formatTime(order.created_at)}</p>
+                                    {order.supplier_label && <p className="text-blue-600">{order.supplier_label}</p>}
+                                    {order.client_ref && <p className="text-slate-600">{order.client_ref}</p>}
+                                    <p className="text-xs text-slate-400">Da: {order.creator_name} • Ore {formatTime(order.created_at)}</p>
                                 </div>
 
                                 {/* Compact action button */}
                                 <button
                                     onClick={() => requestDeliveryConfirmation(order)}
-                                    className="w-full py-4 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl text-white font-bold text-base shadow-lg shadow-green-500/20 active:scale-[0.98] transition-transform"
+                                    className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 rounded-xl text-white font-bold text-base shadow-sm active:scale-[0.98] transition-all cursor-pointer"
                                 >
                                     CONSEGNATO
                                 </button>
@@ -420,7 +416,7 @@ export default function SupplyDashboardPage() {
             {/* Cancelled Orders - REQUIRE ACKNOWLEDGMENT */}
             {cancelledOrders.length > 0 && (
                 <div className="mb-6">
-                    <h2 className="text-sm font-bold text-red-400 uppercase mb-3 flex items-center gap-2">
+                    <h2 className="text-sm font-bold text-red-600 uppercase mb-3 flex items-center gap-2">
                         ORDINI BLOCCATI - Conferma lettura!
                     </h2>
                     <div className="space-y-3">
@@ -428,28 +424,28 @@ export default function SupplyDashboardPage() {
                             .map(order => (
                                 <div
                                     key={order.id}
-                                    className="relative bg-red-900/40 rounded-xl p-4 border border-red-500 overflow-hidden"
+                                    className="relative bg-red-50 rounded-xl p-4 border-2 border-red-300 overflow-hidden"
                                 >
                                     {/* BLOCKED Banner */}
-                                    <div className="absolute top-0 left-0 right-0 bg-red-600/80 text-white text-center py-1 font-bold text-sm tracking-widest">
+                                    <div className="absolute top-0 left-0 right-0 bg-red-600 text-white text-center py-1 font-bold text-sm tracking-widest">
                                         BLOCCATO - NON PRELEVARE
                                     </div>
 
                                     <div className="pt-8 relative z-10">
                                         <div className="flex justify-between items-start mb-2">
-                                            <span className="text-lg font-bold text-white">
+                                            <span className="text-lg font-bold text-slate-900">
                                                 {order.request_type === 'memory'
                                                     ? order.material_label
                                                     : `${order.density_label} ${order.color_label}`}
                                             </span>
-                                            <span className="text-gray-300 text-sm">x{order.quantity}</span>
+                                            <span className="text-slate-600 text-sm">x{order.quantity}</span>
                                         </div>
-                                        <div className="text-sm text-gray-300 mb-3 space-y-1">
+                                        <div className="text-sm text-slate-600 mb-3 space-y-1">
                                             <p><strong>{order.dimensions}</strong></p>
-                                            {order.supplier_label && <p className="text-blue-400">{order.supplier_label}</p>}
-                                            <p className="text-red-300 font-semibold">Annullato da: {order.creator_name}</p>
+                                            {order.supplier_label && <p className="text-blue-600">{order.supplier_label}</p>}
+                                            <p className="text-red-600 font-semibold">Annullato da: {order.creator_name}</p>
                                             {order.notes && (
-                                                <div className="mt-2 text-red-100 bg-red-800/50 p-2 rounded-lg text-sm border border-red-500/30">
+                                                <div className="mt-2 text-red-800 bg-red-100 p-2 rounded-lg text-sm border border-red-200">
                                                     <span className="font-bold opacity-70 block text-xs mb-1">MOTIVO ANNULLAMENTO:</span>
                                                     <span className="italic">"{order.notes}"</span>
                                                 </div>
@@ -458,9 +454,9 @@ export default function SupplyDashboardPage() {
 
                                         <button
                                             onClick={() => handleAcknowledgeCancelled(order.id)}
-                                            className="w-full py-4 bg-gradient-to-r from-red-600 to-red-800 rounded-xl text-white font-black text-lg shadow-lg border-2 border-red-400 hover:from-red-700 hover:to-red-900 transition-all"
+                                            className="w-full py-4 bg-red-600 hover:bg-red-700 rounded-xl text-white font-black text-lg shadow-sm active:scale-[0.98] transition-all cursor-pointer"
                                         >
-                                            ✓ HO CAPITO - PULISCI
+                                            HO CAPITO - PULISCI
                                         </button>
                                     </div>
                                 </div>
@@ -472,67 +468,67 @@ export default function SupplyDashboardPage() {
             {/* Pending Orders (Queue) */}
             {pendingOrders.length > 0 && (
                 <div>
-                    <h2 className="text-sm font-bold text-gray-400 uppercase mb-3">
+                    <h2 className="text-sm font-bold text-slate-500 uppercase mb-3">
                         In Attesa ({pendingOrders.length})
                     </h2>
                     <div className="space-y-4">
                         {pendingOrders.map(order => (
                             <div
                                 key={order.id}
-                                className="master-card p-4 relative overflow-hidden"
+                                className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 relative overflow-hidden"
                             >
                                 {/* Color indicator strip */}
                                 <div
-                                    className="absolute left-0 top-0 bottom-0 w-2 rounded-l-xl"
-                                    style={{ backgroundColor: order.material_color || order.color_value || '#6b7280' }}
+                                    className="absolute left-0 top-0 bottom-0 w-2 rounded-l-2xl"
+                                    style={{ backgroundColor: order.material_color || order.color_value || '#94a3b8' }}
                                 />
 
                                 {/* Header with material name and timer */}
                                 <div className="flex justify-between items-start mb-3 pl-3">
                                     <div className="flex items-center gap-2 flex-wrap">
-                                        <span className="text-lg font-bold text-white">
+                                        <span className="text-lg font-bold text-slate-900">
                                             {order.request_type === 'memory'
                                                 ? order.material_label
                                                 : `${order.density_label} ${order.color_label}`}
                                         </span>
                                         {order.target_sector && (
                                             <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${order.target_sector === 'Pantografo'
-                                                ? 'bg-cyan-900/30 text-cyan-300 border-cyan-500/30'
-                                                : 'bg-purple-900/30 text-purple-300 border-purple-500/30'
+                                                ? 'bg-cyan-50 text-cyan-700 border-cyan-200'
+                                                : 'bg-purple-50 text-purple-700 border-purple-200'
                                                 }`}>
                                                 {order.target_sector}
                                             </span>
                                         )}
-                                        <span className="text-gray-400 font-bold">×{order.quantity}</span>
+                                        <span className="text-slate-500 font-bold">×{order.quantity}</span>
                                     </div>
                                     {/* Live SLA Timer */}
-                                    <span className={`text-sm font-mono font-bold px-2 py-1 rounded-lg whitespace-nowrap ${getSLAColor(order.created_at)}`}>
+                                    <span className={`text-sm font-mono font-bold px-2 py-1 rounded-lg whitespace-nowrap border ${getSLAColor(order.created_at)}`}>
                                         {getTimeSince(order.created_at)}
                                     </span>
                                 </div>
 
                                 {/* Info grid - single column for mobile */}
-                                <div className="text-sm text-gray-400 mb-4 pl-3 space-y-1">
-                                    <p><strong className="text-white">{order.dimensions}</strong> {order.custom_height ? `(H: ${order.custom_height}cm)` : ''}</p>
-                                    <p className={order.is_trimmed ? 'text-orange-400 font-bold' : 'text-gray-500'}>
+                                <div className="text-sm text-slate-500 mb-4 pl-3 space-y-1">
+                                    <p><strong className="text-slate-800">{order.dimensions}</strong> {order.custom_height ? `(H: ${order.custom_height}cm)` : ''}</p>
+                                    <p className={order.is_trimmed ? 'text-orange-600 font-bold' : 'text-slate-400'}>
                                         {order.is_trimmed ? 'RIFILARE!' : 'Non Rifilato'}
                                     </p>
-                                    {order.supplier_label && <p className="text-blue-400">{order.supplier_label}</p>}
-                                    {order.client_ref && <p>{order.client_ref}</p>}
-                                    <p className="text-xs text-gray-500">Da: {order.creator_name}</p>
+                                    {order.supplier_label && <p className="text-blue-600">{order.supplier_label}</p>}
+                                    {order.client_ref && <p className="text-slate-600">{order.client_ref}</p>}
+                                    <p className="text-xs text-slate-400">Da: {order.creator_name}</p>
                                 </div>
 
                                 {/* Action buttons */}
                                 <button
                                     onClick={() => handleTakeCharge(order.id)}
-                                    className="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl text-white font-bold shadow-lg shadow-emerald-500/20 active:scale-[0.98] transition-transform"
+                                    className="w-full py-4 bg-blue-600 hover:bg-blue-700 rounded-xl text-white font-bold shadow-sm active:scale-[0.98] transition-all cursor-pointer"
                                 >
                                     PRENDI IN CARICO
                                 </button>
 
                                 <button
                                     onClick={() => openRejectModal(order)}
-                                    className="w-full mt-2 py-2.5 bg-red-500/10 text-red-400 rounded-xl text-sm font-medium hover:bg-red-500/20 transition-colors border border-red-500/20 flex items-center justify-center gap-2 active:scale-[0.98]"
+                                    className="w-full mt-2 py-2.5 bg-red-50 text-red-600 rounded-xl text-sm font-medium hover:bg-red-100 transition-colors border border-red-200 flex items-center justify-center gap-2 active:scale-[0.98] cursor-pointer"
                                 >
                                     NON DISPONIBILE
                                 </button>
@@ -544,34 +540,34 @@ export default function SupplyDashboardPage() {
 
             {/* DELIVERY CONFIRMATION MODAL */}
             {confirmDeliveryModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                    <div className="bg-[#1e293b] rounded-2xl border border-green-500/30 p-8 max-w-md w-full shadow-2xl text-center">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl border border-slate-200 p-8 max-w-md w-full shadow-2xl text-center">
 
-                        <svg className="w-16 h-16 text-green-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-16 h-16 text-emerald-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                         </svg>
-                        <h2 className="text-xl font-bold text-white mb-2">CONFERMA CONSEGNA</h2>
-                        <p className="text-gray-400 mb-6">
-                            Stai completando la consegna di <strong className="text-white">{confirmDeliveryModal.quantity}</strong> Blocco/i
-                            <span className="text-cyan-400 font-bold"> {confirmDeliveryModal.request_type === 'memory'
+                        <h2 className="text-xl font-bold text-slate-900 mb-2">CONFERMA CONSEGNA</h2>
+                        <p className="text-slate-500 mb-6">
+                            Stai completando la consegna di <strong className="text-slate-800">{confirmDeliveryModal.quantity}</strong> Blocco/i
+                            <span className="text-blue-600 font-bold"> {confirmDeliveryModal.request_type === 'memory'
                                 ? confirmDeliveryModal.material_label
                                 : `${confirmDeliveryModal.density_label} ${confirmDeliveryModal.color_label}`}</span>
                         </p>
-                        <p className="text-lg text-yellow-400 font-bold mb-6">Sei sicuro?</p>
+                        <p className="text-lg text-amber-600 font-bold mb-6">Sei sicuro?</p>
 
                         <div className="grid grid-cols-2 gap-4">
                             <button
                                 onClick={() => setConfirmDeliveryModal(null)}
-                                className="py-4 rounded-xl border-2 border-gray-500/30 bg-gray-700/30 hover:bg-gray-600/40 text-gray-300 font-bold text-lg transition-all"
+                                className="py-4 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 font-bold text-lg transition-all cursor-pointer"
                             >
                                 NO
                             </button>
 
                             <button
                                 onClick={confirmDelivery}
-                                className="py-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-bold text-lg shadow-lg shadow-green-500/30 transition-all active:scale-95"
+                                className="py-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-lg shadow-sm transition-all active:scale-95 cursor-pointer"
                             >
-                                SÌ, CONSEGNA
+                                SI, CONSEGNA
                             </button>
                         </div>
                     </div>
@@ -581,24 +577,24 @@ export default function SupplyDashboardPage() {
             {/* REJECTION MODAL */}
             {rejectModal.isOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setRejectModal({ isOpen: false, order: null })} />
-                    <div className="relative bg-slate-800 rounded-2xl border border-white/10 shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
-                        <div className="bg-gradient-to-r from-red-800 to-pink-900 p-6 text-center">
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setRejectModal({ isOpen: false, order: null })} />
+                    <div className="relative bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-md overflow-hidden">
+                        <div className="bg-red-600 p-6 text-center">
                             <h3 className="text-xl font-bold text-white">Rifiuta Richiesta</h3>
                             <p className="text-red-100 text-sm mt-1">Segnala perché non puoi evadere l'ordine</p>
                         </div>
                         <div className="p-6">
-                            <p className="text-gray-300 text-center mb-6">
-                                Richiesta di <strong className="text-white">{rejectModal.order?.creator_name}</strong><br />
-                                <span className="text-cyan-400 font-bold">
+                            <p className="text-slate-600 text-center mb-6">
+                                Richiesta di <strong className="text-slate-900">{rejectModal.order?.creator_name}</strong><br />
+                                <span className="text-blue-600 font-bold">
                                     {rejectModal.order?.request_type === 'memory' ? rejectModal.order?.material_label : `${rejectModal.order?.density_label} ${rejectModal.order?.color_label}`}
                                 </span>
                             </p>
 
                             <div className="mb-6">
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Motivazione</label>
+                                <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Motivazione</label>
                                 <textarea
-                                    className="w-full bg-slate-900 border border-white/10 rounded-lg p-3 text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
                                     rows="2"
                                     placeholder="Es. Manca materiale a terra, Arrivo tra 1 ora..."
                                     value={rejectReason}
@@ -609,13 +605,13 @@ export default function SupplyDashboardPage() {
                             <div className="grid grid-cols-2 gap-3">
                                 <button
                                     onClick={() => setRejectModal({ isOpen: false, order: null })}
-                                    className="py-3 px-4 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-bold"
+                                    className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold cursor-pointer"
                                 >
                                     Annulla
                                 </button>
                                 <button
                                     onClick={confirmRejection}
-                                    className="py-3 px-4 bg-gradient-to-r from-red-600 to-pink-700 hover:from-red-500 hover:to-pink-600 text-white rounded-xl font-bold shadow-lg"
+                                    className="py-3 px-4 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold shadow-sm cursor-pointer"
                                 >
                                     RIFIUTA
                                 </button>
