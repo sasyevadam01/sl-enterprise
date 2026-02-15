@@ -160,9 +160,9 @@ async def get_shifts(
     except ValueError:
         raise HTTPException(status_code=400, detail="Formato data non valido. Usa YYYY-MM-DD")
 
-    # RESTRIZIONE COORDINATOR: Max 14 giorni da oggi (Week corrente + Week successiva approx)
+    # RESTRIZIONE COORDINATOR: Max 90 giorni da oggi (Week corrente + 3 Mesi approx)
     if current_user.role == 'coordinator':
-        limit_date = datetime.utcnow() + timedelta(days=14)
+        limit_date = datetime.utcnow() + timedelta(days=90)
         if e_date > limit_date:
             # Opzione A: Blocca richiesta
             # raise HTTPException(status_code=403, detail="Non puoi visualizzare turni oltre le prossime 2 settimane")
@@ -172,7 +172,7 @@ async def get_shifts(
             # Tuttavia, il planner richiede intere settimane.
             # Accettiamo se la start_date è entro il limite.
             if s_date > limit_date:
-                 raise HTTPException(status_code=403, detail="Non puoi pianificare oltre le prossime 2 settimane")
+                 raise HTTPException(status_code=403, detail="Non puoi pianificare oltre i prossimi 3 mesi")
 
     from sqlalchemy.orm import joinedload
     

@@ -62,7 +62,31 @@ async def lifespan(app: FastAPI):
                      conn.execute(text("ALTER TABLE block_requests ADD COLUMN target_sector VARCHAR(50) NULL"))
                      conn.commit()
 
-             # 4. logistics_requests: escalation, cancel, secure delivery
+             # 4. users: last_lat, last_lon, last_location_update
+             if inspector.has_table("users"):
+                 cols = [c['name'] for c in inspector.get_columns("users")]
+                 if "last_lat" not in cols:
+                     print("[MIGRATION] Aggiunto campo 'last_lat' a users")
+                     conn.execute(text("ALTER TABLE users ADD COLUMN last_lat FLOAT NULL"))
+                     conn.commit()
+                 if "last_lon" not in cols:
+                     print("[MIGRATION] Aggiunto campo 'last_lon' a users")
+                     conn.execute(text("ALTER TABLE users ADD COLUMN last_lon FLOAT NULL"))
+                     conn.commit()
+                 if "last_location_update" not in cols:
+                     print("[MIGRATION] Aggiunto campo 'last_location_update' a users")
+                     conn.execute(text("ALTER TABLE users ADD COLUMN last_location_update DATETIME NULL"))
+                     conn.commit()
+
+             # 5. roles: default_home
+             if inspector.has_table("roles"):
+                 cols = [c['name'] for c in inspector.get_columns("roles")]
+                 if "default_home" not in cols:
+                     print("[MIGRATION] Aggiunto campo 'default_home' a roles")
+                     conn.execute(text("ALTER TABLE roles ADD COLUMN default_home VARCHAR(100) NULL"))
+                     conn.commit()
+
+             # 6. logistics_requests: escalation, cancel, secure delivery
              # RIMOSSO: La migrazione viene fatta esternamente con fix_db.py per evitare crash all'avvio
              pass
 
