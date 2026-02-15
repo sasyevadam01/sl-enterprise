@@ -31,6 +31,10 @@ def run_migrations():
         ("users", "last_lat", "FLOAT"),
         ("users", "last_lon", "FLOAT"),
         ("users", "last_location_update", "DATETIME"),
+
+        # USERS (PIN Authentication)
+        ("users", "pin_hash", "VARCHAR"),
+        ("users", "pin_required", "BOOLEAN DEFAULT 0"),
         
         # OTHERS (Add here if needed)
     ]
