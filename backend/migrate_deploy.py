@@ -34,7 +34,7 @@ def run_migrations():
 
         # USERS (PIN Authentication)
         ("users", "pin_hash", "VARCHAR"),
-        ("users", "pin_required", "BOOLEAN DEFAULT 0"),
+        ("users", "pin_required", "BOOLEAN DEFAULT 1"),
         
         # OTHERS (Add here if needed)
     ]
@@ -56,6 +56,17 @@ def run_migrations():
                     print(f"[ERROR] on {table}.{col_name}: {e}")
         
         conn.commit()
+    
+    # Post-migration data fixes
+    print("\nApplying data fixes...")
+    with engine.connect() as conn:
+        try:
+            # Ensure ALL users have pin_required = 1 (true) by default
+            result = conn.execute(text("UPDATE users SET pin_required = 1 WHERE pin_required = 0 OR pin_required IS NULL"))
+            print(f"[FIX] Set pin_required=1 for {result.rowcount} users")
+            conn.commit()
+        except Exception as e:
+            print(f"[WARN] pin_required fix: {e}")
     
     print("\nMigration Completed! Database is ready for new code.")
 
