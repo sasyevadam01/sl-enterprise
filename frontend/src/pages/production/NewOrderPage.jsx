@@ -10,6 +10,58 @@ import { useNavigate } from 'react-router-dom';
 import { pickingApi } from '../../api/client';
 import toast from 'react-hot-toast';
 
+// SVG Icon Components
+const IconMemory = ({ className = "w-6 h-6" }) => (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="4" y="4" width="16" height="16" rx="2" /><rect x="9" y="9" width="6" height="6" />
+        <path d="M15 2v2M9 2v2M15 20v2M9 20v2M2 15h2M2 9h2M20 15h2M20 9h2" />
+    </svg>
+);
+const IconSponge = ({ className = "w-6 h-6" }) => (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+    </svg>
+);
+const IconCube = ({ className = "w-5 h-5" }) => (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
+        <polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" />
+    </svg>
+);
+const IconScissors = ({ className = "w-5 h-5" }) => (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="6" cy="6" r="3" /><circle cx="6" cy="18" r="3" />
+        <line x1="20" y1="4" x2="8.12" y2="15.88" /><line x1="14.47" y1="14.48" x2="20" y2="20" />
+        <line x1="8.12" y1="8.12" x2="12" y2="12" />
+    </svg>
+);
+const IconSquare = ({ className = "w-5 h-5" }) => (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2" />
+    </svg>
+);
+const IconDiamond = ({ className = "w-5 h-5" }) => (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M2.7 10.3a2.41 2.41 0 000 3.41l7.59 7.59a2.41 2.41 0 003.41 0l7.59-7.59a2.41 2.41 0 000-3.41L13.7 2.71a2.41 2.41 0 00-3.41 0z" />
+    </svg>
+);
+const IconBuilding = ({ className = "w-5 h-5" }) => (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M3 21h18M9 8h1M9 12h1M9 16h1M14 8h1M14 12h1M14 16h1" />
+        <path d="M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16" />
+    </svg>
+);
+const IconSend = ({ className = "w-5 h-5" }) => (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
+    </svg>
+);
+const IconRotate = ({ className = "w-5 h-5" }) => (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 2v6h-6M3 12a9 9 0 0115.36-6.36L21 8M3 22v-6h6M21 12a9 9 0 01-15.36 6.36L3 16" />
+    </svg>
+);
+
 // Step 1: Category Selector
 const StepCategory = ({ onSelect }) => (
     <div className="space-y-4">
@@ -18,13 +70,13 @@ const StepCategory = ({ onSelect }) => (
             onClick={() => onSelect('memory')}
             className="w-full py-8 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-2xl text-white text-2xl font-bold shadow-lg shadow-purple-500/20 hover:scale-105 hover:shadow-xl transition-all cursor-pointer"
         >
-            🧠 MEMORY
+            <span className="flex items-center justify-center gap-3"><IconMemory className="w-8 h-8" /> MEMORY</span>
         </button>
         <button
             onClick={() => onSelect('sponge')}
             className="w-full py-8 bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl text-white text-2xl font-bold shadow-lg shadow-orange-500/20 hover:scale-105 hover:shadow-xl transition-all cursor-pointer"
         >
-            🧽 SPUGNA
+            <span className="flex items-center justify-center gap-3"><IconSponge className="w-8 h-8" /> SPUGNA</span>
         </button>
     </div>
 );
@@ -223,7 +275,7 @@ const StepDimensions = ({ formData, setFormData, onNext, dimensions = [] }) => {
                             : 'bg-white text-slate-400 border-slate-200 hover:bg-slate-50'
                             }`}
                     >
-                        📦 INTERO
+                        <span className="flex items-center justify-center gap-2"><IconCube /> INTERO</span>
                     </button>
                     <button
                         onClick={() => setFormData(prev => ({ ...prev, isPartial: true }))}
@@ -232,7 +284,7 @@ const StepDimensions = ({ formData, setFormData, onNext, dimensions = [] }) => {
                             : 'bg-white text-slate-400 border-slate-200 hover:bg-slate-50'
                             }`}
                     >
-                        ✂️ PARZIALE
+                        <span className="flex items-center justify-center gap-2"><IconScissors /> PARZIALE</span>
                     </button>
                 </div>
                 {formData.isPartial && (
@@ -261,7 +313,7 @@ const StepDimensions = ({ formData, setFormData, onNext, dimensions = [] }) => {
                             : 'bg-white text-slate-400 border-slate-200 hover:bg-slate-50'
                             }`}
                     >
-                        🔲 NON RIFILATO
+                        <span className="flex items-center justify-center gap-2"><IconSquare /> NON RIFILATO</span>
                     </button>
                     <button
                         onClick={() => setFormData(prev => ({ ...prev, isTrimmed: true }))}
@@ -270,7 +322,7 @@ const StepDimensions = ({ formData, setFormData, onNext, dimensions = [] }) => {
                             : 'bg-white text-slate-400 border-slate-200 hover:bg-slate-50'
                             }`}
                     >
-                        🔷 RIFILARE
+                        <span className="flex items-center justify-center gap-2"><IconDiamond /> RIFILARE</span>
                     </button>
                 </div>
             </div>
@@ -299,7 +351,7 @@ const StepReview = ({ formData, onSubmit, loading, suppliers = [] }) => {
             <div className="bg-white rounded-xl p-4 border border-slate-200 space-y-3 shadow-sm">
                 <div className="flex justify-between border-b border-slate-100 pb-2">
                     <span className="text-slate-500">Tipo:</span>
-                    <span className="text-slate-800 font-bold text-lg">{formData.type === 'memory' ? '🧠 Memory' : '🧽 Spugna'}</span>
+                    <span className="text-slate-800 font-bold text-lg flex items-center gap-2">{formData.type === 'memory' ? <><IconMemory className="w-5 h-5 text-purple-500" /> Memory</> : <><IconSponge className="w-5 h-5 text-amber-500" /> Spugna</>}</span>
                 </div>
                 {formData.type === 'memory' ? (
                     <div className="flex justify-between border-b border-slate-100 pb-2">
@@ -336,7 +388,7 @@ const StepReview = ({ formData, onSubmit, loading, suppliers = [] }) => {
                 <div className="flex justify-between border-b border-white/5 pb-2">
                     <span className="text-gray-400">Rifilatura:</span>
                     <span className={formData.isTrimmed ? 'text-orange-600 font-bold' : 'text-slate-400'}>
-                        {formData.isTrimmed ? '🔷 SI' : '🔲 NO'}
+                        <span className="flex items-center gap-1">{formData.isTrimmed ? <><IconDiamond className="w-4 h-4" /> SI</> : <><IconSquare className="w-4 h-4" /> NO</>}</span>
                     </span>
                 </div>
                 <div className="flex justify-between items-center pt-2">
@@ -383,7 +435,7 @@ const StepReview = ({ formData, onSubmit, loading, suppliers = [] }) => {
                     onClick={() => setShowSupplierModal(true)}
                     className="w-full py-3 bg-slate-50 hover:bg-slate-100 border-2 border-dashed border-slate-300 rounded-xl text-slate-600 font-medium transition-colors flex items-center justify-center gap-2 cursor-pointer"
                 >
-                    🏭 {formData.supplierLabel ? `Fornitore: ${formData.supplierLabel}` : 'Inserisci Fornitore Specifico (Opzionale)'}
+                    <IconBuilding className="w-5 h-5" /> {formData.supplierLabel ? `Fornitore: ${formData.supplierLabel}` : 'Inserisci Fornitore Specifico (Opzionale)'}
                 </button>
             </div>
 
@@ -428,7 +480,7 @@ const StepReview = ({ formData, onSubmit, loading, suppliers = [] }) => {
             {/* Error Message if Invalid */}
             {!isValid && (
                 <div className="text-center text-red-500 text-sm animate-pulse font-medium">
-                    {formData.quantity === 0 ? '⚠️ Seleziona almeno 1 quantità' : '⚠️ Inserisci il riferimento cliente'}
+                    {formData.quantity === 0 ? 'Seleziona almeno 1 quantità' : 'Inserisci il riferimento cliente'}
                 </div>
             )}
 
@@ -438,7 +490,7 @@ const StepReview = ({ formData, onSubmit, loading, suppliers = [] }) => {
                 disabled={loading || !isValid}
                 className="w-full py-5 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-xl text-white font-bold text-xl shadow-lg shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] hover:shadow-xl transition-all cursor-pointer"
             >
-                {loading ? 'Invio...' : '📤 INVIA RICHIESTA'}
+                {loading ? 'Invio...' : <span className="flex items-center justify-center gap-2"><IconSend /> INVIA RICHIESTA</span>}
             </button>
         </div>
     );
@@ -639,7 +691,7 @@ export default function NewOrderPage() {
                                 onClick={() => confirmWithSector('Pantografo')}
                                 className="p-6 rounded-xl border-2 border-cyan-200 bg-cyan-50 hover:bg-cyan-100 hover:border-cyan-400 active:scale-95 transition-all group cursor-pointer"
                             >
-                                <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">✂️</div>
+                                <div className="mb-3 group-hover:scale-110 transition-transform text-cyan-600"><IconScissors className="w-10 h-10 mx-auto" /></div>
                                 <div className="text-lg font-bold text-cyan-700">PANTOGRAFO</div>
                             </button>
 
@@ -647,7 +699,7 @@ export default function NewOrderPage() {
                                 onClick={() => confirmWithSector('Giostra')}
                                 className="p-6 rounded-xl border-2 border-purple-200 bg-purple-50 hover:bg-purple-100 hover:border-purple-400 active:scale-95 transition-all group cursor-pointer"
                             >
-                                <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">🎢</div>
+                                <div className="mb-3 group-hover:scale-110 transition-transform text-purple-600"><IconRotate className="w-10 h-10 mx-auto" /></div>
                                 <div className="text-lg font-bold text-purple-700">GIOSTRA</div>
                             </button>
                         </div>
