@@ -13,16 +13,16 @@ import toast from 'react-hot-toast';
 // Step 1: Category Selector
 const StepCategory = ({ onSelect }) => (
     <div className="space-y-4">
-        <h2 className="text-xl font-bold text-white text-center mb-6">Cosa ti serve?</h2>
+        <h2 className="text-xl font-bold text-slate-800 text-center mb-6">Cosa ti serve?</h2>
         <button
             onClick={() => onSelect('memory')}
-            className="w-full py-8 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl text-white text-2xl font-bold shadow-lg shadow-purple-500/30 hover:scale-105 transition-transform"
+            className="w-full py-8 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-2xl text-white text-2xl font-bold shadow-lg shadow-purple-500/20 hover:scale-105 hover:shadow-xl transition-all cursor-pointer"
         >
             🧠 MEMORY
         </button>
         <button
             onClick={() => onSelect('sponge')}
-            className="w-full py-8 bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl text-white text-2xl font-bold shadow-lg shadow-orange-500/30 hover:scale-105 transition-transform"
+            className="w-full py-8 bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl text-white text-2xl font-bold shadow-lg shadow-orange-500/20 hover:scale-105 hover:shadow-xl transition-all cursor-pointer"
         >
             🧽 SPUGNA
         </button>
@@ -66,7 +66,7 @@ const StepMemoryMaterial = ({ materials, onSelect }) => {
 
     return (
         <div>
-            <h2 className="text-xl font-bold text-white text-center mb-4">Scegli Memory</h2>
+            <h2 className="text-xl font-bold text-slate-800 text-center mb-4">Scegli Memory</h2>
             <div className="grid grid-cols-1 gap-4">
                 {materials.map(m => {
                     const textColor = getContrastColor(m.value);
@@ -76,7 +76,7 @@ const StepMemoryMaterial = ({ materials, onSelect }) => {
                             key={m.id}
                             onClick={() => onSelect(m)}
                             className="p-5 rounded-2xl font-bold text-lg transition-all duration-200 
-                                       border border-white/20 relative overflow-hidden
+                                       border border-slate-200 relative overflow-hidden shadow-sm
                                        active:scale-[0.98] active:brightness-110
                                        hover:translate-y-[-2px] hover:shadow-2xl"
                             style={{
@@ -108,13 +108,13 @@ const StepMemoryMaterial = ({ materials, onSelect }) => {
 // Step 2B: Sponge - Density Selector
 const StepSpongeDensity = ({ densities, onSelect }) => (
     <div>
-        <h2 className="text-xl font-bold text-white text-center mb-4">Densità Spugna</h2>
+        <h2 className="text-xl font-bold text-slate-800 text-center mb-4">Densità Spugna</h2>
         <div className="grid grid-cols-2 gap-3">
             {densities.map(d => (
                 <button
                     key={d.id}
                     onClick={() => onSelect(d)}
-                    className="p-6 rounded-xl bg-slate-700 text-white font-bold text-2xl shadow-lg hover:bg-cyan-600 transition-colors border-2 border-white/10"
+                    className="p-6 rounded-xl bg-white text-slate-800 font-bold text-2xl shadow-sm hover:bg-emerald-50 hover:border-emerald-400 transition-colors border-2 border-slate-200 cursor-pointer"
                 >
                     {d.label}
                 </button>
@@ -145,7 +145,7 @@ const StepSpongeColor = ({ colors, onSelect }) => {
 
     return (
         <div>
-            <h2 className="text-xl font-bold text-white text-center mb-4">Colore Spugna</h2>
+            <h2 className="text-xl font-bold text-slate-800 text-center mb-4">Colore Spugna</h2>
             <div className="grid grid-cols-1 gap-4">
                 {colors.map(c => {
                     const textColor = getContrastColor(c.value);
@@ -155,7 +155,7 @@ const StepSpongeColor = ({ colors, onSelect }) => {
                             key={c.id}
                             onClick={() => onSelect(c)}
                             className="p-5 rounded-2xl font-bold text-lg transition-all duration-200 
-                                       border border-white/20 relative overflow-hidden
+                                       border border-slate-200 relative overflow-hidden shadow-sm
                                        active:scale-[0.98] active:brightness-110
                                        hover:translate-y-[-2px] hover:shadow-2xl"
                             style={{
@@ -191,19 +191,19 @@ const StepDimensions = ({ formData, setFormData, onNext, dimensions = [] }) => {
 
     return (
         <div className="space-y-6">
-            <h2 className="text-xl font-bold text-white text-center mb-4">Dimensioni & Opzioni</h2>
+            <h2 className="text-xl font-bold text-slate-800 text-center mb-4">Dimensioni & Opzioni</h2>
 
             {/* Dimension Buttons */}
             <div>
-                <p className="text-gray-400 text-sm mb-2">1. Seleziona Misura</p>
+                <p className="text-slate-500 text-sm mb-2 font-medium">1. Seleziona Misura</p>
                 <div className="grid grid-cols-3 gap-3">
                     {displayDims.map(dim => (
                         <button
                             key={dim}
                             onClick={() => setFormData(prev => ({ ...prev, dimensions: dim }))}
-                            className={`p-3 rounded-xl font-bold text-sm transition-all border-2 ${formData.dimensions === dim
-                                ? 'bg-cyan-600 text-white border-cyan-400 shadow-lg shadow-cyan-500/30'
-                                : 'bg-slate-700 text-gray-300 border-white/10 hover:bg-slate-600'
+                            className={`p-3 rounded-xl font-bold text-sm transition-all border-2 cursor-pointer ${formData.dimensions === dim
+                                ? 'bg-emerald-500 text-white border-emerald-400 shadow-lg shadow-emerald-500/20'
+                                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
                                 }`}
                         >
                             {dim}
@@ -214,22 +214,22 @@ const StepDimensions = ({ formData, setFormData, onNext, dimensions = [] }) => {
 
             {/* Block Type Row */}
             <div>
-                <p className="text-gray-400 text-sm mb-2">2. Tipo di Blocco</p>
+                <p className="text-slate-500 text-sm mb-2 font-medium">2. Tipo di Blocco</p>
                 <div className="flex gap-3">
                     <button
                         onClick={() => setFormData(prev => ({ ...prev, isPartial: false, customHeight: null }))}
-                        className={`flex-1 py-4 rounded-xl font-bold transition-all border-2 ${!formData.isPartial
-                            ? 'bg-green-600 text-white border-green-400'
-                            : 'bg-slate-800 text-gray-500 border-white/10'
+                        className={`flex-1 py-4 rounded-xl font-bold transition-all border-2 cursor-pointer ${!formData.isPartial
+                            ? 'bg-emerald-500 text-white border-emerald-400'
+                            : 'bg-white text-slate-400 border-slate-200 hover:bg-slate-50'
                             }`}
                     >
                         📦 INTERO
                     </button>
                     <button
                         onClick={() => setFormData(prev => ({ ...prev, isPartial: true }))}
-                        className={`flex-1 py-4 rounded-xl font-bold transition-all border-2 ${formData.isPartial
-                            ? 'bg-yellow-600 text-white border-yellow-400'
-                            : 'bg-slate-800 text-gray-500 border-white/10'
+                        className={`flex-1 py-4 rounded-xl font-bold transition-all border-2 cursor-pointer ${formData.isPartial
+                            ? 'bg-amber-500 text-white border-amber-400'
+                            : 'bg-white text-slate-400 border-slate-200 hover:bg-slate-50'
                             }`}
                     >
                         ✂️ PARZIALE
@@ -237,13 +237,13 @@ const StepDimensions = ({ formData, setFormData, onNext, dimensions = [] }) => {
                 </div>
                 {formData.isPartial && (
                     <div className="mt-3 animate-fadeIn">
-                        <label className="text-xs text-yellow-400 mb-1 block">Inserisci Altezza (cm)</label>
+                        <label className="text-xs text-amber-600 mb-1 block font-semibold">Inserisci Altezza (cm)</label>
                         <input
                             type="number"
                             placeholder="Es: 15"
                             value={formData.customHeight || ''}
                             onChange={(e) => setFormData(prev => ({ ...prev, customHeight: parseInt(e.target.value) || null }))}
-                            className="w-full p-3 bg-slate-800 border-2 border-yellow-500/50 rounded-xl text-white text-center text-xl font-bold focus:border-yellow-400 outline-none"
+                            className="w-full p-3 bg-white border-2 border-amber-300 rounded-xl text-slate-800 text-center text-xl font-bold focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none shadow-sm"
                             autoFocus
                         />
                     </div>
@@ -252,22 +252,22 @@ const StepDimensions = ({ formData, setFormData, onNext, dimensions = [] }) => {
 
             {/* Trim Row - Rifilatura */}
             <div>
-                <p className="text-gray-400 text-sm mb-2">3. Rifilatura</p>
+                <p className="text-slate-500 text-sm mb-2 font-medium">3. Rifilatura</p>
                 <div className="flex gap-3">
                     <button
                         onClick={() => setFormData(prev => ({ ...prev, isTrimmed: false }))}
-                        className={`flex-1 py-4 rounded-xl font-bold transition-all border-2 ${!formData.isTrimmed
-                            ? 'bg-slate-600 text-white border-slate-400'
-                            : 'bg-slate-800 text-gray-500 border-white/10'
+                        className={`flex-1 py-4 rounded-xl font-bold transition-all border-2 cursor-pointer ${!formData.isTrimmed
+                            ? 'bg-slate-600 text-white border-slate-500'
+                            : 'bg-white text-slate-400 border-slate-200 hover:bg-slate-50'
                             }`}
                     >
                         🔲 NON RIFILATO
                     </button>
                     <button
                         onClick={() => setFormData(prev => ({ ...prev, isTrimmed: true }))}
-                        className={`flex-1 py-4 rounded-xl font-bold transition-all border-2 ${formData.isTrimmed
-                            ? 'bg-orange-600 text-white border-orange-400'
-                            : 'bg-slate-800 text-gray-500 border-white/10'
+                        className={`flex-1 py-4 rounded-xl font-bold transition-all border-2 cursor-pointer ${formData.isTrimmed
+                            ? 'bg-orange-500 text-white border-orange-400'
+                            : 'bg-white text-slate-400 border-slate-200 hover:bg-slate-50'
                             }`}
                     >
                         🔷 RIFILARE
@@ -279,7 +279,7 @@ const StepDimensions = ({ formData, setFormData, onNext, dimensions = [] }) => {
             <button
                 onClick={onNext}
                 disabled={!formData.dimensions}
-                className="w-full py-4 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl text-white font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed mt-4 shadow-lg shadow-cyan-500/20"
+                className="w-full py-4 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-xl text-white font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed mt-4 shadow-lg shadow-emerald-500/20 cursor-pointer hover:shadow-xl transition-shadow"
             >
                 Avanti →
             </button>
@@ -294,64 +294,64 @@ const StepReview = ({ formData, onSubmit, loading, suppliers = [] }) => {
 
     return (
         <div className="space-y-6">
-            <h2 className="text-xl font-bold text-white text-center mb-4">Conferma Ordine</h2>
+            <h2 className="text-xl font-bold text-slate-800 text-center mb-4">Conferma Ordine</h2>
 
-            <div className="bg-slate-800/80 rounded-xl p-4 border border-white/10 space-y-3 shadow-xl">
-                <div className="flex justify-between border-b border-white/5 pb-2">
-                    <span className="text-gray-400">Tipo:</span>
-                    <span className="text-white font-bold text-lg">{formData.type === 'memory' ? '🧠 Memory' : '🧽 Spugna'}</span>
+            <div className="bg-white rounded-xl p-4 border border-slate-200 space-y-3 shadow-sm">
+                <div className="flex justify-between border-b border-slate-100 pb-2">
+                    <span className="text-slate-500">Tipo:</span>
+                    <span className="text-slate-800 font-bold text-lg">{formData.type === 'memory' ? '🧠 Memory' : '🧽 Spugna'}</span>
                 </div>
                 {formData.type === 'memory' ? (
-                    <div className="flex justify-between border-b border-white/5 pb-2">
+                    <div className="flex justify-between border-b border-slate-100 pb-2">
                         <span className="text-gray-400">Materiale:</span>
-                        <span className="text-cyan-400 font-bold text-lg">{formData.materialLabel}</span>
+                        <span className="text-emerald-600 font-bold text-lg">{formData.materialLabel}</span>
                     </div>
                 ) : (
                     <>
-                        <div className="flex justify-between border-b border-white/5 pb-2">
+                        <div className="flex justify-between border-b border-slate-100 pb-2">
                             <span className="text-gray-400">Densità:</span>
-                            <span className="text-cyan-400 font-bold text-lg">{formData.densityLabel}</span>
+                            <span className="text-emerald-600 font-bold text-lg">{formData.densityLabel}</span>
                         </div>
-                        <div className="flex justify-between border-b border-white/5 pb-2">
+                        <div className="flex justify-between border-b border-slate-100 pb-2">
                             <span className="text-gray-400">Colore:</span>
-                            <span className="text-white font-bold text-lg">{formData.colorLabel}</span>
+                            <span className="text-slate-800 font-bold text-lg">{formData.colorLabel}</span>
                         </div>
                     </>
                 )}
                 <div className="flex justify-between border-b border-white/5 pb-2">
                     <span className="text-gray-400">Dimensioni:</span>
-                    <span className="text-white font-bold text-lg">{formData.dimensions}</span>
+                    <span className="text-slate-800 font-bold text-lg">{formData.dimensions}</span>
                 </div>
                 {formData.isPartial ? (
                     <div className="flex justify-between border-b border-white/5 pb-2">
                         <span className="text-gray-400">Taglio Parziale:</span>
-                        <span className="text-yellow-400 font-bold text-lg">{formData.customHeight} cm</span>
+                        <span className="text-amber-600 font-bold text-lg">{formData.customHeight} cm</span>
                     </div>
                 ) : (
                     <div className="flex justify-between border-b border-white/5 pb-2">
                         <span className="text-gray-400">Taglio:</span>
-                        <span className="text-green-400 font-bold">Intero</span>
+                        <span className="text-emerald-600 font-bold">Intero</span>
                     </div>
                 )}
                 <div className="flex justify-between border-b border-white/5 pb-2">
                     <span className="text-gray-400">Rifilatura:</span>
-                    <span className={formData.isTrimmed ? 'text-orange-400 font-bold' : 'text-gray-300'}>
+                    <span className={formData.isTrimmed ? 'text-orange-600 font-bold' : 'text-slate-400'}>
                         {formData.isTrimmed ? '🔷 SI' : '🔲 NO'}
                     </span>
                 </div>
                 <div className="flex justify-between items-center pt-2">
                     <span className="text-gray-400">Quantità:</span>
-                    <div className="flex items-center gap-4 bg-slate-900 rounded-lg p-1">
+                    <div className="flex items-center gap-4 bg-slate-100 rounded-lg p-1">
                         <button
                             onClick={() => formData.setQuantity(Math.max(0, formData.quantity - 1))}
-                            className="w-10 h-10 bg-slate-700 rounded-lg text-white font-bold text-2xl hover:bg-red-500 transition-colors"
+                            className="w-10 h-10 bg-white rounded-lg text-slate-600 font-bold text-2xl hover:bg-red-500 hover:text-white transition-colors border border-slate-200 cursor-pointer"
                         >-</button>
-                        <span className={`font-bold text-2xl w-8 text-center ${formData.quantity > 0 ? 'text-white' : 'text-red-500'}`}>
+                        <span className={`font-bold text-2xl w-8 text-center ${formData.quantity > 0 ? 'text-slate-800' : 'text-red-500'}`}>
                             {formData.quantity}
                         </span>
                         <button
                             onClick={() => formData.setQuantity(formData.quantity + 1)}
-                            className="w-10 h-10 bg-slate-700 rounded-lg text-white font-bold text-2xl hover:bg-green-500 transition-colors"
+                            className="w-10 h-10 bg-white rounded-lg text-slate-600 font-bold text-2xl hover:bg-emerald-500 hover:text-white transition-colors border border-slate-200 cursor-pointer"
                         >+</button>
                     </div>
                 </div>
@@ -359,7 +359,7 @@ const StepReview = ({ formData, onSubmit, loading, suppliers = [] }) => {
 
             {/* Client Reference - MANDATORY */}
             <div>
-                <label className="text-sm font-bold text-white mb-2 block">
+                <label className="text-sm font-bold text-slate-700 mb-2 block">
                     Riferimento Cliente <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -368,10 +368,10 @@ const StepReview = ({ formData, onSubmit, loading, suppliers = [] }) => {
                     value={formData.clientRef || ''}
                     maxLength={100}
                     onChange={(e) => formData.setClientRef(e.target.value)}
-                    className={`w-full p-4 bg-slate-800 border-2 rounded-xl text-white text-lg placeholder-gray-500 focus:outline-none ${!formData.clientRef ? 'border-red-500/50 focus:border-red-500' : 'border-green-500/50 focus:border-green-500'
+                    className={`w-full p-4 bg-white border-2 rounded-xl text-slate-800 text-lg placeholder-slate-400 focus:outline-none shadow-sm ${!formData.clientRef ? 'border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-100' : 'border-emerald-300 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100'
                         }`}
                 />
-                <div className="text-right text-xs text-gray-500 mt-1">
+                <div className="text-right text-xs text-slate-400 mt-1">
                     {(formData.clientRef || '').length}/100
                 </div>
             </div>
@@ -381,7 +381,7 @@ const StepReview = ({ formData, onSubmit, loading, suppliers = [] }) => {
                 <button
                     type="button"
                     onClick={() => setShowSupplierModal(true)}
-                    className="w-full py-3 bg-slate-700 hover:bg-slate-600 border-2 border-dashed border-white/20 rounded-xl text-gray-300 font-medium transition-colors flex items-center justify-center gap-2"
+                    className="w-full py-3 bg-slate-50 hover:bg-slate-100 border-2 border-dashed border-slate-300 rounded-xl text-slate-600 font-medium transition-colors flex items-center justify-center gap-2 cursor-pointer"
                 >
                     🏭 {formData.supplierLabel ? `Fornitore: ${formData.supplierLabel}` : 'Inserisci Fornitore Specifico (Opzionale)'}
                 </button>
@@ -389,9 +389,9 @@ const StepReview = ({ formData, onSubmit, loading, suppliers = [] }) => {
 
             {/* Supplier Modal */}
             {showSupplierModal && (
-                <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={() => setShowSupplierModal(false)}>
-                    <div className="bg-slate-800 rounded-2xl p-6 w-full max-w-sm border border-white/10 shadow-2xl" onClick={e => e.stopPropagation()}>
-                        <h3 className="text-lg font-bold text-white mb-4 text-center">Seleziona Fornitore</h3>
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowSupplierModal(false)}>
+                    <div className="bg-white rounded-2xl p-6 w-full max-w-sm border border-slate-200 shadow-xl" onClick={e => e.stopPropagation()}>
+                        <h3 className="text-lg font-bold text-slate-800 mb-4 text-center">Seleziona Fornitore</h3>
                         <div className="space-y-2">
                             {suppliers.map(s => (
                                 <button
@@ -400,7 +400,7 @@ const StepReview = ({ formData, onSubmit, loading, suppliers = [] }) => {
                                         formData.setSupplier(s);
                                         setShowSupplierModal(false);
                                     }}
-                                    className={`w-full py-3 px-4 rounded-lg font-medium text-left transition-colors ${formData.supplierId === s.id ? 'bg-blue-600 text-white' : 'bg-slate-700 text-gray-200 hover:bg-slate-600'}`}
+                                    className={`w-full py-3 px-4 rounded-lg font-medium text-left transition-colors cursor-pointer ${formData.supplierId === s.id ? 'bg-emerald-500 text-white' : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200'}`}
                                 >
                                     {s.label}
                                 </button>
@@ -410,14 +410,14 @@ const StepReview = ({ formData, onSubmit, loading, suppliers = [] }) => {
                                     formData.setSupplier(null);
                                     setShowSupplierModal(false);
                                 }}
-                                className="w-full py-3 px-4 rounded-lg font-medium text-left bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors mt-2"
+                                className="w-full py-3 px-4 rounded-lg font-medium text-left bg-red-50 text-red-600 hover:bg-red-100 border border-red-200 transition-colors mt-2 cursor-pointer"
                             >
-                                ❌ Nessun Fornitore
+                                ✕ Nessun Fornitore
                             </button>
                         </div>
                         <button
                             onClick={() => setShowSupplierModal(false)}
-                            className="w-full mt-4 py-2 bg-slate-900 rounded-lg text-gray-400 hover:text-white transition-colors"
+                            className="w-full mt-4 py-2 bg-slate-100 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition-colors cursor-pointer"
                         >
                             Chiudi
                         </button>
@@ -427,7 +427,7 @@ const StepReview = ({ formData, onSubmit, loading, suppliers = [] }) => {
 
             {/* Error Message if Invalid */}
             {!isValid && (
-                <div className="text-center text-red-400 text-sm animate-pulse">
+                <div className="text-center text-red-500 text-sm animate-pulse font-medium">
                     {formData.quantity === 0 ? '⚠️ Seleziona almeno 1 quantità' : '⚠️ Inserisci il riferimento cliente'}
                 </div>
             )}
@@ -436,7 +436,7 @@ const StepReview = ({ formData, onSubmit, loading, suppliers = [] }) => {
             <button
                 onClick={onSubmit}
                 disabled={loading || !isValid}
-                className="w-full py-5 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl text-white font-bold text-xl shadow-lg shadow-green-500/30 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] transition-transform"
+                className="w-full py-5 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-xl text-white font-bold text-xl shadow-lg shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02] hover:shadow-xl transition-all cursor-pointer"
             >
                 {loading ? 'Invio...' : '📤 INVIA RICHIESTA'}
             </button>
@@ -580,17 +580,17 @@ export default function NewOrderPage() {
     };
 
     return (
-        <div className="min-h-screen carbon-background p-4">
+        <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white p-4">
             {/* Header */}
             <div className="flex items-center gap-4 mb-6">
                 <button
                     onClick={goBack}
-                    className="w-10 h-10 bg-slate-700 rounded-full flex items-center justify-center text-white"
+                    className="w-10 h-10 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-600 hover:bg-slate-50 shadow-sm cursor-pointer transition-colors"
                 >
                     ←
                 </button>
-                <h1 className="text-xl font-bold text-white">Nuovo Ordine</h1>
-                <span className="text-gray-500 text-sm ml-auto">Step {Math.ceil(step)}/4</span>
+                <h1 className="text-xl font-bold text-slate-800">Nuovo Ordine</h1>
+                <span className="text-slate-400 text-sm ml-auto font-medium">Step {Math.ceil(step)}/4</span>
             </div>
 
             {/* Steps */}
@@ -628,33 +628,33 @@ export default function NewOrderPage() {
 
             {/* SECTOR SELECTION MODAL */}
             {showSectorModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                    <div className="bg-[#1e293b] rounded-2xl border border-blue-500/30 p-8 max-w-md w-full shadow-2xl text-center">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl border border-slate-200 p-8 max-w-md w-full shadow-xl text-center">
 
-                        <h2 className="text-2xl font-bold text-white mb-2">REPARTO DI DESTINAZIONE?</h2>
-                        <p className="text-gray-400 mb-8">Specifica per chi è questo materiale per aiutare il magazzino.</p>
+                        <h2 className="text-2xl font-bold text-slate-800 mb-2">REPARTO DI DESTINAZIONE?</h2>
+                        <p className="text-slate-500 mb-8">Specifica per chi è questo materiale per aiutare il magazzino.</p>
 
                         <div className="grid grid-cols-2 gap-4">
                             <button
                                 onClick={() => confirmWithSector('Pantografo')}
-                                className="p-6 rounded-xl border-2 border-cyan-500/30 bg-cyan-900/20 hover:bg-cyan-900/40 hover:border-cyan-400 active:scale-95 transition-all group"
+                                className="p-6 rounded-xl border-2 border-cyan-200 bg-cyan-50 hover:bg-cyan-100 hover:border-cyan-400 active:scale-95 transition-all group cursor-pointer"
                             >
                                 <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">✂️</div>
-                                <div className="text-lg font-bold text-cyan-300">PANTOGRAFO</div>
+                                <div className="text-lg font-bold text-cyan-700">PANTOGRAFO</div>
                             </button>
 
                             <button
                                 onClick={() => confirmWithSector('Giostra')}
-                                className="p-6 rounded-xl border-2 border-purple-500/30 bg-purple-900/20 hover:bg-purple-900/40 hover:border-purple-400 active:scale-95 transition-all group"
+                                className="p-6 rounded-xl border-2 border-purple-200 bg-purple-50 hover:bg-purple-100 hover:border-purple-400 active:scale-95 transition-all group cursor-pointer"
                             >
                                 <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">🎢</div>
-                                <div className="text-lg font-bold text-purple-300">GIOSTRA</div>
+                                <div className="text-lg font-bold text-purple-700">GIOSTRA</div>
                             </button>
                         </div>
 
                         <button
                             onClick={() => setShowSectorModal(false)}
-                            className="mt-8 text-gray-400 hover:text-white underline text-sm"
+                            className="mt-8 text-slate-400 hover:text-slate-700 underline text-sm cursor-pointer"
                         >
                             Annulla
                         </button>
