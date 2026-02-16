@@ -55,7 +55,7 @@ export default function MainLayout() {
             {/* Mobile Backdrop */}
             {mobileOpen && (
                 <div
-                    className="fixed inset-0 bg-black/30 z-40 md:hidden backdrop-blur-sm"
+                    className="fixed inset-0 bg-black/30 z-[105] md:hidden backdrop-blur-sm"
                     onClick={() => setMobileOpen(false)}
                 />
             )}

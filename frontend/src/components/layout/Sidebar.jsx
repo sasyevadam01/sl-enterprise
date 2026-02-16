@@ -414,7 +414,7 @@ export default function Sidebar({ isOpen, onToggle, mobileOpen, setMobileOpen })
     if (!user) return null;
 
     return (
-        <aside className={`fixed left-0 top-0 h-screen bg-white border-r border-slate-200 transition-all duration-300 z-50 flex flex-col
+        <aside className={`fixed left-0 top-0 h-screen bg-white border-r border-slate-200 transition-all duration-300 z-[110] flex flex-col
             ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
             ${isOpen ? 'md:w-64' : 'md:w-20'} 
             w-64`}>
