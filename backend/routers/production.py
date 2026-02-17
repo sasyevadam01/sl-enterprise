@@ -246,7 +246,11 @@ async def list_block_requests(
     from sqlalchemy import desc
     query = query.order_by(desc(BlockRequest.is_urgent), BlockRequest.created_at.desc())
     
-    results = query.offset(offset).limit(limit).all()
+    # If limit is greater than 0, apply it. Otherwise, return all.
+    if limit > 0:
+        query = query.limit(limit)
+
+    results = query.offset(offset).all()
     
     response_list = []
     for req in results:
