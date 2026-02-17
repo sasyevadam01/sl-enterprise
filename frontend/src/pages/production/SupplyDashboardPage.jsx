@@ -30,7 +30,7 @@ export default function SupplyDashboardPage() {
     const loadOrders = async () => {
         try {
             // Fetch active orders (pending+processing) - these won't be cut off by limit
-            const activeData = await pickingApi.getRequests('active', 100);
+            const activeData = await pickingApi.getRequests('active', 1000);
 
             // Fetch cancelled orders separately for the warning section
             const cancelledData = await pickingApi.getRequests('cancelled', 50);
