@@ -12,7 +12,7 @@ import {
 
 const ITEM_TYPES = [
     { value: 'memory_block', label: 'Blocco Memory', icon: '🧊', color: 'purple' },
-    { value: 'wet_mattress', label: 'Materasso Bagnato', icon: '💧', color: 'blue' },
+    { value: 'wet_mattress', label: 'Materasso Bagnato', icon: '🛏️', color: 'blue' },
     { value: 'wet_other', label: 'Altro Materiale Bagnato', icon: '💧', color: 'cyan' },
 ];
 
@@ -52,7 +52,10 @@ function InsertModal({ onClose, onInsert }) {
     const [quantity, setQuantity] = useState(1);
     const [minutes, setMinutes] = useState(180);
     const [loading, setLoading] = useState(false);
+    const [acceptedWarning, setAcceptedWarning] = useState(false);
 
+    const isWetType = type === 'wet_mattress' || type === 'wet_other';
+    const handleTypeChange = (val) => { setType(val); setAcceptedWarning(false); };
     const handleSubmit = async () => {
         if (!type) return toast.error('Seleziona il tipo di materiale');
         if (!reference.trim()) return toast.error('Il riferimento è obbligatorio');
@@ -93,7 +96,7 @@ function InsertModal({ onClose, onInsert }) {
                             {ITEM_TYPES.map(t => (
                                 <button
                                     key={t.value}
-                                    onClick={() => setType(t.value)}
+                                    onClick={() => handleTypeChange(t.value)}
                                     className={`p-3 rounded-xl text-center transition-all border-2 cursor-pointer ${type === t.value
                                         ? 'border-orange-400 bg-orange-50 shadow-sm'
                                         : 'border-slate-200 bg-white hover:bg-slate-50'
@@ -105,6 +108,29 @@ function InsertModal({ onClose, onInsert }) {
                             ))}
                         </div>
                     </div>
+
+                    {/* ⚠️ Avviso Materiale Bagnato */}
+                    {(type === 'wet_mattress' || type === 'wet_other') && (
+                        <div className="bg-red-50 border-2 border-red-300 rounded-xl p-3 flex flex-col gap-3">
+                            <div className="flex gap-2.5 items-start">
+                                <AlertTriangle size={20} className="text-red-600 flex-shrink-0 mt-0.5" />
+                                <p className="text-red-700 text-xs font-semibold leading-relaxed">
+                                    <span className="font-black uppercase">Attenzione!</span> Stai inserendo del materiale Bagnato nel forno.
+                                    Accertati di aver fatto la segnalazione sul gruppo <span className="font-black">Errori Fabbrica</span> taggando
+                                    Coordinatori e Dirigenti. L'omissione potrebbe farti incombere in un <span className="font-black text-red-800">Richiamo Formale</span>.
+                                </p>
+                            </div>
+                            <label className="flex items-center gap-2 cursor-pointer bg-white rounded-lg p-2.5 border border-red-200">
+                                <input
+                                    type="checkbox"
+                                    checked={acceptedWarning}
+                                    onChange={e => setAcceptedWarning(e.target.checked)}
+                                    className="w-5 h-5 accent-red-600 cursor-pointer"
+                                />
+                                <span className="text-xs font-bold text-red-700">Confermo di aver segnalato sul gruppo Errori Fabbrica</span>
+                            </label>
+                        </div>
+                    )}
 
                     {/* Riferimento */}
                     <div>
@@ -170,7 +196,7 @@ function InsertModal({ onClose, onInsert }) {
                     </button>
                     <button
                         onClick={handleSubmit}
-                        disabled={loading || !type || !reference.trim()}
+                        disabled={loading || !type || !reference.trim() || (isWetType && !acceptedWarning)}
                         className="flex-[2] py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-bold shadow-lg shadow-orange-500/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer hover:shadow-xl transition-all"
                     >
                         {loading ? 'Inserimento...' : '🔥 Inserisci nel Forno'}
@@ -193,9 +219,10 @@ export default function OvenPage() {
     const loadData = useCallback(async () => {
         try {
             const data = await ovenApi.getItems();
+            console.log("DEBUG OVEN DATA:", data);
             setItems(data || []);
         } catch (err) {
-            console.error(err);
+            console.error("DEBUG OVEN ERROR:", err);
         } finally {
             setLoading(false);
         }

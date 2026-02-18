@@ -419,6 +419,9 @@ class OvenItem(Base):
     # Status: in_oven, removed, overdue
     status = Column(String(20), default="in_oven")
 
+    # Notifica di stagnazione già inviata?
+    notified_overdue = Column(Boolean, default=False)
+
     notes = Column(Text, nullable=True)
 
     # Relationships

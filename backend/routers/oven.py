@@ -8,10 +8,10 @@ from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
 
-from database import get_db
+from database import get_db, Notification
 from models.core import User
 from models.production import OvenItem, OVEN_MAX_MINUTES
-from routers.auth import get_current_user
+from security import get_current_user
 
 router = APIRouter(prefix="/oven", tags=["Oven - Il Forno"])
 
@@ -109,6 +109,37 @@ async def insert_item(
     db.add(item)
     db.commit()
     db.refresh(item)
+
+    # Invio notifica ai Coordinatori + Super Admin
+    try:
+        from sqlalchemy import or_
+        from database import Role
+        
+        # Query TUTTI i coordinatori (per ruolo) + super admin
+        targets = db.query(User).filter(
+            User.is_active == True
+        ).outerjoin(Role, User.role_id == Role.id).filter(
+            or_(
+                Role.name == "coordinator",
+                Role.name == "super_admin",
+                User.role == "coordinator",
+                User.role == "super_admin",
+            )
+        ).all()
+        
+        for target in targets:
+            notif = Notification(
+                recipient_user_id=target.id,
+                notif_type="info",
+                title="🔥 Nuovo inserimento Forno",
+                message=f"{current_user.full_name} ha inserito: {item.reference} ({item.quantity} pz).",
+                link_url="/production/oven"
+            )
+            db.add(notif)
+        db.commit()
+    except Exception as e:
+        print(f"ERROR: Fallita notifica inserimento forno: {e}")
+
     return serialize_item(item)
 
 
@@ -118,10 +149,8 @@ async def get_active_items(
     current_user: User = Depends(get_current_user)
 ):
     """Lista items attualmente nel forno."""
-    items = db.query(OvenItem).filter(
-        OvenItem.status == "in_oven"
-    ).order_by(OvenItem.inserted_at.asc()).all()
-
+    items = db.query(OvenItem).filter(OvenItem.status == "in_oven").all()
+    print(f"DEBUG: Found {len(items)} active items")
     return [serialize_item(i) for i in items]
 
 

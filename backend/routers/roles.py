@@ -159,6 +159,7 @@ async def get_permission_definitions(current_user: User = Depends(get_current_us
         {"code": "perform_checklists", "label": "Compilare Check List", "category": "Production", "description": "Permette di compilare le check list mezzi e carrelli."},
         {"code": "manage_fleet", "label": "Gestione Flotta", "category": "Production", "description": "Permette di aggiungere, modificare ed eliminare i mezzi del parco."},
         {"code": "view_checklist_history", "label": "Storico Check List", "category": "Production", "description": "Visualizzazione storico controlli effettuati."},
+        {"code": "use_oven", "label": "Utilizzare Il Forno", "category": "Production", "description": "Permette di inserire e rimuovere materiali dal forno industriale."},
         {"code": "manage_logistics_config", "label": "Configurazione Logistica", "category": "Admin", "description": "Gestione configurazioni generali modulo logistica."},
         {"code": "admin_users", "label": "Gestione Utenti", "category": "Admin", "description": "Accesso all'area Admin per gestire utenti e configurazioni di sistema."},
         {"code": "admin_audit", "label": "Audit Logs", "category": "Admin", "description": "Visualizza il registro di tutte le azioni critiche eseguite nel sistema."},

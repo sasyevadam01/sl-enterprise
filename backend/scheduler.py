@@ -190,8 +190,76 @@ def start_scheduler():
             replace_existing=True
         )
 
+        # 5. Oven Stagnation Check (Ogni 5 minuti)
+        scheduler.add_job(
+            check_oven_stagnation,
+            trigger=IntervalTrigger(minutes=5),
+            id='oven_stagnation',
+            name='Controlla stagnazione forno',
+            replace_existing=True
+        )
+
         scheduler.start()
         logger.info("Scheduler avviato correttamente.")
+
+# ============================================================
+# OVEN LOGIC
+# ============================================================
+from models.production import OvenItem
+
+def check_oven_stagnation():
+    """
+    Controlla se ci sono materiali nel forno oltre il tempo previsto
+    e invia notifiche ai Coordinatori.
+    """
+    db = SessionLocal()
+    try:
+        now = datetime.now()
+        # Prendi items attivi che hanno superato il tempo e non sono ancora stati notificati
+        overdue_items = db.query(OvenItem).filter(
+            OvenItem.status == 'in_oven',
+            OvenItem.notified_overdue == False
+        ).all()
+        
+        for item in overdue_items:
+            elapsed_minutes = (now - item.inserted_at).total_seconds() / 60.0
+            
+            if elapsed_minutes > item.expected_minutes:
+                # Target: Coordinatori + Super Admin (per ruolo, non per nome)
+                from sqlalchemy import or_
+                from database import Role
+                targets = db.query(User).filter(
+                    User.is_active == True
+                ).outerjoin(Role, User.role_id == Role.id).filter(
+                    or_(
+                        Role.name == "coordinator",
+                        Role.name == "super_admin",
+                        User.role == "coordinator",
+                        User.role == "super_admin",
+                    )
+                ).all()
+                
+                for t in targets:
+                    n = Notification(
+                        recipient_user_id=t.id,
+                        notif_type="urgent",
+                        title="🚨 ATTENZIONE: Materiale scaduto nel forno!",
+                        message=f"Il materiale '{item.reference}' è nel forno da {int(elapsed_minutes)} minuti! Tempo massimo previsto: {item.expected_minutes} min. Verificare immediatamente.",
+                        link_url="/production/oven"
+                    )
+                    db.add(n)
+                
+                # Segna come notificato
+                item.notified_overdue = True
+                db.commit()
+                logger.info(f"Notifica stagnazione inviata per item {item.id} ({item.reference})")
+                
+    except Exception as e:
+        logger.error(f"Errore check stagnazione forno: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
 
 # ============================================================
 # ESCALATION LOGIC

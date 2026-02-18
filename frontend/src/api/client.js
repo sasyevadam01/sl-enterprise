@@ -167,11 +167,11 @@ export const fleetApi = {
 };
 
 export const ovenApi = {
-  getItems: () => client.get("/oven/items").then(r => r.data),
-  getHistory: (limit = 30) => client.get("/oven/items/history", { params: { limit } }).then(r => r.data),
-  insertItem: (data) => client.post("/oven/items", data).then(r => r.data),
-  removeItem: (id) => client.put(`/oven/items/${id}/remove`).then(r => r.data),
-  getStats: () => client.get("/oven/stats").then(r => r.data),
+  getItems: () => client.get("/oven/items"),
+  getHistory: (limit = 30) => client.get("/oven/items/history", { params: { limit } }),
+  insertItem: (data) => client.post("/oven/items", data),
+  removeItem: (id) => client.put(`/oven/items/${id}/remove`),
+  getStats: () => client.get("/oven/stats"),
 };
 
 export const notificationsApi = {

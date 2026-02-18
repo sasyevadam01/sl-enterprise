@@ -222,7 +222,7 @@ function App() {
                 </PermissionRoute>
               } />
               <Route path="production/oven" element={
-                <PermissionRoute permission="manage_production_supply">
+                <PermissionRoute permission="use_oven">
                   <OvenPage />
                 </PermissionRoute>
               } />
