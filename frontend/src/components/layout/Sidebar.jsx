@@ -377,7 +377,7 @@ export default function Sidebar({ isOpen, onToggle, mobileOpen, setMobileOpen })
             if (hasPermission('manage_production_supply') || hasPermission('admin_users')) {
                 try {
                     // Fetch pending blocks
-                    const blocksData = await pickingApi.getRequests('pending', 100);
+                    const blocksData = await pickingApi.getRequests('pending');
                     const pending = Array.isArray(blocksData) ? blocksData.filter(b => b.status === 'pending') : [];
                     newCounts.productionSupply = pending.length;
                 } catch (err) {

@@ -495,7 +495,7 @@ export const pickingApi = {
 
   // Requests (Orders)
   createRequest: (data) => client.post("/production/requests", data),
-  getRequests: (status, limit = 50) => client.get("/production/requests", { params: { status, limit } }),
+  getRequests: (status, limit) => client.get("/production/requests", { params: { status, limit } }),
   updateStatus: (id, status, notes) => client.patch(`/production/requests/${id}/status`, { status, notes }),
   acknowledge: (id) => client.patch(`/production/requests/${id}/acknowledge`),
   toggleUrgency: (id) => client.patch(`/production/requests/${id}/urgency`),

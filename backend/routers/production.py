@@ -208,7 +208,7 @@ async def create_block_request(
 async def list_block_requests(
     status: Optional[str] = None, # pending, processing, delivered, history (delivered/completed)
     material_type: Optional[str] = None,  # memory, sponge - filtro tipo materiale
-    limit: int = 50,
+    limit: Optional[int] = None,  # None = nessun limite (record infiniti)
     offset: int = 0,  # Paginazione
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -246,7 +246,10 @@ async def list_block_requests(
     from sqlalchemy import desc
     query = query.order_by(desc(BlockRequest.is_urgent), BlockRequest.created_at.desc())
     
-    results = query.offset(offset).limit(limit).all()
+    query = query.offset(offset)
+    if limit is not None:
+        query = query.limit(limit)
+    results = query.all()
     
     response_list = []
     for req in results:

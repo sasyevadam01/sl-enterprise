@@ -31,7 +31,7 @@ export default function OrderDashboardPage() {
 
     const loadOrders = async () => {
         try {
-            const data = await pickingApi.getRequests(null, 50);
+            const data = await pickingApi.getRequests();
             setOrders(data || []);
         } catch (err) {
             console.error('Error loading orders:', err);
