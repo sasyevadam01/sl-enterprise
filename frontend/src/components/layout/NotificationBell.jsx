@@ -264,7 +264,7 @@ export default function NotificationBell() {
 
                 {/* Badge */}
                 {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center animate-pulse">
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
                         {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                 )}
@@ -309,7 +309,7 @@ export default function NotificationBell() {
                                         setIsOpen(false);
                                     }}
                                     className={`block px-4 py-3 border-b border-slate-100 hover:bg-slate-50 cursor-pointer transition ${notif.notif_type === 'priority' ? 'bg-red-50 border-l-4 border-l-red-500' :
-                                        notif.notif_type === 'critical' ? 'bg-red-50 border-l-4 border-l-red-600 animate-pulse' :
+                                        notif.notif_type === 'critical' ? 'bg-red-50 border-l-4 border-l-red-600' :
                                             notif.notif_type === 'urgent' ? 'bg-orange-50 border-l-4 border-l-orange-500' :
                                                 notif.notif_type === 'chat' ? 'bg-blue-50 border-l-4 border-l-blue-500' :
                                                     (!notif.is_read ? 'bg-emerald-50/50' : '')
