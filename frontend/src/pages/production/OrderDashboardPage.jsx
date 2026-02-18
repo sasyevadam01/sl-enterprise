@@ -126,7 +126,19 @@ export default function OrderDashboardPage() {
     const rejectedOrders = orders.filter(o => o.status === 'cancelled' && o.processed_by_id); // Rejected by Supply
 
     return (
-        <div className="min-h-screen bg-slate-50 p-4 pb-24">
+        <div className="min-h-screen bg-slate-50 p-4 pb-24 relative overflow-hidden">
+            {/* Siervoplast Logo Watermark — Background */}
+            <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-0">
+                <img
+                    src="/logo-siervoplast.png"
+                    alt=""
+                    className="w-80 md:w-[28rem] select-none"
+                    style={{
+                        opacity: 0.04,
+                        filter: 'grayscale(100%)',
+                    }}
+                />
+            </div>
             {/* Header */}
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mb-6">
                 <div className="flex items-center gap-3 mb-1">
