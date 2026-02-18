@@ -83,92 +83,110 @@ const TaskItem = ({
 
   return (
     <div className={`border-b border-slate-100 last:border-b-0 ${task.status === 'completed' ? 'opacity-50' : ''}`}>
-      {/* ── Main Row ── */}
+      {/* ── Main Row / Card ── */}
       <div
-        className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors cursor-pointer group"
+        className="flex flex-col md:flex-row md:items-center gap-3 px-4 py-4 md:py-3 hover:bg-slate-50 transition-colors cursor-pointer group relative"
         onClick={() => setExpanded(!expanded)}
       >
-        {/* Priority Badge */}
-        <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${getPriorityColor(task.priority)}`}>
-          {task.priority}
+        {/* Mobile Header: Priority + Title + Expand Icon */}
+        <div className="flex items-start gap-3 w-full md:w-auto overflow-hidden">
+          {/* Priority Badge */}
+          <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${getPriorityColor(task.priority)} mt-0.5 md:mt-0`}>
+            {task.priority}
+          </div>
+
+          {/* Title + Metadata */}
+          <div className="flex-grow min-w-0">
+            <div className="flex flex-wrap items-center gap-2 mb-1">
+              <span className={`font-semibold text-sm md:text-base break-words ${task.status === 'completed' ? 'line-through text-slate-400' : 'text-slate-900'}`}>
+                {task.title}
+              </span>
+              {/* Badges Packet */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {task.recurrence !== 'none' && (
+                  <span className="text-[10px] bg-purple-100 text-purple-600 px-1.5 py-0.5 rounded font-medium whitespace-nowrap">RIC</span>
+                )}
+                {totalChecks > 0 && (
+                  <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-medium whitespace-nowrap">
+                    {doneChecks}/{totalChecks}
+                  </span>
+                )}
+                {task.attachments?.length > 0 && (
+                  <span className="text-[10px] bg-blue-50 text-blue-500 px-1.5 py-0.5 rounded font-medium whitespace-nowrap">
+                    📎 {task.attachments.length}
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="text-xs text-slate-400 truncate">
+              {task.assignee_name || 'Non assegnato'}
+            </div>
+          </div>
+
+          {/* Mobile Expand Arrow */}
+          <div className="md:hidden flex-shrink-0 pt-1">
+            <svg className={`w-5 h-5 text-slate-300 transition-transform ${expanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
         </div>
 
-        {/* Title + Assignee */}
-        <div className="flex-grow min-w-0">
-          <div className="flex items-center gap-2">
-            <span className={`font-semibold text-sm truncate ${task.status === 'completed' ? 'line-through text-slate-400' : 'text-slate-900'}`}>
-              {task.title}
+        {/* Mobile Footer / Desktop Columns: Info & Actions */}
+        <div className="flex items-center justify-between w-full md:w-auto md:flex-grow md:justify-end gap-2 md:gap-4 mt-2 md:mt-0 pl-11 md:pl-0">
+
+          {/* Info Block: Deadline & Status */}
+          <div className="flex items-center gap-3">
+            <span className={`text-xs ${isOverdue ? 'text-red-600 font-bold' : 'text-slate-400'}`}>
+              {formatDate(task.deadline)}
             </span>
-            {task.recurrence !== 'none' && (
-              <span className="text-[10px] bg-purple-100 text-purple-600 px-1.5 py-0.5 rounded font-medium">RIC</span>
+            <span className={`text-xs px-2.5 py-1 rounded-full font-medium whitespace-nowrap ${st.cls}`}>
+              {st.label}
+            </span>
+          </div>
+
+          {/* Actions Block */}
+          <div
+            className="flex items-center gap-1 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Mobile-friendly larger touch targets */}
+            {task.status === 'pending' && canAct && (
+              <button onClick={() => handleAction('acknowledged')} className="p-2 rounded-lg bg-white border border-slate-200 md:border-transparent md:bg-transparent hover:bg-amber-50 text-amber-600 transition shadow-sm md:shadow-none" title="Segna come Visto">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+              </button>
             )}
-            {totalChecks > 0 && (
-              <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-medium">
-                {doneChecks}/{totalChecks}
-              </span>
+            {(task.status === 'pending' || task.status === 'acknowledged') && canAct && (
+              <button onClick={() => handleAction('in_progress')} className="p-2 rounded-lg bg-white border border-slate-200 md:border-transparent md:bg-transparent hover:bg-blue-50 text-blue-600 transition shadow-sm md:shadow-none" title="Inizia">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              </button>
             )}
-            {task.attachments?.length > 0 && (
-              <span className="text-[10px] bg-blue-50 text-blue-500 px-1.5 py-0.5 rounded font-medium">
-                {task.attachments.length} file
-              </span>
+            {task.status === 'in_progress' && canAct && (
+              <button onClick={() => handleAction('completed')} className="p-2 rounded-lg bg-white border border-slate-200 md:border-transparent md:bg-transparent hover:bg-emerald-50 text-emerald-600 transition shadow-sm md:shadow-none" title="Completa">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              </button>
+            )}
+            <button onClick={openInteractions} className="p-2 rounded-lg bg-white border border-slate-200 md:border-transparent md:bg-transparent hover:bg-slate-100 text-slate-400 transition shadow-sm md:shadow-none" title="Chat & Allegati">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+            </button>
+            {(isManager || canAct) && (
+              <button onClick={() => onEdit(task)} disabled={!!task.locked_by && task.locked_by !== currentUserId} className="p-2 rounded-lg bg-white border border-slate-200 md:border-transparent md:bg-transparent hover:bg-slate-100 text-slate-400 transition disabled:opacity-30 shadow-sm md:shadow-none" title="Modifica">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+              </button>
+            )}
+            {isManager && (
+              <button onClick={() => onDelete(task.id)} className="p-2 rounded-lg bg-white border border-slate-200 md:border-transparent md:bg-transparent hover:bg-red-50 text-slate-400 hover:text-red-500 transition shadow-sm md:shadow-none" title="Elimina">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+              </button>
             )}
           </div>
-          <div className="text-xs text-slate-400 truncate mt-0.5">
-            {task.assignee_name || 'Non assegnato'}
-          </div>
         </div>
 
-        {/* Deadline */}
-        <div className="flex-shrink-0 w-28 text-right hidden md:block">
-          <span className={`text-xs ${isOverdue ? 'text-red-600 font-bold' : 'text-slate-400'}`}>
-            {formatDate(task.deadline)}
-          </span>
+        {/* Desktop Expand Arrow */}
+        <div className="hidden md:block flex-shrink-0">
+          <svg className={`w-4 h-4 text-slate-300 transition-transform ${expanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
         </div>
-
-        {/* Status Pill */}
-        <div className="flex-shrink-0 w-24 text-center hidden sm:block">
-          <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${st.cls}`}>
-            {st.label}
-          </span>
-        </div>
-
-        {/* Actions */}
-        <div
-          className="flex-shrink-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {task.status === 'pending' && canAct && (
-            <button onClick={() => handleAction('acknowledged')} className="p-1.5 rounded-md hover:bg-amber-50 text-amber-600 transition cursor-pointer" title="Segna come Visto">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-            </button>
-          )}
-          {(task.status === 'pending' || task.status === 'acknowledged') && canAct && (
-            <button onClick={() => handleAction('in_progress')} className="p-1.5 rounded-md hover:bg-blue-50 text-blue-600 transition cursor-pointer" title="Inizia">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            </button>
-          )}
-          {task.status === 'in_progress' && canAct && (
-            <button onClick={() => handleAction('completed')} className="p-1.5 rounded-md hover:bg-emerald-50 text-emerald-600 transition cursor-pointer" title="Completa">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            </button>
-          )}
-          <button onClick={openInteractions} className="p-1.5 rounded-md hover:bg-slate-100 text-slate-400 transition cursor-pointer" title="Chat & Allegati">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-          </button>
-          {(isManager || canAct) && (
-            <button onClick={() => onEdit(task)} disabled={!!task.locked_by && task.locked_by !== currentUserId} className="p-1.5 rounded-md hover:bg-slate-100 text-slate-400 transition disabled:opacity-30 cursor-pointer" title="Modifica">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-            </button>
-          )}
-          {isManager && (
-            <button onClick={() => onDelete(task.id)} className="p-1.5 rounded-md hover:bg-red-50 text-slate-400 hover:text-red-500 transition cursor-pointer" title="Elimina">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-            </button>
-          )}
-        </div>
-
-        {/* Expand Arrow */}
-        <svg className={`w-4 h-4 text-slate-300 transition-transform flex-shrink-0 ${expanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
       </div>
 
       {/* ── Expanded Detail ── */}
