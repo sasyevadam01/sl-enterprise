@@ -214,7 +214,13 @@ def check_oven_stagnation():
     """
     db = SessionLocal()
     try:
-        now = datetime.now()
+        # Usa ora italiana per coerenza con inserted_at
+        try:
+            from zoneinfo import ZoneInfo
+            now = datetime.now(ZoneInfo('Europe/Rome')).replace(tzinfo=None)
+        except ImportError:
+            from datetime import timezone, timedelta as td
+            now = datetime.now(timezone(td(hours=1))).replace(tzinfo=None)
         # Prendi items attivi che hanno superato il tempo e non sono ancora stati notificati
         overdue_items = db.query(OvenItem).filter(
             OvenItem.status == 'in_oven',

@@ -1,6 +1,16 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Text, Float, JSON, Index
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
+
+# Fuso orario Italia (CET/CEST)
+def _now_italy():
+    """Ritorna l'ora locale italiana (UTC+1 inverno, UTC+2 estate)."""
+    try:
+        from zoneinfo import ZoneInfo
+        return datetime.now(ZoneInfo('Europe/Rome')).replace(tzinfo=None)
+    except ImportError:
+        # Fallback: UTC+1
+        return datetime.now(timezone(timedelta(hours=1))).replace(tzinfo=None)
 from .base import Base
 
 class ProductionSession(Base):
@@ -407,7 +417,7 @@ class OvenItem(Base):
 
     # Chi ha inserito
     operator_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    inserted_at = Column(DateTime, default=datetime.utcnow)
+    inserted_at = Column(DateTime, default=_now_italy)
 
     # Durata prevista (max 180 min)
     expected_minutes = Column(Integer, default=OVEN_MAX_MINUTES)
