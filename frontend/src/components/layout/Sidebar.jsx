@@ -141,6 +141,7 @@ const getMenuItems = (hasPermission) => {
             { type: 'divider', label: 'Logistica Taglio' },
             { title: 'Richiesta Blocchi', path: '/production/orders', permission: 'create_production_orders', icon: '📦' },
             { title: 'Lista Prelievi', path: '/production/blocks', permission: 'manage_production_supply', icon: '🚚' },
+            { title: 'Il Forno', path: '/production/oven', permission: 'manage_production_supply', icon: '🔥' },
             { title: 'Calcolo Blocchi', path: '/production/calcolo', permission: 'access_block_calculator', icon: '📐' },
             { title: 'Config. Blocchi', path: '/admin/production/config', permission: 'manage_production_config', icon: '⚙️' },
             { title: 'Report Forniture Blocchi', path: '/admin/production/reports', permission: 'view_production_reports', icon: '📊' },

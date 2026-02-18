@@ -45,6 +45,7 @@ import LogisticsDashboardPage from './pages/logistics/LogisticsDashboardPage';
 import LogisticsConfigPage from './pages/admin/LogisticsConfigPage';
 import VehicleChecklistPage from './pages/fleet/VehicleChecklistPage';
 import ChecklistHistoryPage from './pages/fleet/ChecklistHistoryPage';
+import OvenPage from './pages/production/OvenPage';
 
 function App() {
   return (
@@ -218,6 +219,11 @@ function App() {
               <Route path="production/checklist/history" element={
                 <PermissionRoute permission="view_checklist_history">
                   <ChecklistHistoryPage />
+                </PermissionRoute>
+              } />
+              <Route path="production/oven" element={
+                <PermissionRoute permission="manage_production_supply">
+                  <OvenPage />
                 </PermissionRoute>
               } />
 

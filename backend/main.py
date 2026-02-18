@@ -13,7 +13,7 @@ from routers import (
     auth, users, employees, leaves, disciplinary, notifications, expiries, fleet, returns,
     tasks, events, audit, hr_stats, shifts, announcements, facility, factory, kpi, roles,
     admin_settings, mobile, maintenance, reports, bonuses, chat, production, logistics,
-    block_calculator
+    block_calculator, oven
 )
 
 
@@ -242,6 +242,9 @@ app.include_router(logistics.router)
 
 # Block Calculator
 app.include_router(block_calculator.router)
+
+# Il Forno (Oven Tracking)
+app.include_router(oven.router)
 
 # ============================================================
 # LOGISTICS & PRODUCTION WEBSOCKETS
