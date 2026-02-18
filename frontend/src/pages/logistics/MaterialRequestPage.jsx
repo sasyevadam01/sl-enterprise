@@ -181,7 +181,8 @@ export default function MaterialRequestPage() {
     return (
         <div className="logistics-page pb-20">
             <header className="logistics-header bg-white p-4 shadow-sm rounded-2xl border border-slate-200">
-                <h1 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2"><Package size={24} className="text-brand-green" /> Richiesta Materiali</h1>
+                <h1 className="text-2xl font-bold text-slate-800 mb-2 flex items-center gap-2"><Package size={24} className="text-brand-green" /> Richiesta Materiali</h1>
+                <p className="text-slate-500 text-sm mb-4 italic">Per Fare la tua Richiesta, Clicca sul numero Banchina</p>
                 <div className="banchina-selector-mobile">
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                         {banchine.map(b => (
