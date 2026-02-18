@@ -63,6 +63,7 @@ def get_or_create_performance(db: Session, employee_id: int) -> LogisticsPerform
     return perf
 
 
+def calculate_points_and_penalties(request, db: Session):
     """Calcola punti e penalità per una missione completata."""
     points = int(get_config_value(db, "points_base_mission", "1"))
     
@@ -302,7 +303,7 @@ async def create_request(
 @router.patch("/requests/{request_id}/cancel")
 async def cancel_request(
     request_id: int,
-    reason: str = Body(None, min_length=3, embed=True),
+    reason: Optional[str] = Body(None, embed=True),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):

@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
+import MaterialIcon from './MaterialIcon';
 
 export default function LogisticsModal({
     isOpen,
@@ -20,7 +21,7 @@ export default function LogisticsModal({
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
-                        className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
+                        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
                     />
 
                     {/* Modal Content */}
@@ -29,17 +30,16 @@ export default function LogisticsModal({
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 10 }}
                         transition={{ duration: 0.2, ease: "easeOut" }}
-                        className={`relative w-full ${maxWidth} bg-[#121212] 
-                        border border-white/10 rounded-2xl shadow-2xl shadow-black/50 z-[101] overflow-hidden`}
+                        className={`relative w-full ${maxWidth} bg-white
+                        border border-slate-200 rounded-2xl shadow-xl z-[101] overflow-hidden`}
                     >
-                        {/* Glass / Glow Effects */}
-                        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-50" />
-                        <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-black/40 to-transparent" />
+                        {/* Top accent line */}
+                        <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-brand-green/40 to-transparent" />
 
                         {/* Close Button */}
                         <button
                             onClick={onClose}
-                            className="absolute top-4 right-4 p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-full transition-colors z-50"
+                            className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors z-50"
                         >
                             <X size={20} />
                         </button>
@@ -48,9 +48,21 @@ export default function LogisticsModal({
                             {/* Header */}
                             {(title || icon) && (
                                 <div className="text-center mb-8">
-                                    {icon && <div className="text-5xl mb-4 drop-shadow-lg">{icon}</div>}
+                                    {icon && (
+                                        <div className="mb-4 flex justify-center">
+                                            {typeof icon === 'string' ? (
+                                                <div className="w-16 h-16 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center">
+                                                    <MaterialIcon emoji={icon} size={32} className="text-brand-green" />
+                                                </div>
+                                            ) : (
+                                                <div className="w-16 h-16 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-center">
+                                                    {icon}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                     {title && (
-                                        <h3 className="text-2xl font-bold text-white tracking-wide">
+                                        <h3 className="text-2xl font-bold text-slate-800 tracking-wide">
                                             {title}
                                         </h3>
                                     )}

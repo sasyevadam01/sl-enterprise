@@ -2,12 +2,15 @@
  * MaterialRequestPage.jsx
  * Pagina per operatori banchina - Richiesta Materiali
  * Griglia pulsanti touch-friendly per richieste veloci
+ * Light Enterprise Design System v5.0
  */
 import { useState, useEffect, useContext } from 'react';
 import AuthContext from '../../context/AuthContext';
 import { logisticsApi, fleetApi } from '../../api/client';
 import LogisticsModal from './components/LogisticsModal';
 import { useUI } from '../../components/ui/CustomUI';
+import { Package, Clock, ArrowRight, MapPin, User, XCircle, AlertTriangle } from 'lucide-react';
+import MaterialIcon from './components/MaterialIcon';
 import './LogisticsStyles.css';
 
 export default function MaterialRequestPage() {
@@ -26,9 +29,6 @@ export default function MaterialRequestPage() {
     const [quantity, setQuantity] = useState(1);
     const [messages, setMessages] = useState([]);
 
-    // SECTOR SELECTION STATE
-    // Removed unused sector state
-
     useEffect(() => {
         loadData();
 
@@ -45,16 +45,14 @@ export default function MaterialRequestPage() {
         ws.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
-                // If a request changed status, refresh my history to see updates
                 if (data.type === 'request_updated' || data.type === 'request_completed') {
-                    checkActiveRequest(); // Use existing checkActiveRequest to refresh
+                    checkActiveRequest();
                 }
             } catch (err) {
                 console.error("WS error:", err);
             }
         };
 
-        // Poll per aggiornamenti sulla richiesta attiva (keep polling for now, WS is for immediate updates)
         const interval = setInterval(checkActiveRequest, 5000);
 
         return () => {
@@ -73,7 +71,6 @@ export default function MaterialRequestPage() {
             setMaterials(mats);
             setBanchine(banchs);
 
-            // Se utente ha banchina default, selezionala
             if (user?.employee?.default_banchina_id) {
                 setSelectedBanchina(user.employee.default_banchina_id);
             }
@@ -90,12 +87,9 @@ export default function MaterialRequestPage() {
     const checkActiveRequest = async () => {
         try {
             const data = await logisticsApi.getRequests({ my_requests: true, status: 'active' });
-            // Filter all active requests (pending or processing)
             const activeList = data.items?.filter(r => ['pending', 'processing'].includes(r.status)) || [];
             setActiveRequest(activeList);
 
-            // Fetch messages for all active requests logic could be complex, for now let's just fetch for the first one or leave it
-            // Ideally we'd fetch messages per request or just rely on global notifications
             if (activeList.length > 0) {
                 const msgs = await logisticsApi.getMessages(activeList[0].id);
                 setMessages(msgs);
@@ -123,12 +117,10 @@ export default function MaterialRequestPage() {
             return;
         }
 
-        // Close custom modal
         setShowCustomModal(false);
 
         setSending(true);
         try {
-            // Persistence: Save banchina for next time
             localStorage.setItem('last_banchina_id', selectedBanchina);
 
             const request = await logisticsApi.createRequest({
@@ -139,7 +131,6 @@ export default function MaterialRequestPage() {
                 banchina_id: selectedBanchina,
                 require_otp: requireOtp
             });
-            // Add new request to the list
             setActiveRequest(prev => [...prev, request]);
             setCustomDescription('');
             setQuantity(1);
@@ -148,7 +139,6 @@ export default function MaterialRequestPage() {
             console.error('Errore invio richiesta:', err);
             const errorMsg = err.response?.data?.detail || "Errore durante l'invio della richiesta.";
             setError(errorMsg);
-            // Also show toast if available, but for now error state renders the error screen
         } finally {
             setSending(false);
         }
@@ -174,9 +164,9 @@ export default function MaterialRequestPage() {
         return (
             <div className="logistics-page">
                 <div className="text-center p-8">
-                    <div className="text-red-500 text-xl font-bold mb-4">⚠️ Ops! Qualcosa è andato storto.</div>
-                    <p className="text-gray-400 mb-6">{error}</p>
-                    <button onClick={() => { setLoading(true); loadData(); }} className="px-6 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-white font-bold transition-colors">
+                    <div className="text-red-600 text-xl font-bold mb-4">⚠️ Ops! Qualcosa è andato storto.</div>
+                    <p className="text-slate-500 mb-6">{error}</p>
+                    <button onClick={() => { setLoading(true); loadData(); }} className="px-6 py-2 bg-brand-green hover:bg-brand-green/90 rounded-lg text-white font-bold transition-colors">
                         🔄 Riprova
                     </button>
                 </div>
@@ -190,15 +180,15 @@ export default function MaterialRequestPage() {
 
     return (
         <div className="logistics-page pb-20">
-            <header className="logistics-header bg-gradient-to-r from-gray-900 to-gray-800 p-4 shadow-lg">
-                <h1 className="text-2xl font-bold text-white mb-4">📦 Richiesta Materiali</h1>
+            <header className="logistics-header bg-white p-4 shadow-sm rounded-2xl border border-slate-200">
+                <h1 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2"><Package size={24} className="text-brand-green" /> Richiesta Materiali</h1>
                 <div className="banchina-selector-mobile">
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                         {banchine.map(b => (
                             <button
                                 key={b.id}
                                 onClick={() => setSelectedBanchina(b.id)}
-                                className={`p-3 rounded-xl font-bold text-sm transition-all ${selectedBanchina === b.id ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'}`}
+                                className={`p-3 rounded-xl font-bold text-sm transition-all ${selectedBanchina === b.id ? 'bg-brand-green text-white shadow-md' : 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200'}`}
                             >
                                 {b.code}
                             </button>
@@ -210,18 +200,18 @@ export default function MaterialRequestPage() {
             {/* Active Requests List */}
             {activeRequest && (activeRequest.length > 0) && (
                 <div className="px-4 pt-4 space-y-4">
-                    <h3 className="text-gray-400 font-bold uppercase text-xs tracking-wider">Richieste Attive ({activeRequest.length})</h3>
+                    <h3 className="text-slate-500 font-bold uppercase text-xs tracking-wider">Richieste Attive ({activeRequest.length})</h3>
                     {activeRequest.map(req => (
-                        <div key={req.id} className="active-request-card p-4 bg-gray-900/90 rounded-2xl border border-white/10 shadow-lg">
+                        <div key={req.id} className="active-request-card p-4 bg-white rounded-2xl border border-slate-200 shadow-sm">
                             <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-3">
-                                    <span className="text-3xl">{req.material_type_icon || '📦'}</span>
+                                    <span className="text-3xl"><MaterialIcon emoji={req.material_type_icon} size={32} className="text-brand-green" /></span>
                                     <div>
-                                        <h2 className="text-lg font-bold text-white leading-none">{req.material_type_label}</h2>
+                                        <h2 className="text-lg font-bold text-slate-800 leading-none">{req.material_type_label}</h2>
                                         <div className="flex gap-2 mt-1">
-                                            <span className="text-xs text-gray-400 font-mono">#{req.id}</span>
+                                            <span className="text-xs text-slate-400 font-mono">#{req.id}</span>
                                             {req.quantity >= 1 && (
-                                                <span className="text-xs px-2 py-0.5 bg-blue-500/20 text-blue-300 rounded-full font-bold border border-blue-500/30">
+                                                <span className="text-xs px-2 py-0.5 bg-brand-green/10 text-brand-green rounded-full font-bold border border-brand-green/20">
                                                     x{req.quantity} {req.unit_of_measure}
                                                 </span>
                                             )}
@@ -229,27 +219,27 @@ export default function MaterialRequestPage() {
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <div className={`status-badge inline-flex items-center gap-1 ${req.status === 'pending' ? 'text-yellow-500' : 'text-green-400'} font-bold text-sm`}>
-                                        {req.status === 'pending' ? '⏳ Attesa' : '🏃 In arrivo'}
+                                    <div className={`status-badge inline-flex items-center gap-1 ${req.status === 'pending' ? 'text-amber-600' : 'text-green-600'} font-bold text-sm`}>
+                                        {req.status === 'pending' ? <span className="flex items-center gap-1"><Clock size={14} /> Attesa</span> : <span className="flex items-center gap-1"><ArrowRight size={14} /> In arrivo</span>}
                                     </div>
-                                    <div className="text-xl font-mono font-bold text-white tracking-widest mt-1">
+                                    <div className="text-xl font-mono font-bold text-slate-800 tracking-widest mt-1">
                                         {formatTime(req.wait_time_seconds || 0)}
                                     </div>
                                 </div>
                             </div>
 
                             {/* Details Row */}
-                            <div className="flex justify-between items-center text-sm text-gray-400 border-t border-white/5 pt-2 mt-2">
-                                <span>📍 {req.banchina_code || 'Banchina ?'}</span>
-                                {req.assigned_to_name && <span>👤 {req.assigned_to_name}</span>}
+                            <div className="flex justify-between items-center text-sm text-slate-500 border-t border-slate-100 pt-2 mt-2">
+                                <span className="flex items-center gap-1"><MapPin size={14} className="text-brand-green" /> {req.banchina_code || 'Banchina ?'}</span>
+                                {req.assigned_to_name && <span className="flex items-center gap-1"><User size={14} className="text-slate-400" /> {req.assigned_to_name}</span>}
                             </div>
 
                             {/* SECURE DELIVERY OTP */}
                             {req.confirmation_code && (
-                                <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl text-center">
-                                    <div className="text-[10px] text-blue-400 font-bold uppercase tracking-widest mb-1">Codice Consegna (OTP)</div>
-                                    <div className="text-3xl font-black text-white tracking-[0.3em] font-mono">{req.confirmation_code}</div>
-                                    <div className="text-[10px] text-gray-500 mt-1">Dettalo al mulettista per confermare l'arrivo</div>
+                                <div className="mt-4 p-4 bg-brand-green/5 border border-brand-green/15 rounded-xl text-center">
+                                    <div className="text-[10px] text-brand-green font-bold uppercase tracking-widest mb-1">Codice Consegna (OTP)</div>
+                                    <div className="text-3xl font-black text-slate-800 tracking-[0.3em] font-mono">{req.confirmation_code}</div>
+                                    <div className="text-[10px] text-slate-400 mt-1">Dettalo al mulettista per confermare l'arrivo</div>
                                 </div>
                             )}
 
@@ -263,12 +253,12 @@ export default function MaterialRequestPage() {
                 {materials.map(mat => (
                     <button
                         key={mat.id}
-                        className={`relative flex flex-col items-center justify-center p-6 rounded-2xl transition-all ${(!selectedBanchina || sending) ? 'bg-gray-800 opacity-50' : 'bg-gray-800 hover:bg-gray-700 shadow-lg'}`}
+                        className={`relative flex flex-col items-center justify-center p-6 rounded-2xl transition-all ${(!selectedBanchina || sending) ? 'bg-slate-50 opacity-50 border border-slate-200' : 'bg-white hover:bg-slate-50 shadow-sm border border-slate-200 hover:border-brand-green hover:shadow-md cursor-pointer'}`}
                         onClick={() => handleMaterialClick(mat)}
                         disabled={sending || !selectedBanchina}
                     >
-                        <span className="text-4xl mb-3">{mat.icon}</span>
-                        <span className="text-white font-medium text-center leading-tight">{mat.label}</span>
+                        <MaterialIcon emoji={mat.icon} size={36} className="text-brand-green mb-3" />
+                        <span className="text-slate-700 font-medium text-center leading-tight">{mat.label}</span>
                     </button>
                 ))}
             </div>
@@ -281,34 +271,34 @@ export default function MaterialRequestPage() {
             >
                 <div>
                     <div className="form-group mb-4">
-                        <label className="block text-gray-400 text-sm font-bold mb-2">Quantità & Unità</label>
+                        <label className="block text-slate-500 text-sm font-bold mb-2">Quantità & Unità</label>
                         <div className="flex gap-2">
-                            <div className="flex items-center gap-3 bg-black/20 p-2 rounded-xl border border-white/5 flex-1">
-                                <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-10 h-10 rounded-lg bg-gray-700 text-white font-bold">-</button>
-                                <span className="flex-1 text-center text-2xl font-bold text-white">{quantity}</span>
-                                <button onClick={() => setQuantity(quantity + 1)} className="w-10 h-10 rounded-lg bg-gray-700 text-white font-bold">+</button>
+                            <div className="flex items-center gap-3 bg-slate-50 p-2 rounded-xl border border-slate-200 flex-1">
+                                <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-10 h-10 rounded-lg bg-slate-200 text-slate-700 font-bold hover:bg-slate-300 transition">-</button>
+                                <span className="flex-1 text-center text-2xl font-bold text-slate-800">{quantity}</span>
+                                <button onClick={() => setQuantity(quantity + 1)} className="w-10 h-10 rounded-lg bg-slate-200 text-slate-700 font-bold hover:bg-slate-300 transition">+</button>
                             </div>
                             <div className="w-1/3">
-                                <select value={selectedUom} onChange={(e) => setSelectedUom(e.target.value)} className="w-full h-full bg-black/20 border border-white/10 rounded-xl px-2 text-white font-bold text-center">
-                                    {uomOptions.map(u => <option key={u} value={u} className="bg-gray-800">{u}</option>)}
+                                <select value={selectedUom} onChange={(e) => setSelectedUom(e.target.value)} className="w-full h-full bg-slate-50 border border-slate-200 rounded-xl px-2 text-slate-700 font-bold text-center">
+                                    {uomOptions.map(u => <option key={u} value={u}>{u}</option>)}
                                 </select>
                             </div>
                         </div>
                     </div>
                     <div className="form-group mb-6">
-                        <label className="block text-gray-400 text-sm font-bold mb-2">Note {customMaterial?.requires_description && '*'}</label>
+                        <label className="block text-slate-500 text-sm font-bold mb-2">Note {customMaterial?.requires_description && '*'}</label>
                         <textarea
                             value={customDescription}
                             onChange={(e) => setCustomDescription(e.target.value)}
                             placeholder="Descrizione..."
                             rows={3}
-                            className="w-full bg-black/20 border border-white/10 rounded-xl p-4 text-white"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-700 focus:border-brand-green focus:ring-1 focus:ring-brand-green/20 outline-none"
                         />
                     </div>
 
                     <div className="form-group mb-6">
-                        <label className="flex items-center gap-3 p-3 bg-black/20 border border-white/10 rounded-xl cursor-pointer hover:bg-black/30 transition">
-                            <div className={`w-6 h-6 rounded border flex items-center justify-center transition ${requireOtp ? 'bg-green-500 border-green-500' : 'border-gray-500'}`}>
+                        <label className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100 transition">
+                            <div className={`w-6 h-6 rounded border flex items-center justify-center transition ${requireOtp ? 'bg-brand-green border-brand-green' : 'border-slate-300'}`}>
                                 {requireOtp && <span className="text-white font-bold">✓</span>}
                             </div>
                             <input
@@ -318,15 +308,15 @@ export default function MaterialRequestPage() {
                                 className="hidden"
                             />
                             <div>
-                                <span className="text-white font-bold block">Richiedi Codice Sicurezza (OTP)</span>
-                                <span className="text-xs text-gray-400">Il magazziniere dovrà chiederti il codice per consegnare</span>
+                                <span className="text-slate-700 font-bold block">Richiedi Codice Sicurezza (OTP)</span>
+                                <span className="text-xs text-slate-400">Il magazziniere dovrà chiederti il codice per consegnare</span>
                             </div>
                         </label>
                     </div>
                     <div className="flex gap-3 mt-4">
-                        <button className="flex-1 py-4 bg-gray-800 text-gray-300 rounded-xl font-bold" onClick={() => setShowCustomModal(false)}>Annulla</button>
+                        <button className="flex-1 py-4 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200 transition border border-slate-200" onClick={() => setShowCustomModal(false)}>Annulla</button>
                         <button
-                            className="flex-[2] py-4 bg-blue-600 text-white rounded-xl font-bold"
+                            className="flex-[2] py-4 bg-brand-green text-white rounded-xl font-bold hover:bg-brand-green/90 transition shadow-sm"
                             onClick={() => sendRequest()}
                             disabled={sending || (customMaterial?.requires_description && !customDescription.trim())}
                         >
@@ -339,7 +329,6 @@ export default function MaterialRequestPage() {
     );
 }
 
-// Helper per cancellazione
 // Helper per cancellazione (con modale integrato per coerenza stilistica)
 function CancelButton({ requestId, onCancel }) {
     const [showConfirm, setShowConfirm] = useState(false);
@@ -364,27 +353,27 @@ function CancelButton({ requestId, onCancel }) {
         <>
             <button
                 onClick={() => setShowConfirm(true)}
-                className="w-full mt-4 py-3 border-2 border-red-500/30 text-red-400 font-bold rounded-xl hover:bg-red-500/10 transition"
+                className="w-full mt-4 py-3 border-2 border-red-200 text-red-500 font-bold rounded-xl hover:bg-red-50 transition"
             >
-                ❌ Annulla Richiesta
+                <XCircle size={16} className="inline-block mr-1" style={{ verticalAlign: 'text-bottom' }} /> Annulla Richiesta
             </button>
 
             <LogisticsModal
                 isOpen={showConfirm}
                 onClose={() => setShowConfirm(false)}
                 title="Annullare Richiesta?"
-                icon="⚠️"
+                icon={<AlertTriangle size={40} className="text-amber-500" />}
             >
                 <div className="text-center">
-                    <p className="text-gray-300 mb-6">
+                    <p className="text-slate-600 mb-6">
                         Sei sicuro di voler rimuovere questa richiesta dalla coda?
                         <br />
-                        <span className="text-sm text-gray-500">Questa azione non si può annullare.</span>
+                        <span className="text-sm text-slate-400">Questa azione non si può annullare.</span>
                     </p>
 
                     <div className="flex gap-3">
                         <button
-                            className="flex-1 py-3 px-4 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition"
+                            className="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium transition border border-slate-200"
                             onClick={() => setShowConfirm(false)}
                             disabled={cancelling}
                         >

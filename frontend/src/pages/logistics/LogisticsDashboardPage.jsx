@@ -6,6 +6,8 @@
 import { useState, useEffect } from 'react';
 import api, { logisticsApi } from '../../api/client';
 import LogisticsMap from './LogisticsMap';
+import { User, ArrowRight, Radio } from 'lucide-react';
+import MaterialIcon from './components/MaterialIcon';
 import './LogisticsStyles.css';
 
 export default function LogisticsDashboardPage() {
@@ -152,13 +154,13 @@ export default function LogisticsDashboardPage() {
                                 {selectedBanchina.requests.map(req => (
                                     <div key={req.id} className={`mini-card ${req.is_urgent ? 'urgent urgent-pulse' : ''}`}>
                                         <div className="card-header">
-                                            <span className="icon">{req.material_type_icon}</span>
+                                            <span className="icon"><MaterialIcon emoji={req.material_type_icon} size={18} className="text-brand-green" /></span>
                                             <strong>{req.material_type_label}</strong>
                                         </div>
                                         {req.custom_description && <p className="desc">{req.custom_description}</p>}
 
                                         <div className="meta">
-                                            <div className="requester">👤 {req.requester_name}</div>
+                                            <div className="requester flex items-center gap-1"><User size={14} className="text-slate-400" /> {req.requester_name}</div>
 
                                             {req.status === 'pending' ? (
                                                 <div className="status pending">
@@ -166,7 +168,7 @@ export default function LogisticsDashboardPage() {
                                                 </div>
                                             ) : (
                                                 <div className="status processing">
-                                                    🚶 {req.assigned_to_name} (ETA: {req.promised_eta_minutes} min)
+                                                    <ArrowRight size={12} className="inline-block mr-0.5" style={{ verticalAlign: 'text-bottom' }} /> {req.assigned_to_name} (ETA: {req.promised_eta_minutes} min)
                                                 </div>
                                             )}
                                         </div>
@@ -176,7 +178,7 @@ export default function LogisticsDashboardPage() {
                         </div>
                     ) : (
                         <div className="activity-feed">
-                            <h3>📡 Feed Attività</h3>
+                            <h3 className="flex items-center gap-2"><Radio size={16} className="text-brand-green" /> Feed Attività</h3>
                             {requests.length === 0 ? (
                                 <div className="empty-feed">Nessuna attività corrente</div>
                             ) : (
