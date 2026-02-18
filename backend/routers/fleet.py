@@ -416,6 +416,32 @@ REQUIRED_CHECKS = [
     "batteria_fissaggio", "batteria_carica", "pulizia_carro", "pulizia_ruote"
 ]
 
+def get_current_shift():
+    """Determina il turno corrente in base all'ora.
+    Returns: 'morning', 'evening', or None (fuori finestra).
+    """
+    now = datetime.now()
+    hour = now.hour
+    minute = now.minute
+    time_val = hour * 60 + minute  # minuti dalla mezzanotte
+    
+    # Mattutino: 06:00 (360) - 12:30 (750)
+    if 360 <= time_val <= 750:
+        return 'morning'
+    # Serale: 14:00 (840) - 21:30 (1290)
+    elif 840 <= time_val <= 1290:
+        return 'evening'
+    else:
+        return None
+
+def get_shift_label(shift):
+    """Restituisce il nome leggibile del turno."""
+    if shift == 'morning':
+        return 'Check Mattutino (06:00 – 12:30)'
+    elif shift == 'evening':
+        return 'Check Serale (14:00 – 21:30)'
+    return 'Fuori Turno'
+
 class ChecklistSubmission(BaseModel):
     vehicle_id: int
     checklist_data: dict
@@ -436,6 +462,7 @@ class ChecklistResponse(BaseModel):
     timestamp: datetime
     checklist_data: dict
     status: str
+    shift: Optional[str] = None
     notes: Optional[str] = None
     resolution_notes: Optional[str] = None
     resolved_at: Optional[datetime] = None
@@ -629,12 +656,36 @@ async def create_checklist(
         
         tablet_photo_url = f"/uploads/checklists/{tablet_filename}" if tablet_filename else None
 
-        # 6. Save
+        # 6. Determine Shift
+        current_shift = get_current_shift()
+        if not current_shift:
+            now = datetime.now()
+            h, m = now.hour, now.minute
+            if h * 60 + m < 360:  # Before 06:00
+                raise HTTPException(400, "Checklist non disponibile. Il prossimo turno inizia alle 06:00.")
+            elif 750 < h * 60 + m < 840:  # 12:30-14:00
+                raise HTTPException(400, "Pausa pranzo — il prossimo check sarà disponibile alle 14:00.")
+            else:  # After 21:30
+                raise HTTPException(400, "Turno terminato. Il prossimo check sarà disponibile domani alle 06:00.")
+
+        # 7. Check if this vehicle was already checked THIS shift TODAY
+        today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        already_done = db.query(FleetChecklist).filter(
+            FleetChecklist.vehicle_id == vehicle_id,
+            FleetChecklist.shift == current_shift,
+            FleetChecklist.timestamp >= today_start
+        ).first()
+        if already_done:
+            shift_label = get_shift_label(current_shift)
+            raise HTTPException(400, f"Questo mezzo è già stato controllato per il {shift_label}.")
+
+        # 8. Save
         checklist = FleetChecklist(
             vehicle_id=vehicle_id,
             operator_id=current_user.id,
             checklist_data=new_checks_data,
             status=status,
+            shift=current_shift,
             notes=notes,
             tablet_status=tablet_status,
             tablet_photo_url=tablet_photo_url
@@ -690,3 +741,59 @@ async def get_latest_checklist(
         .filter(FleetChecklist.vehicle_id == vehicle_id)\
         .order_by(FleetChecklist.timestamp.desc())\
         .first()
+
+
+@router.get("/shift-info", summary="Info Turno Corrente")
+async def get_shift_info(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Restituisce il turno corrente e i mezzi già controllati per questo turno."""
+    current_shift = get_current_shift()
+    now = datetime.now()
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    # Determine next shift info for display
+    h, m = now.hour, now.minute
+    time_val = h * 60 + m
+    
+    if current_shift:
+        label = get_shift_label(current_shift)
+        # Get vehicles already checked for this shift today
+        checked = db.query(FleetChecklist).filter(
+            FleetChecklist.shift == current_shift,
+            FleetChecklist.timestamp >= today_start
+        ).all()
+        
+        checked_map = {}
+        for c in checked:
+            op = db.query(User).filter(User.id == c.operator_id).first()
+            checked_map[str(c.vehicle_id)] = {
+                "operator": op.full_name or op.username if op else "?",
+                "tabletStatus": c.tablet_status or "ok",
+                "time": c.timestamp.strftime("%H:%M") if c.timestamp else None
+            }
+        
+        return {
+            "shift": current_shift,
+            "label": label,
+            "available": True,
+            "checked_vehicles": checked_map,
+            "message": None
+        }
+    else:
+        # Outside any shift window
+        if time_val < 360:
+            msg = "Nessun check disponibile. Il turno mattutino inizia alle 06:00."
+        elif 750 < time_val < 840:
+            msg = "Pausa pranzo — il prossimo check sarà disponibile alle 14:00."
+        else:
+            msg = "Turno terminato. Il prossimo check sarà disponibile domani alle 06:00."
+        
+        return {
+            "shift": None,
+            "label": "Fuori Turno",
+            "available": False,
+            "checked_vehicles": {},
+            "message": msg
+        }

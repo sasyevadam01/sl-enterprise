@@ -163,6 +163,7 @@ export const fleetApi = {
     });
   },
   resolveChecklist: (id, notes) => client.put(`/fleet/checklists/${id}/resolve`, { notes }),
+  getShiftInfo: () => client.get("/fleet/shift-info"),
 };
 
 export const notificationsApi = {

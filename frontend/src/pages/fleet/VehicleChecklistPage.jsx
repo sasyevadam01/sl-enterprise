@@ -4,7 +4,7 @@ import { fleetApi } from '../../api/client';
 import { useUI, StandardModal } from '../../components/ui/CustomUI';
 import { useAuth } from '../../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { format } from 'date-fns';
+// date-fns removed: shift-info endpoint handles date logic server-side
 import {
     Car,
     CheckCircle2,
@@ -82,7 +82,10 @@ export default function VehicleChecklistPage() {
     const [tabletNote, setTabletNote] = useState("");
 
     // Feature: Disable checked vehicles
-    const [checkedVehicles, setCheckedVehicles] = useState({}); // { vehicle_id: operator_name }
+    const [checkedVehicles, setCheckedVehicles] = useState({}); // { vehicle_id: { operator, tabletStatus, time } }
+
+    // Shift State
+    const [shiftInfo, setShiftInfo] = useState({ shift: null, label: '', available: false, message: null });
 
     // TAB STATE
     const [activeView, setActiveView] = useState('checklist'); // checklist, management
@@ -108,23 +111,14 @@ export default function VehicleChecklistPage() {
 
     const loadData = async () => {
         try {
-            const today = format(new Date(), 'yyyy-MM-dd');
-            const [vData, chkData] = await Promise.all([
+            const [vData, shiftData] = await Promise.all([
                 fleetApi.getVehicles({ status: 'operational' }),
-                fleetApi.getChecklists({ date: today })
+                fleetApi.getShiftInfo()
             ]);
 
             setVehicles(vData);
-
-            const checkedMap = {};
-            chkData.forEach(chk => {
-                const opName = chk.operator ? (chk.operator.full_name || chk.operator.username) : `Operatore #${chk.operator_id}`;
-                checkedMap[chk.vehicle_id] = {
-                    operator: opName,
-                    tabletStatus: chk.tablet_status || 'ok' // Default to ok if missing (legacy)
-                };
-            });
-            setCheckedVehicles(checkedMap);
+            setShiftInfo(shiftData);
+            setCheckedVehicles(shiftData.checked_vehicles || {});
 
         } catch (err) {
             console.error(err);
@@ -457,27 +451,53 @@ export default function VehicleChecklistPage() {
                                     className="space-y-12"
                                 >
                                     <div className="flex flex-col gap-6 mb-8">
-                                        {/* Progress Counter */}
-                                        <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-200">
-                                                    <ClipboardCheck size={20} />
-                                                </div>
-                                                <div>
-                                                    <h4 className="text-slate-900 font-black uppercase text-sm tracking-widest">Avanzamento Turno</h4>
-                                                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Mezzi Controllati</p>
-                                                </div>
+                                        {/* Shift Banner */}
+                                        <div className={`flex items-center gap-4 p-4 rounded-2xl border shadow-sm ${shiftInfo.available
+                                            ? shiftInfo.shift === 'morning'
+                                                ? 'bg-amber-50 border-amber-200'
+                                                : 'bg-indigo-50 border-indigo-200'
+                                            : 'bg-slate-100 border-slate-200'
+                                            }`}>
+                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${shiftInfo.available
+                                                ? shiftInfo.shift === 'morning'
+                                                    ? 'bg-amber-100 text-amber-600'
+                                                    : 'bg-indigo-100 text-indigo-600'
+                                                : 'bg-slate-200 text-slate-500'
+                                                }`}>
+                                                {shiftInfo.shift === 'morning' ? '☀️' : shiftInfo.shift === 'evening' ? '🌙' : '⏸️'}
                                             </div>
-                                            <div className="flex items-end flex-col">
-                                                <span className="text-2xl font-black text-slate-900 tracking-tighter">
-                                                    {Object.keys(checkedVehicles).length} <span className="text-slate-400 text-sm">/ {vehicles.length}</span>
-                                                </span>
-                                                <div className="w-32 h-1.5 bg-slate-200 rounded-full overflow-hidden mt-1">
-                                                    <div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${(Object.keys(checkedVehicles).length / vehicles.length) * 100}%` }}></div>
-                                                </div>
+                                            <div className="flex-grow">
+                                                <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest">
+                                                    {shiftInfo.available ? shiftInfo.label : 'Fuori Turno'}
+                                                </h4>
+                                                {shiftInfo.message && (
+                                                    <p className="text-xs text-slate-500 mt-0.5">{shiftInfo.message}</p>
+                                                )}
                                             </div>
                                         </div>
 
+                                        {/* Progress Counter */}
+                                        {shiftInfo.available && (
+                                            <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-200">
+                                                        <ClipboardCheck size={20} />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="text-slate-900 font-black uppercase text-sm tracking-widest">Avanzamento Turno</h4>
+                                                        <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Mezzi Controllati</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-end flex-col">
+                                                    <span className="text-2xl font-black text-slate-900 tracking-tighter">
+                                                        {Object.keys(checkedVehicles).length} <span className="text-slate-400 text-sm">/ {vehicles.length}</span>
+                                                    </span>
+                                                    <div className="w-32 h-1.5 bg-slate-200 rounded-full overflow-hidden mt-1">
+                                                        <div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${(Object.keys(checkedVehicles).length / vehicles.length) * 100}%` }}></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div className="flex flex-wrap gap-4 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm">
@@ -505,107 +525,84 @@ export default function VehicleChecklistPage() {
                                         ))}
                                     </div>
 
-                                    {Object.entries(grouped).length === 0 ? (
-                                        <div className="text-center py-20 bg-white rounded-[40px] border border-dashed border-slate-200">
+                                    {!shiftInfo.available ? (
+                                        /* ── Blocked State ── */
+                                        <div className="text-center py-20 bg-white rounded-[32px] border border-dashed border-slate-200">
+                                            <Clock size={48} className="mx-auto text-slate-300 mb-4" />
+                                            <p className="text-slate-500 font-bold text-sm">{shiftInfo.message || 'Nessun check disponibile'}</p>
+                                            <p className="text-slate-400 text-xs mt-2">I check sono attivi dalle 06:00 alle 12:30 e dalle 14:00 alle 21:30</p>
+                                        </div>
+                                    ) : Object.entries(grouped).length === 0 ? (
+                                        <div className="text-center py-20 bg-white rounded-[32px] border border-dashed border-slate-200">
                                             <Truck size={48} className="mx-auto text-slate-300 mb-4" />
                                             <p className="text-slate-500 font-medium">Nessun mezzo disponibile al momento.</p>
                                         </div>
                                     ) : (
                                         Object.entries(grouped).map(([type, list]) => (
-                                            <section key={type}>
-                                                <div className="flex items-center gap-4 mb-6">
-                                                    <h3 className="text-sm font-black text-blue-600 uppercase tracking-[0.2em] whitespace-nowrap">
+                                            <section key={type} className="mb-6">
+                                                <div className="flex items-center gap-4 mb-3">
+                                                    <h3 className="text-xs font-black text-blue-600 uppercase tracking-[0.2em] whitespace-nowrap">
                                                         {type}
                                                     </h3>
                                                     <div className="h-px w-full bg-blue-100"></div>
                                                 </div>
 
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                                {/* ── Compact Mobile List ── */}
+                                                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden divide-y divide-slate-100">
                                                     {list.map(v => {
-                                                        const checkInfo = checkedVehicles[v.id];
+                                                        const checkInfo = checkedVehicles[v.id] || checkedVehicles[String(v.id)];
                                                         const isChecked = !!checkInfo;
                                                         const operatorName = checkInfo?.operator;
-                                                        const tabletStatus = checkInfo?.tabletStatus;
+                                                        const checkTime = checkInfo?.time;
+                                                        const vTabletStatus = checkInfo?.tabletStatus;
 
                                                         const isMitsubishi = v.brand?.toLowerCase().includes('mitsubishi');
+                                                        const accentColor = isMitsubishi ? 'emerald' : 'amber';
 
                                                         return (
                                                             <button
                                                                 key={v.id}
                                                                 onClick={() => handleSelectVehicle(v)}
                                                                 disabled={isChecked}
-                                                                className={`group relative h-48 rounded-[32px] text-left transition-all duration-300 border overflow-hidden p-6 flex flex-col justify-between cursor-pointer
+                                                                className={`w-full flex items-center gap-4 px-4 py-3.5 text-left transition-all
                                                                     ${isChecked
-                                                                        ? 'bg-slate-50 border-slate-200 opacity-50 cursor-not-allowed'
-                                                                        : isMitsubishi
-                                                                            ? 'bg-white border-emerald-200 hover:border-emerald-400 hover:shadow-md active:scale-95'
-                                                                            : 'bg-white border-amber-200 hover:border-amber-400 hover:shadow-md active:scale-95'
+                                                                        ? 'bg-slate-50 opacity-60 cursor-not-allowed'
+                                                                        : `hover:bg-${accentColor}-50 active:bg-${accentColor}-100 cursor-pointer`
                                                                     }`}
                                                             >
-                                                                {/* Realistic Technical Drawing Background */}
-                                                                <div className={`absolute -right-4 bottom-0 w-48 h-48 opacity-5 transition-all duration-500 group-hover:scale-110 group-hover:opacity-10 pointer-events-none
-                                                                    ${isMitsubishi ? 'text-emerald-600' : 'text-amber-600'}`}>
-                                                                    <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-                                                                        <path d="M60 160V170H40V160H60ZM60 160H80V120H40V160H60Z" fill="currentColor" />
-                                                                        <path d="M120 50V170H100V50H120ZM140 170H180C191 170 200 161 200 150V90L150 60H140V170ZM150 80L185 100V160H140V80H150Z" fill="currentColor" />
-                                                                        <path d="M80 170H100V50H80V170Z" fill="currentColor" />
-                                                                        <path d="M220 170H200V150H220V170Z" fill="currentColor" />
-                                                                        <circle cx="90" cy="180" r="15" fill="currentColor" />
-                                                                        <circle cx="170" cy="180" r="15" fill="currentColor" />
-                                                                        {/* Mast details */}
-                                                                        <rect x="85" y="60" width="5" height="100" fill="currentColor" opacity="0.5" />
-                                                                        <rect x="115" y="60" width="5" height="100" fill="currentColor" opacity="0.5" />
-                                                                        <path d="M80 60H120V65H80V60Z" fill="currentColor" />
-                                                                        <path d="M80 160H120V165H80V160Z" fill="currentColor" />
-                                                                        {/* Forks */}
-                                                                        <path d="M10 165H80V170H10V165Z" fill="currentColor" />
-                                                                        <path d="M10 165V155L20 155V165H10Z" fill="currentColor" />
-                                                                    </svg>
+                                                                {/* Vehicle Number */}
+                                                                <div className={`flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg border ${isChecked
+                                                                    ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                                                                    : `bg-${accentColor}-50 text-${accentColor}-700 border-${accentColor}-200`
+                                                                    }`}>
+                                                                    {isChecked ? <CheckCircle2 size={20} /> : v.internal_code}
                                                                 </div>
 
-                                                                {/* Decorator Light Blur */}
-                                                                <div className={`absolute -top-10 -right-10 w-40 h-40 blur-3xl rounded-full transition-colors pointer-events-none
-                                                                    ${isMitsubishi ? 'bg-emerald-500/5 group-hover:bg-emerald-500/10' : 'bg-amber-500/5 group-hover:bg-amber-500/10'}`}>
-                                                                </div>
-
-                                                                <div className="relative z-10 w-full">
-                                                                    <div className="flex justify-between items-start">
-                                                                        <div>
-                                                                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 opacity-70">{v.brand}</div>
-                                                                            <div className={`text-4xl font-black text-slate-900 transition-colors tracking-tighter ${isMitsubishi ? 'group-hover:text-emerald-600' : 'group-hover:text-amber-600'}`}>
-                                                                                {v.internal_code}
-                                                                            </div>
-                                                                        </div>
-                                                                        <div className="flex flex-col gap-2">
-                                                                            <div className={`p-2 rounded-xl bg-slate-50 border border-slate-200 self-end ${isMitsubishi ? 'text-emerald-600' : 'text-amber-600'}`}>
-                                                                                <ForkliftIcon className="w-6 h-6" />
-                                                                            </div>
-                                                                            {/* Tablet Status Icon */}
-                                                                            <div className={`p-1.5 rounded-lg border self-end flex items-center justify-center transition-colors
-                                                                                ${isChecked
-                                                                                    ? (tabletStatus === 'broken' ? 'bg-red-50 text-red-500 border-red-200' : 'bg-emerald-50 text-emerald-500 border-emerald-200')
-                                                                                    : 'bg-slate-50 text-slate-400 border-slate-200'}`}
-                                                                                title={`Tablet: ${isChecked ? (tabletStatus === 'broken' ? 'Problema Segnalato' : 'OK') : 'Da Verificare'}`}
-                                                                            >
-                                                                                {isChecked && tabletStatus === 'broken' ? <AlertTriangle size={14} /> : <Tablet size={14} />}
-                                                                            </div>
-                                                                        </div>
+                                                                {/* Info */}
+                                                                <div className="flex-grow min-w-0">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className={`font-bold text-sm ${isChecked ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
+                                                                            {v.brand || 'N/D'} {v.internal_code}
+                                                                        </span>
+                                                                        {/* Tablet Status */}
+                                                                        {isChecked && vTabletStatus === 'broken' && (
+                                                                            <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-bold">TABLET KO</span>
+                                                                        )}
                                                                     </div>
+                                                                    <div className="text-xs text-slate-400 truncate">
+                                                                        {isChecked
+                                                                            ? `${operatorName} • ${checkTime || ''}`
+                                                                            : v.assigned_operator || v.model || type
+                                                                        }
+                                                                    </div>
+                                                                </div>
 
+                                                                {/* Action Indicator */}
+                                                                <div className="flex-shrink-0">
                                                                     {isChecked ? (
-                                                                        <div className="mt-8 pt-4 border-t border-slate-100 flex flex-col gap-1">
-                                                                            <div className="flex items-center gap-2 text-emerald-600 font-black text-[10px] uppercase tracking-widest">
-                                                                                <CheckCircle2 size={12} /> COMPLETATO
-                                                                            </div>
-                                                                            <div className="text-[10px] text-slate-400 font-bold truncate">
-                                                                                Operatore: {operatorName}
-                                                                            </div>
-                                                                        </div>
+                                                                        <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">FATTO</span>
                                                                     ) : (
-                                                                        <div className={`mt-8 flex items-center gap-2 transition-transform group-hover:translate-x-1 ${isMitsubishi ? 'text-emerald-600' : 'text-amber-600'}`}>
-                                                                            <span className="text-[10px] font-black uppercase tracking-widest">Seleziona</span>
-                                                                            <ArrowRight size={14} />
-                                                                        </div>
+                                                                        <ArrowRight size={16} className={`text-${accentColor}-400`} />
                                                                     )}
                                                                 </div>
                                                             </button>
@@ -613,8 +610,8 @@ export default function VehicleChecklistPage() {
                                                     })}
                                                 </div>
                                             </section>
-                                        )
-                                        ))}
+                                        ))
+                                    )}
                                 </motion.div>
                             )}
 

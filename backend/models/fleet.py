@@ -100,6 +100,7 @@ class FleetChecklist(Base):
     vehicle_id = Column(Integer, ForeignKey("fleet_vehicles.id"), nullable=False)
     operator_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     timestamp = Column(DateTime, default=datetime.utcnow)
+    shift = Column(String(10), nullable=True)  # "morning" (06:00-12:30) or "evening" (14:00-21:30)
     
     # Dati Checklist JSON (Es. {"freni": true, "luci": false})
     # Valori: true=OK, false=KO

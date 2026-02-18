@@ -292,6 +292,14 @@ function ChecklistCard({ checklist, vehicle, index, onClick }) {
                         `}>
                             {isWarning ? 'DANGER' : isResolved ? 'FIXED' : 'SAFE'}
                         </div>
+                        {checklist.shift && (
+                            <div className={`px-3 py-1.5 rounded-xl font-black text-[9px] uppercase tracking-widest border mt-2 text-center ${checklist.shift === 'morning'
+                                    ? 'bg-amber-50 text-amber-600 border-amber-200'
+                                    : 'bg-indigo-50 text-indigo-600 border-indigo-200'
+                                }`}>
+                                {checklist.shift === 'morning' ? '☀️ Mattutino' : '🌙 Serale'}
+                            </div>
+                        )}
                     </div>
 
                     <div className="space-y-6">
