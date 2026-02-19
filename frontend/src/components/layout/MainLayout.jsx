@@ -3,7 +3,7 @@
  * v5.0 — Light Enterprise Theme
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import NotificationBell from './NotificationBell';
 import { useAuth } from '../../context/AuthContext';
@@ -33,8 +33,10 @@ export default function MainLayout() {
     const [mobileOpen, setMobileOpen] = useState(false);
     const { user } = useAuth();
     const location = useLocation();
+    const navigate = useNavigate();
     const { toast } = useUI();
     const userInteracted = useRef(false);
+    const [logisticsAlerts, setLogisticsAlerts] = useState([]);
 
     // ── Track user interaction (Chrome autoplay policy) ──
     useEffect(() => {
@@ -96,7 +98,15 @@ export default function MainLayout() {
                     const data = JSON.parse(event.data);
                     if (data.type === 'new_request') {
                         playNotificationSound();
-                        toast.info('📦 Nuova richiesta materiale in arrivo!');
+                        // Banner persistente invece di toast
+                        setLogisticsAlerts(prev => [
+                            ...prev,
+                            {
+                                id: Date.now(),
+                                message: '📦 Nuova richiesta materiale in arrivo!',
+                                time: new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
+                            }
+                        ]);
                         console.log('[WS Global] 🔔 Notifica ricevuta: new_request');
                     }
                 } catch (err) {
@@ -119,6 +129,15 @@ export default function MainLayout() {
             if (ws) ws.close();
         };
     }, [user, playNotificationSound, toast]);
+
+    const dismissAlert = useCallback((id) => {
+        setLogisticsAlerts(prev => prev.filter(a => a.id !== id));
+    }, []);
+
+    const handleAlertClick = useCallback((id) => {
+        dismissAlert(id);
+        navigate('/logistics');
+    }, [dismissAlert, navigate]);
 
     const getPageTitle = () => {
         if (PAGE_TITLES[location.pathname]) {
@@ -145,6 +164,39 @@ export default function MainLayout() {
                     className="fixed inset-0 bg-black/30 z-[105] md:hidden backdrop-blur-sm"
                     onClick={() => setMobileOpen(false)}
                 />
+            )}
+
+            {/* Persistent Logistics Notification Banners */}
+            {logisticsAlerts.length > 0 && (
+                <div className="fixed top-0 left-0 right-0 z-[200] flex flex-col gap-1">
+                    {logisticsAlerts.map((alert) => (
+                        <div
+                            key={alert.id}
+                            className="bg-gradient-to-r from-emerald-600 to-green-500 text-white shadow-2xl shadow-green-500/30 cursor-pointer"
+                            style={{ animation: 'slideDown 0.4s ease-out' }}
+                            onClick={() => handleAlertClick(alert.id)}
+                        >
+                            <div className="max-w-screen-xl mx-auto px-4 py-4 flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                    <span className="relative flex h-3 w-3 shrink-0">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+                                    </span>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-bold text-base truncate">{alert.message}</p>
+                                        <p className="text-green-100 text-xs mt-0.5">Tocca per aprire Logistica — {alert.time}</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); dismissAlert(alert.id); }}
+                                    className="shrink-0 w-8 h-8 rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center text-white font-bold transition"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
             )}
 
             {/* Main Content */}
