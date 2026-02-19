@@ -583,7 +583,20 @@ async def create_checklist(
             file_path = os.path.join(dest_dir, filename)
             
             contents = await upload_file.read()
-            img = Image.open(BytesIO(contents))
+            
+            # Guard: empty file
+            if not contents or len(contents) < 100:
+                print(f"DEBUG: File vuoto o troppo piccolo ({len(contents) if contents else 0} bytes)")
+                return None
+            
+            try:
+                img = Image.open(BytesIO(contents))
+                img.verify()  # Verifica integrità
+                # Re-open dopo verify (verify chiude il file)
+                img = Image.open(BytesIO(contents))
+            except Exception as img_err:
+                print(f"DEBUG: Impossibile leggere immagine: {img_err}, content_type={upload_file.content_type}, filename={upload_file.filename}, size={len(contents)}")
+                return None
             
             # Max dimensions
             max_width = 1280
