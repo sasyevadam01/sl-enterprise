@@ -2,12 +2,12 @@
  * SL Enterprise - Main Layout
  * v5.0 — Light Enterprise Theme
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import NotificationBell from './NotificationBell';
 import { useAuth } from '../../context/AuthContext';
-import { usePushNotifications } from '../../hooks/usePushNotifications';
+import { useUI } from '../ui/CustomUI';
 
 const PAGE_TITLES = {
     '/dashboard': 'Dashboard',
@@ -33,25 +33,92 @@ export default function MainLayout() {
     const [mobileOpen, setMobileOpen] = useState(false);
     const { user } = useAuth();
     const location = useLocation();
-    const { isSupported, isSubscribed, subscribe } = usePushNotifications();
+    const { toast } = useUI();
+    const userInteracted = useRef(false);
 
-    // Auto-subscribe push notifications al login
+    // ── Track user interaction (Chrome autoplay policy) ──
     useEffect(() => {
-        if (user && isSupported && !isSubscribed) {
-            console.log('[Push] Auto-subscribe: user logged in, attempting subscription...');
-            // Ritardo breve per non bloccare il rendering iniziale
-            const timer = setTimeout(() => {
-                subscribe().then(ok => {
-                    console.log('[Push] Auto-subscribe result:', ok);
-                }).catch(err => {
-                    console.error('[Push] Auto-subscribe error:', err);
-                });
-            }, 2000);
-            return () => clearTimeout(timer);
-        } else if (user) {
-            console.log(`[Push] Skip auto-subscribe: supported=${isSupported} subscribed=${isSubscribed}`);
+        const markInteracted = () => { userInteracted.current = true; };
+        window.addEventListener('click', markInteracted, { once: true });
+        window.addEventListener('touchstart', markInteracted, { once: true });
+        window.addEventListener('keydown', markInteracted, { once: true });
+        return () => {
+            window.removeEventListener('click', markInteracted);
+            window.removeEventListener('touchstart', markInteracted);
+            window.removeEventListener('keydown', markInteracted);
+        };
+    }, []);
+
+    // ── Notification Sound (Web Audio API — no files needed) ──
+    const playNotificationSound = useCallback(() => {
+        if (!userInteracted.current) return;
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            // Primo tono (Do alto)
+            const osc1 = ctx.createOscillator();
+            const gain1 = ctx.createGain();
+            osc1.type = 'sine';
+            osc1.frequency.value = 830;
+            gain1.gain.setValueAtTime(0.3, ctx.currentTime);
+            gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+            osc1.connect(gain1);
+            gain1.connect(ctx.destination);
+            osc1.start(ctx.currentTime);
+            osc1.stop(ctx.currentTime + 0.3);
+            // Secondo tono (Mi alto)
+            const osc2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.value = 1050;
+            gain2.gain.setValueAtTime(0.3, ctx.currentTime + 0.15);
+            gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+            osc2.connect(gain2);
+            gain2.connect(ctx.destination);
+            osc2.start(ctx.currentTime + 0.15);
+            osc2.stop(ctx.currentTime + 0.5);
+        } catch (e) {
+            console.warn('[Sound] Audio non supportato:', e);
         }
-    }, [user, isSupported, isSubscribed, subscribe]);
+    }, []);
+
+    // ── Global WebSocket: Logistics notifications on ANY page ──
+    useEffect(() => {
+        if (!user) return;
+
+        const wsUrl = `ws://${window.location.hostname}:8000/ws/logistics`;
+        let ws;
+        let reconnectTimer;
+
+        const connect = () => {
+            ws = new WebSocket(wsUrl);
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.type === 'new_request') {
+                        playNotificationSound();
+                        toast.info('📦 Nuova richiesta materiale in arrivo!');
+                        console.log('[WS Global] 🔔 Notifica ricevuta: new_request');
+                    }
+                } catch (err) {
+                    console.error('[WS Global] Parse error:', err);
+                }
+            };
+            ws.onclose = () => {
+                // Riconnessione automatica dopo 5 secondi
+                reconnectTimer = setTimeout(connect, 5000);
+            };
+            ws.onerror = (err) => {
+                console.warn('[WS Global] Errore connessione logistics:', err);
+            };
+        };
+
+        connect();
+
+        return () => {
+            clearTimeout(reconnectTimer);
+            if (ws) ws.close();
+        };
+    }, [user, playNotificationSound, toast]);
 
     const getPageTitle = () => {
         if (PAGE_TITLES[location.pathname]) {
