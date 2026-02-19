@@ -297,6 +297,75 @@ async def create_request(
     except Exception as e:
         print(f"[WS ERROR] Broadcast fallito: {e}")
     
+    # ── Web Push Notifications ──────────────────────────────────
+    try:
+        from models.chat import PushSubscription
+        from push_service import send_logistics_push
+
+        # Trova utenti target: manage_logistics_pool OR supervise_logistics OR super_admin
+        target_user_ids = set()
+
+        # 1. Super admin (role field legacy)
+        super_admins = db.query(User.id).filter(User.role == "super_admin", User.is_active == True).all()
+        target_user_ids.update(uid for (uid,) in super_admins)
+
+        # 2. Utenti con permessi logistics tramite Role JSON
+        from models.core import Role
+        all_roles = db.query(Role).all()
+        target_role_ids = []
+        for r in all_roles:
+            perms = r.permissions or []
+            if "*" in perms or "manage_logistics_pool" in perms or "supervise_logistics" in perms:
+                target_role_ids.append(r.id)
+
+        if target_role_ids:
+            users_with_roles = db.query(User.id).filter(
+                User.role_id.in_(target_role_ids),
+                User.is_active == True
+            ).all()
+            target_user_ids.update(uid for (uid,) in users_with_roles)
+
+        # Escludi il richiedente stesso
+        target_user_ids.discard(current_user.id)
+
+        if target_user_ids:
+            # Recupera subscriptions
+            subs = db.query(PushSubscription).filter(
+                PushSubscription.user_id.in_(list(target_user_ids))
+            ).all()
+
+            dead_subs = []
+            mat_label = material.label if material else "Materiale"
+            ban_code = request.banchina.code if request.banchina else "?"
+            req_name = current_user.full_name or current_user.username
+
+            for sub in subs:
+                subscription_info = {
+                    "endpoint": sub.endpoint,
+                    "keys": {"p256dh": sub.p256dh_key, "auth": sub.auth_key}
+                }
+                success = send_logistics_push(
+                    subscription_info=subscription_info,
+                    material_label=mat_label,
+                    banchina_code=ban_code,
+                    requester_name=req_name,
+                    is_urgent=False
+                )
+                if not success:
+                    dead_subs.append(sub)
+
+            # Cleanup subscription scadute
+            for sub in dead_subs:
+                db.delete(sub)
+            if dead_subs:
+                db.commit()
+                print(f"[PUSH] Cleaned {len(dead_subs)} dead subscriptions")
+
+            print(f"[PUSH] Logistics push inviati a {len(subs) - len(dead_subs)}/{len(subs)} subscriptions")
+
+    except Exception as e:
+        print(f"[PUSH ERROR] Invio push logistics fallito: {e}")
+    
     return enrich_request_response(request)
 
 

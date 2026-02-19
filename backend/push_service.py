@@ -108,6 +108,23 @@ def send_production_notification(
         icon="/logo192.png"
     )
 
+def send_logistics_push(
+    subscription_info: dict,
+    material_label: str,
+    banchina_code: str,
+    requester_name: str,
+    is_urgent: bool = False
+):
+    """Invia notifica per nuova richiesta materiale logistica."""
+    prefix = "🚨 URGENTE" if is_urgent else "📦 Richiesta Materiale"
+    return send_push_notification(
+        subscription_info=subscription_info,
+        title=prefix,
+        body=f"{material_label} — Banchina {banchina_code} (da {requester_name})",
+        url="/logistics",
+        tag=f"logistics-{banchina_code}"
+    )
+
 
 # Script per generare chiavi VAPID (esegui una volta)
 if __name__ == "__main__":

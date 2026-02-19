@@ -2,11 +2,12 @@
  * SL Enterprise - Main Layout
  * v5.0 — Light Enterprise Theme
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import NotificationBell from './NotificationBell';
 import { useAuth } from '../../context/AuthContext';
+import { usePushNotifications } from '../../hooks/usePushNotifications';
 
 const PAGE_TITLES = {
     '/dashboard': 'Dashboard',
@@ -32,6 +33,16 @@ export default function MainLayout() {
     const [mobileOpen, setMobileOpen] = useState(false);
     const { user } = useAuth();
     const location = useLocation();
+    const { isSupported, isSubscribed, subscribe } = usePushNotifications();
+
+    // Auto-subscribe push notifications al login
+    useEffect(() => {
+        if (user && isSupported && !isSubscribed) {
+            // Ritardo breve per non bloccare il rendering iniziale
+            const timer = setTimeout(() => subscribe(), 2000);
+            return () => clearTimeout(timer);
+        }
+    }, [user, isSupported, isSubscribed, subscribe]);
 
     const getPageTitle = () => {
         if (PAGE_TITLES[location.pathname]) {
