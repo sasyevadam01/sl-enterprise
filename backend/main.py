@@ -81,21 +81,22 @@ async def lifespan(app: FastAPI):
                      print("[MIGRATION] Aggiunto campo 'shift' a fleet_checklists")
                      conn.execute(text("ALTER TABLE fleet_checklists ADD COLUMN shift VARCHAR(50)"))
                      conn.commit()
-              # 6. Auto-fix: assegna role_id a utenti con role_id NULL
-              orphans = conn.execute(text(
-                  "SELECT u.id, u.role FROM users u WHERE u.role_id IS NULL AND u.is_active = 1"
-              )).fetchall()
-              if orphans:
-                  for uid, role_name in orphans:
-                      role_row = conn.execute(text(
-                          "SELECT id FROM roles WHERE name = :rn"
-                      ), {"rn": role_name}).fetchone()
-                      if role_row:
-                          conn.execute(text(
-                              "UPDATE users SET role_id = :rid WHERE id = :uid"
-                          ), {"rid": role_row[0], "uid": uid})
-                  conn.commit()
-                  print(f"[MIGRATION] Assegnato role_id a {len(orphans)} utenti orfani")
+
+             # 6. Auto-fix: assegna role_id a utenti con role_id NULL
+             orphans = conn.execute(text(
+                 "SELECT u.id, u.role FROM users u WHERE u.role_id IS NULL AND u.is_active = 1"
+             )).fetchall()
+             if orphans:
+                 for uid, role_name in orphans:
+                     role_row = conn.execute(text(
+                         "SELECT id FROM roles WHERE name = :rn"
+                     ), {"rn": role_name}).fetchone()
+                     if role_row:
+                         conn.execute(text(
+                             "UPDATE users SET role_id = :rid WHERE id = :uid"
+                         ), {"rid": role_row[0], "uid": uid})
+                 conn.commit()
+                 print(f"[MIGRATION] Assegnato role_id a {len(orphans)} utenti orfani")
 
     except Exception as e:
         print(f"[MIGRATION WARNING] Errore auto-migration: {e}")
