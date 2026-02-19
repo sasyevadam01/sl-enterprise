@@ -8,6 +8,7 @@ import api, { logisticsApi } from '../../api/client';
 import LogisticsMap from './LogisticsMap';
 import { User, ArrowRight, Radio } from 'lucide-react';
 import MaterialIcon from './components/MaterialIcon';
+import { useUI } from '../../components/ui/CustomUI';
 import './LogisticsStyles.css';
 
 export default function LogisticsDashboardPage() {
@@ -21,6 +22,36 @@ export default function LogisticsDashboardPage() {
     });
     const [selectedBanchina, setSelectedBanchina] = useState(null);
     const [loading, setLoading] = useState(true);
+    const { toast } = useUI();
+
+    // ── Notification Sound (Web Audio API) ──
+    const playNotificationSound = () => {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc1 = ctx.createOscillator();
+            const gain1 = ctx.createGain();
+            osc1.type = 'sine';
+            osc1.frequency.value = 830;
+            gain1.gain.setValueAtTime(0.3, ctx.currentTime);
+            gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+            osc1.connect(gain1);
+            gain1.connect(ctx.destination);
+            osc1.start(ctx.currentTime);
+            osc1.stop(ctx.currentTime + 0.3);
+            const osc2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.value = 1050;
+            gain2.gain.setValueAtTime(0.3, ctx.currentTime + 0.15);
+            gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+            osc2.connect(gain2);
+            gain2.connect(ctx.destination);
+            osc2.start(ctx.currentTime + 0.15);
+            osc2.stop(ctx.currentTime + 0.5);
+        } catch (e) {
+            console.warn('[Sound] Audio non supportato:', e);
+        }
+    };
 
     useEffect(() => {
         loadData();
@@ -33,8 +64,11 @@ export default function LogisticsDashboardPage() {
             try {
                 const data = JSON.parse(event.data);
                 if (data.type === 'new_request' || data.type === 'request_updated' || data.type === 'request_completed') {
-                    console.log("📍 Dashboard update event:", data.type);
-                    loadData(); // Full refresh for dashboard map/stats
+                    loadData();
+                    if (data.type === 'new_request') {
+                        playNotificationSound();
+                        toast.info('📦 Nuova richiesta materiale in arrivo!');
+                    }
                 }
             } catch (err) {
                 console.error("WS error:", err);

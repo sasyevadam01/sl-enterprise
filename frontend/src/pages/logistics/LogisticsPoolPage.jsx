@@ -43,6 +43,37 @@ export default function LogisticsPoolPage() {
     const [isSelectionMode, setIsSelectionMode] = useState(false);
     const [selectedRequestIds, setSelectedRequestIds] = useState(new Set());
 
+    // ── Notification Sound (Web Audio API — no files needed) ──
+    const playNotificationSound = () => {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            // Primo tono (Do alto)
+            const osc1 = ctx.createOscillator();
+            const gain1 = ctx.createGain();
+            osc1.type = 'sine';
+            osc1.frequency.value = 830;
+            gain1.gain.setValueAtTime(0.3, ctx.currentTime);
+            gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+            osc1.connect(gain1);
+            gain1.connect(ctx.destination);
+            osc1.start(ctx.currentTime);
+            osc1.stop(ctx.currentTime + 0.3);
+            // Secondo tono (Mi alto — più allegro)
+            const osc2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.value = 1050;
+            gain2.gain.setValueAtTime(0.3, ctx.currentTime + 0.15);
+            gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+            osc2.connect(gain2);
+            gain2.connect(ctx.destination);
+            osc2.start(ctx.currentTime + 0.15);
+            osc2.stop(ctx.currentTime + 0.5);
+        } catch (e) {
+            console.warn('[Sound] Audio non supportato:', e);
+        }
+    };
+
     useEffect(() => {
         loadData();
 
@@ -56,7 +87,9 @@ export default function LogisticsPoolPage() {
                 if (data.type === 'new_request' || data.type === 'request_updated' || data.type === 'request_completed') {
                     loadRequests();
                     if (data.type === 'new_request') {
-                        console.log("🚀 Nuova richiesta in piscina!");
+                        // 🔔 Suono + Toast notifica
+                        playNotificationSound();
+                        toast.info('📦 Nuova richiesta materiale in arrivo!');
                     }
                 }
             } catch (err) {
