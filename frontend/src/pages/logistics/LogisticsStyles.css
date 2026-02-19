@@ -1053,20 +1053,56 @@
 
 /* ─── Dashboard mobile override ─── */
 @media (max-width: 768px) {
-  .dashboard-content {
-    flex-direction: column;
-  }
-
-  .dashboard-sidebar {
-    width: 100%;
-    max-height: 300px;
-  }
-
-  .map-section {
-    min-height: auto;
+  .dashboard-page {
+    height: auto;
+    overflow: auto;
+    padding: 0.5rem;
+    -webkit-overflow-scrolling: touch;
   }
 
   .dashboard-stats {
     grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .stat-box {
+    padding: 0.75rem;
+  }
+
+  .stat-box h3 {
+    font-size: 0.7rem;
+    letter-spacing: 0.5px;
+  }
+
+  .stat-box .value {
+    font-size: 1.6rem;
+  }
+
+  .dashboard-content {
+    flex-direction: column-reverse;
+    gap: 0.75rem;
+  }
+
+  .dashboard-sidebar {
+    width: 100%;
+    max-height: none;
+    border-radius: 16px;
+  }
+
+  .map-section {
+    min-height: auto;
+    border-radius: 16px;
+  }
+
+  .map-legend {
+    position: relative;
+    bottom: auto;
+    left: auto;
+    transform: none;
+    margin-top: 0.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 1rem;
   }
 }
