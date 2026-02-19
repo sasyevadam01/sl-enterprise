@@ -245,7 +245,7 @@ function App() {
                 </PermissionRoute>
               } />
               <Route path="logistics/control-room" element={
-                <PermissionRoute permission="supervise_logistics">
+                <PermissionRoute permission="admin_users">
                   <ControlRoomPage />
                 </PermissionRoute>
               } />
