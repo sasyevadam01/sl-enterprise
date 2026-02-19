@@ -375,7 +375,7 @@ export default function LogisticsPoolPage() {
                                         </div>
                                     </div>
 
-                                    <div className="request-meta grid grid-cols-2 gap-2 mt-2">
+                                    <div className="request-meta grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
                                         <div className="banchina bg-slate-50 p-2 rounded-lg border border-slate-100">
                                             <span className="text-slate-400 text-xs font-bold uppercase block">Destinazione</span>
                                             <span className="text-slate-800 font-bold text-lg flex items-center gap-1"><MapPin size={16} className="text-brand-green" /> Banchina {req.banchina_code}</span>
@@ -384,7 +384,7 @@ export default function LogisticsPoolPage() {
                                             <span className="text-slate-400 text-xs font-bold uppercase block">Richiedente</span>
                                             <span className="text-slate-800 font-bold text-lg truncate flex items-center gap-1"><User size={16} className="text-slate-500" /> {req.requester_name}</span>
                                         </div>
-                                        <div className={`wait-time col-span-2 text-center p-1 rounded-lg font-mono font-bold ${getWaitClass(req.wait_time_seconds)}`}>
+                                        <div className={`wait-time sm:col-span-2 text-center p-1 rounded-lg font-mono font-bold ${getWaitClass(req.wait_time_seconds)}`}>
                                             <Clock size={14} className="inline-block mr-1" style={{ verticalAlign: 'text-bottom' }} /> Attesa: {formatTime(req.wait_time_seconds)}
                                         </div>
                                     </div>
@@ -446,7 +446,7 @@ export default function LogisticsPoolPage() {
                                         </div>
                                     </div>
 
-                                    <div className="request-meta grid grid-cols-2 gap-2 mt-2">
+                                    <div className="request-meta grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
                                         <div className="banchina bg-slate-50 p-2 rounded-lg border border-slate-100">
                                             <span className="text-slate-400 text-xs font-bold uppercase block">Destinazione</span>
                                             <span className="text-slate-800 font-bold text-lg flex items-center gap-1"><MapPin size={16} className="text-brand-green" /> Banchina {req.banchina_code}</span>

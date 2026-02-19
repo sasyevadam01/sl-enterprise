@@ -1106,3 +1106,120 @@
     gap: 1rem;
   }
 }
+
+/* ─── Pool Page mobile override ─── */
+@media (max-width: 768px) {
+
+  /* Header: stack vertically */
+  .pool-page .pool-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .pool-page .pool-header h1 {
+    font-size: 1.15rem;
+  }
+
+  /* Performance badge: wrap and shrink */
+  .pool-page .performance-badge {
+    gap: 0.5rem;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.8rem;
+    align-self: flex-start;
+  }
+
+  /* Tabs: smaller text, tighter padding */
+  .pool-page .pool-tabs {
+    padding: 0.35rem;
+    gap: 0.25rem;
+  }
+
+  .pool-page .pool-tabs .tab {
+    padding: 0.6rem 0.25rem;
+    font-size: 0.78rem;
+  }
+
+  /* Request cards: reduce padding */
+  .pool-page .request-card {
+    padding: 0.75rem;
+    border-radius: 12px;
+  }
+
+  /* Request main: stack vertically */
+  .pool-page .request-main {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  /* Material icon: smaller */
+  .pool-page .request-info .material-icon {
+    font-size: 1.5rem;
+  }
+
+  /* Material details text */
+  .pool-page .material-details strong {
+    font-size: 0.9rem;
+  }
+
+  .pool-page .material-details p {
+    font-size: 0.8rem;
+  }
+
+  /* Meta grid: full width, text smaller */
+  .pool-page .request-meta {
+    text-align: left;
+    width: 100%;
+  }
+
+  .pool-page .request-meta .banchina span.text-lg,
+  .pool-page .request-meta .requester span.text-lg,
+  .pool-page .request-meta span.text-lg {
+    font-size: 0.9rem;
+  }
+
+  /* Take button: slightly smaller */
+  .pool-page .btn-take {
+    padding: 0.75rem;
+    font-size: 1rem;
+    border-radius: 10px;
+  }
+
+  /* Queue actions: flexible wrap */
+  .pool-page .queue-actions {
+    flex-wrap: wrap;
+  }
+
+  /* Stats grid: 2 columns */
+  .pool-page .stats-section {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+
+  .pool-page .stat-card {
+    padding: 1rem;
+    border-radius: 12px;
+  }
+
+  .pool-page .stat-card .stat-value {
+    font-size: 1.5rem;
+  }
+
+  .pool-page .stat-card .stat-label {
+    font-size: 0.78rem;
+  }
+
+  /* Logistics page: reduce base padding */
+  .logistics-page {
+    padding: 0.5rem;
+  }
+}
+
+/* ─── Pool Page extra-small (< 400px) ─── */
+@media (max-width: 400px) {
+
+  .pool-page .pool-tabs .tab {
+    font-size: 0.72rem;
+    padding: 0.5rem 0.2rem;
+  }
+}
