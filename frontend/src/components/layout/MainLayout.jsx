@@ -36,7 +36,8 @@ export default function MainLayout() {
     const navigate = useNavigate();
     const { toast } = useUI();
     const userInteracted = useRef(false);
-    const [logisticsAlerts, setLogisticsAlerts] = useState([]);
+    const [alertCount, setAlertCount] = useState(0);
+    const [lastAlertTime, setLastAlertTime] = useState(null);
 
     // ── Track user interaction (Chrome autoplay policy) ──
     useEffect(() => {
@@ -98,15 +99,8 @@ export default function MainLayout() {
                     const data = JSON.parse(event.data);
                     if (data.type === 'new_request') {
                         playNotificationSound();
-                        // Banner persistente invece di toast
-                        setLogisticsAlerts(prev => [
-                            ...prev,
-                            {
-                                id: Date.now(),
-                                message: '📦 Nuova richiesta materiale in arrivo!',
-                                time: new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
-                            }
-                        ]);
+                        setAlertCount(prev => prev + 1);
+                        setLastAlertTime(new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }));
                         console.log('[WS Global] 🔔 Notifica ricevuta: new_request');
                     }
                 } catch (err) {
@@ -130,14 +124,15 @@ export default function MainLayout() {
         };
     }, [user, playNotificationSound, toast]);
 
-    const dismissAlert = useCallback((id) => {
-        setLogisticsAlerts(prev => prev.filter(a => a.id !== id));
+    const dismissAllAlerts = useCallback(() => {
+        setAlertCount(0);
+        setLastAlertTime(null);
     }, []);
 
-    const handleAlertClick = useCallback((id) => {
-        dismissAlert(id);
+    const handleAlertClick = useCallback(() => {
+        dismissAllAlerts();
         navigate('/logistics');
-    }, [dismissAlert, navigate]);
+    }, [dismissAllAlerts, navigate]);
 
     const getPageTitle = () => {
         if (PAGE_TITLES[location.pathname]) {
@@ -166,36 +161,43 @@ export default function MainLayout() {
                 />
             )}
 
-            {/* Persistent Logistics Notification Banners */}
-            {logisticsAlerts.length > 0 && (
-                <div className="fixed top-0 left-0 right-0 z-[200] flex flex-col gap-1">
-                    {logisticsAlerts.map((alert) => (
-                        <div
-                            key={alert.id}
-                            className="bg-gradient-to-r from-emerald-600 to-green-500 text-white shadow-2xl shadow-green-500/30 cursor-pointer"
-                            style={{ animation: 'slideDown 0.4s ease-out' }}
-                            onClick={() => handleAlertClick(alert.id)}
-                        >
-                            <div className="max-w-screen-xl mx-auto px-4 py-4 flex items-center justify-between gap-3">
-                                <div className="flex items-center gap-3 flex-1 min-w-0">
-                                    <span className="relative flex h-3 w-3 shrink-0">
-                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                                        <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
-                                    </span>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="font-bold text-base truncate">{alert.message}</p>
-                                        <p className="text-green-100 text-xs mt-0.5">Tocca per aprire Logistica — {alert.time}</p>
-                                    </div>
+            {/* Single Consolidated Logistics Notification Banner */}
+            {alertCount > 0 && (
+                <div
+                    className="fixed top-0 left-0 right-0 z-[200]"
+                    style={{ animation: 'slideDown 0.4s ease-out' }}
+                >
+                    <div className="bg-gradient-to-r from-emerald-600 via-green-500 to-emerald-600 text-white shadow-2xl shadow-green-500/40">
+                        <div className="max-w-screen-xl mx-auto px-5 py-5 flex items-center justify-between gap-4">
+                            {/* Left: icon + message */}
+                            <div className="flex items-center gap-4 flex-1 min-w-0 cursor-pointer" onClick={handleAlertClick}>
+                                <div className="relative shrink-0">
+                                    <span className="text-3xl">📦</span>
+                                    {alertCount > 1 && (
+                                        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-black rounded-full w-5 h-5 flex items-center justify-center shadow-lg">
+                                            {alertCount}
+                                        </span>
+                                    )}
                                 </div>
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); dismissAlert(alert.id); }}
-                                    className="shrink-0 w-8 h-8 rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center text-white font-bold transition"
-                                >
-                                    ✕
-                                </button>
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-bold text-lg leading-tight">
+                                        {alertCount === 1 ? 'Nuova richiesta materiale!' : `${alertCount} nuove richieste materiale!`}
+                                    </p>
+                                    <p className="text-green-100 text-sm mt-0.5">
+                                        Tocca per aprire Logistica{lastAlertTime ? ` — ultimo alle ${lastAlertTime}` : ''}
+                                    </p>
+                                </div>
                             </div>
+
+                            {/* Right: HO LETTO button */}
+                            <button
+                                onClick={(e) => { e.stopPropagation(); dismissAllAlerts(); }}
+                                className="shrink-0 px-5 py-2.5 bg-white text-green-700 font-black text-sm rounded-xl shadow-lg hover:bg-green-50 active:scale-95 transition-all cursor-pointer"
+                            >
+                                ✓ HO LETTO
+                            </button>
                         </div>
-                    ))}
+                    </div>
                 </div>
             )}
 
