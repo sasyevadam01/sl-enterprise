@@ -132,6 +132,19 @@ const getMenuItems = (hasPermission) => {
         ],
     });
 
+    // MONITOR SPOSTAMENTI - Control Room Admin
+    items.push({
+        title: 'Monitor Spostamenti',
+        icon: '📡',
+        permission: 'supervise_logistics',
+        titleColor: '#ef4444',
+        children: [
+            { title: 'Control Room', path: '/logistics/control-room', permission: 'supervise_logistics', icon: '🎯' },
+            { title: 'Mappa Richieste', path: '/logistics/dashboard', permission: 'supervise_logistics', icon: '📊' },
+            { title: 'Config. Logistica', path: '/admin/logistics', permission: 'supervise_logistics', icon: '⚙️' },
+        ],
+    });
+
     // LIVE PRODUCTION - Sezione per Gestione Blocchi
     items.push({
         title: 'Live Production',
@@ -204,7 +217,9 @@ function SidebarItem({ item, isOpen, pendingCounts, onItemClick, onResetBadge })
                         </span>
                         {isOpen && (
                             <span className={`text-sm font-medium transition-colors
-                                ${item.isAnimated ? 'text-brand-green' : 'text-slate-800 group-hover:text-brand-green'}`}>
+                                ${item.isAnimated ? 'text-brand-green' : 'text-slate-800 group-hover:text-brand-green'}`}
+                                style={item.titleColor ? { color: item.titleColor, fontWeight: 800 } : undefined}
+                            >
                                 {item.title}
                             </span>
                         )}

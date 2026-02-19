@@ -46,6 +46,7 @@ import LogisticsConfigPage from './pages/admin/LogisticsConfigPage';
 import VehicleChecklistPage from './pages/fleet/VehicleChecklistPage';
 import ChecklistHistoryPage from './pages/fleet/ChecklistHistoryPage';
 import OvenPage from './pages/production/OvenPage';
+import ControlRoomPage from './pages/logistics/ControlRoomPage';
 
 function App() {
   return (
@@ -241,6 +242,11 @@ function App() {
               <Route path="logistics/dashboard" element={
                 <PermissionRoute permission="supervise_logistics">
                   <LogisticsDashboardPage />
+                </PermissionRoute>
+              } />
+              <Route path="logistics/control-room" element={
+                <PermissionRoute permission="supervise_logistics">
+                  <ControlRoomPage />
                 </PermissionRoute>
               } />
 
