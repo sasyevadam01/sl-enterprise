@@ -928,3 +928,145 @@
     opacity: 0;
   }
 }
+
+/* ============================================================ */
+/* MOBILE MAP - Banchine Card Grid                              */
+/* ============================================================ */
+
+.mobile-map-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 0.75rem;
+}
+
+.mobile-section {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.mobile-section-label {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 4px;
+  color: #94a3b8;
+  margin-bottom: 0.75rem;
+  padding-left: 0.25rem;
+}
+
+.mobile-banchine-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.mobile-banchina-card {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 0.75rem;
+  border: 1.5px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-height: 72px;
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-banchina-card:active {
+  transform: scale(0.97);
+}
+
+.mobile-banchina-card.urgent {
+  border-color: #ef4444;
+  background: #fef2f2;
+  animation: urgentPulse 2s infinite ease-in-out;
+}
+
+.mobile-banchina-card.processing {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.mobile-banchina-card.pending {
+  border-color: #f59e0b;
+  background: #fffbeb;
+}
+
+.mobile-banchina-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mobile-banchina-code {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.mobile-banchina-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fff;
+  background: #94a3b8;
+}
+
+.mobile-banchina-badge.urgent {
+  background: #ef4444;
+}
+
+.mobile-banchina-badge.processing {
+  background: #3b82f6;
+}
+
+.mobile-banchina-badge.pending {
+  background: #f59e0b;
+}
+
+.mobile-banchina-name {
+  font-size: 0.7rem;
+  color: #64748b;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.mobile-banchina-info {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.65rem;
+  color: #94a3b8;
+  margin-top: auto;
+}
+
+/* ─── Dashboard mobile override ─── */
+@media (max-width: 768px) {
+  .dashboard-content {
+    flex-direction: column;
+  }
+
+  .dashboard-sidebar {
+    width: 100%;
+    max-height: 300px;
+  }
+
+  .map-section {
+    min-height: auto;
+  }
+
+  .dashboard-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

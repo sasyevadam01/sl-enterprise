@@ -1,6 +1,16 @@
-import { useMemo } from 'react';
-import { Truck } from 'lucide-react';
+import { useMemo, useState, useEffect } from 'react';
+import { Truck, MapPin, AlertTriangle, Clock, Package } from 'lucide-react';
 import './LogisticsStyles.css';
+
+const useIsMobile = (breakpoint = 768) => {
+    const [isMobile, setIsMobile] = useState(window.innerWidth < breakpoint);
+    useEffect(() => {
+        const handler = () => setIsMobile(window.innerWidth < breakpoint);
+        window.addEventListener('resize', handler);
+        return () => window.removeEventListener('resize', handler);
+    }, [breakpoint]);
+    return isMobile;
+};
 
 const LogisticsMap = ({ requests = [], operators = [], onBanchinaClick }) => {
     // Configurazione Layout Banchine (2D Blueprint Style)
@@ -120,6 +130,64 @@ const LogisticsMap = ({ requests = [], operators = [], onBanchinaClick }) => {
         );
     };
 
+    const isMobile = useIsMobile();
+
+    // ── MOBILE: Card Grid ──
+    if (isMobile) {
+        const vega5 = banchineLayout.filter(b => parseInt(b.code.replace('B', '')) <= 7);
+        const vega6 = banchineLayout.filter(b => parseInt(b.code.replace('B', '')) > 7);
+
+        const renderMobileCard = (b) => {
+            const status = banchinaStatus[b.code] || {};
+            let cardClass = 'mobile-banchina-card';
+            if (status.urgent) cardClass += ' urgent';
+            else if (status.processing) cardClass += ' processing';
+            else if (status.pending) cardClass += ' pending';
+
+            return (
+                <div
+                    key={b.code}
+                    className={cardClass}
+                    onClick={() => onBanchinaClick && onBanchinaClick(b, status)}
+                >
+                    <div className="mobile-banchina-header">
+                        <span className="mobile-banchina-code">{b.code}</span>
+                        {status.hasRequest && (
+                            <span className={`mobile-banchina-badge ${status.urgent ? 'urgent' : status.processing ? 'processing' : 'pending'}`}>
+                                {status.urgent ? <AlertTriangle size={12} /> : status.count}
+                            </span>
+                        )}
+                    </div>
+                    <span className="mobile-banchina-name">{b.name}</span>
+                    {status.hasRequest && status.requests?.[0] && (
+                        <div className="mobile-banchina-info">
+                            <Clock size={11} />
+                            <span>{Math.floor((Date.now() - new Date(status.requests[0].created_at).getTime()) / 60000)} min</span>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        return (
+            <div className="mobile-map-container">
+                <div className="mobile-section">
+                    <div className="mobile-section-label">VEGA 5</div>
+                    <div className="mobile-banchine-grid">
+                        {vega5.map(renderMobileCard)}
+                    </div>
+                </div>
+                <div className="mobile-section">
+                    <div className="mobile-section-label">VEGA 6</div>
+                    <div className="mobile-banchine-grid">
+                        {vega6.map(renderMobileCard)}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // ── DESKTOP: SVG Map ──
     return (
         <div className="logistics-map-container" style={{ background: '#f8fafc', borderRadius: '24px', overflow: 'hidden', minHeight: '520px', border: '1px solid #e2e8f0', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)' }}>
             <svg viewBox="0 0 1000 520" className="logistics-map-svg" style={{ width: '100%', height: '100%' }}>
@@ -133,55 +201,37 @@ const LogisticsMap = ({ requests = [], operators = [], onBanchinaClick }) => {
                     </pattern>
                 </defs>
 
-                {/* Clean Grid Background */}
                 <rect width="100%" height="100%" fill="url(#grid)" />
 
-                {/* Section Labels */}
                 <g opacity="0.4">
                     <text x="50" y="45" fill="#475569" fontSize="12" fontWeight="800" letterSpacing="6">VEGA 5 SECTION</text>
                     <text x="50" y="295" fill="#475569" fontSize="12" fontWeight="800" letterSpacing="6">VEGA 6 SECTION</text>
                 </g>
 
-                {/* Smooth Connection Lines for processing tasks */}
                 {Object.entries(banchinaStatus).map(([code, status]) => {
                     if (!status.processing) return null;
                     const target = banchineLayout.find(b => b.code === code);
                     if (!target) return null;
                     const startNode = banchineLayout.find(b => b.code === 'B16') || { x: 830, y: 320, w: 100, h: 130 };
-
                     const startX = startNode.x + startNode.w / 2;
                     const startY = startNode.y + startNode.h / 2;
                     const endX = target.x + target.w / 2;
                     const endY = target.y + target.h / 2;
-
                     return (
-                        <line
-                            key={`path-${code}`}
-                            x1={startX} y1={startY} x2={endX} y2={endY}
-                            stroke={status.urgent ? '#ef4444' : '#3b82f6'}
-                            strokeWidth="2"
-                            strokeDasharray="8,8"
-                            opacity="0.2"
-                            className="animate-dash"
-                        />
+                        <line key={`path-${code}`} x1={startX} y1={startY} x2={endX} y2={endY}
+                            stroke={status.urgent ? '#ef4444' : '#3b82f6'} strokeWidth="2"
+                            strokeDasharray="8,8" opacity="0.2" className="animate-dash" />
                     );
                 })}
 
-                {/* Render Banchine */}
                 {banchineLayout.map(renderBlock)}
 
-                {/* Forklifts / Operators Tracking */}
                 {operators && operators.map(op => {
                     const pos = gpsToSvg(op.lat, op.lon);
                     return (
                         <g key={op.id} style={{ transition: 'all 1.5s cubic-bezier(0.4, 0, 0.2, 1)' }} transform={`translate(${pos.x}, ${pos.y})`}>
-                            {/* Operator Marker */}
                             <circle r="18" fill="white" stroke="#22c55e" strokeWidth="2" style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }} />
-                            <g transform="translate(-10, -10)">
-                                <Truck size={20} className="text-green-600" />
-                            </g>
-
-                            {/* Info Label */}
+                            <g transform="translate(-10, -10)"><Truck size={20} className="text-green-600" /></g>
                             <g transform="translate(0, -28)">
                                 <rect x="-35" y="-14" width="70" height="18" rx="6" fill="#1e293b" />
                                 <text x="0" y="-1" fill="white" fontSize="10" fontWeight="700" textAnchor="middle">
@@ -191,7 +241,6 @@ const LogisticsMap = ({ requests = [], operators = [], onBanchinaClick }) => {
                         </g>
                     );
                 })}
-
             </svg>
         </div>
     );
