@@ -256,19 +256,19 @@ async def create_request(
     if material.requires_description and not data.custom_description:
         raise HTTPException(400, f"Il materiale '{material.label}' richiede una descrizione")
     
-    # --- BLOCCO DOPPIONI (Anti-Flood) ---
-    # Verifica se esiste già una richiesta IDENTICA (stesso materiale, stessa banchina) in sospeso
-    existing_pending = db.query(LogisticsRequest).filter(
+    # --- ANTI-FLOOD (solo double-click, 10 sec) ---
+    from datetime import datetime, timedelta
+    flood_threshold = datetime.utcnow() - timedelta(seconds=10)
+    recent_duplicate = db.query(LogisticsRequest).filter(
         LogisticsRequest.material_type_id == data.material_type_id,
         LogisticsRequest.banchina_id == banchina_id,
-        LogisticsRequest.status == "pending"
+        LogisticsRequest.requester_id == current_user.id,
+        LogisticsRequest.status == "pending",
+        LogisticsRequest.created_at >= flood_threshold
     ).first()
     
-    if existing_pending:
-        # Se fatta dallo stesso utente negli ultimi 2 minuti, blocca (possibile click multiplo)
-        if existing_pending.requester_id == current_user.id:
-            raise HTTPException(400, "Hai già una richiesta identica in attesa per questa banchina.")
-        # Altrimenti, se è di un altro, permettiamo o segnaliamo (per ora permettiamo ma logghiamo)
+    if recent_duplicate:
+        raise HTTPException(400, "Richiesta identica inviata pochi secondi fa. Attendi qualche secondo.")
     
     # --- GENERAZIONE OTP (Secure Delivery) ---
     otp = None
