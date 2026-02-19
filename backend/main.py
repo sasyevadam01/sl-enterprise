@@ -74,6 +74,14 @@ async def lifespan(app: FastAPI):
                      conn.execute(text("ALTER TABLE users ADD COLUMN pin_required BOOLEAN DEFAULT 1"))
                      conn.commit()
 
+             # 5. fleet_checklists.shift (Shift tracking)
+             if inspector.has_table("fleet_checklists"):
+                 cols = [c['name'] for c in inspector.get_columns("fleet_checklists")]
+                 if "shift" not in cols:
+                     print("[MIGRATION] Aggiunto campo 'shift' a fleet_checklists")
+                     conn.execute(text("ALTER TABLE fleet_checklists ADD COLUMN shift VARCHAR(50)"))
+                     conn.commit()
+
     except Exception as e:
         print(f"[MIGRATION WARNING] Errore auto-migration: {e}")
 

@@ -26,6 +26,7 @@ def run_migrations():
         # FLEET CHECKLISTS
         ("fleet_checklists", "tablet_photo_url", "VARCHAR(500)"),
         ("fleet_checklists", "tablet_status", "VARCHAR(50) DEFAULT 'unknown'"),
+        ("fleet_checklists", "shift", "VARCHAR(50)"),
 
         # USERS (Location Tracking)
         ("users", "last_lat", "FLOAT"),
