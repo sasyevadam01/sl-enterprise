@@ -62,9 +62,17 @@ async def lifespan(app: FastAPI):
                      conn.execute(text("ALTER TABLE block_requests ADD COLUMN target_sector VARCHAR(50) NULL"))
                      conn.commit()
 
-             # 4. logistics_requests: escalation, cancel, secure delivery
-             # RIMOSSO: La migrazione viene fatta esternamente con fix_db.py per evitare crash all'avvio
-             pass
+             # 4. users.pin_hash and users.pin_required (PIN Authentication)
+             if inspector.has_table("users"):
+                 cols = [c['name'] for c in inspector.get_columns("users")]
+                 if "pin_hash" not in cols:
+                     print("[MIGRATION] Aggiunto campo 'pin_hash' a users")
+                     conn.execute(text("ALTER TABLE users ADD COLUMN pin_hash VARCHAR(255) NULL"))
+                     conn.commit()
+                 if "pin_required" not in cols:
+                     print("[MIGRATION] Aggiunto campo 'pin_required' a users")
+                     conn.execute(text("ALTER TABLE users ADD COLUMN pin_required BOOLEAN DEFAULT 1"))
+                     conn.commit()
 
     except Exception as e:
         print(f"[MIGRATION WARNING] Errore auto-migration: {e}")
