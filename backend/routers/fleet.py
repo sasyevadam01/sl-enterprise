@@ -16,6 +16,11 @@ import json
 from datetime import datetime
 from io import BytesIO
 from PIL import Image
+try:
+    from pillow_heif import register_heif_opener
+    register_heif_opener()
+except ImportError:
+    print("[WARN] pillow-heif non installato — HEIC non supportato")
 from fastapi import Form, Request
 
 class VehicleUpdate(BaseModel):
@@ -575,9 +580,15 @@ async def create_checklist(
             
             ext = ".jpg"
             save_format = "JPEG"
-            if upload_file.content_type == "image/png" or upload_file.filename.lower().endswith(".png"):
+            ct = (upload_file.content_type or "").lower()
+            fn = (upload_file.filename or "").lower()
+            if ct == "image/png" or fn.endswith(".png"):
                 ext = ".png"
                 save_format = "PNG"
+            # HEIC/HEIF → always convert to JPEG
+            elif ct in ("image/heic", "image/heif") or fn.endswith((".heic", ".heif")):
+                ext = ".jpg"
+                save_format = "JPEG"
             
             filename = f"{prefix}{uuid.uuid4()}{ext}"
             file_path = os.path.join(dest_dir, filename)
