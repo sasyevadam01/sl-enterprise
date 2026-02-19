@@ -294,8 +294,8 @@ function ChecklistCard({ checklist, vehicle, index, onClick }) {
                         </div>
                         {checklist.shift && (
                             <div className={`px-3 py-1.5 rounded-xl font-black text-[9px] uppercase tracking-widest border mt-2 text-center ${checklist.shift === 'morning'
-                                    ? 'bg-amber-50 text-amber-600 border-amber-200'
-                                    : 'bg-indigo-50 text-indigo-600 border-indigo-200'
+                                ? 'bg-amber-50 text-amber-600 border-amber-200'
+                                : 'bg-indigo-50 text-indigo-600 border-indigo-200'
                                 }`}>
                                 {checklist.shift === 'morning' ? '☀️ Mattutino' : '🌙 Serale'}
                             </div>
@@ -388,10 +388,17 @@ function ChecklistDetailModal({ checklist, vehicle, onClose, StandardModal, onRe
         }
     };
 
+    // Responsabili manutenzione flotta
+    const FLEET_MAINTENANCE_TEAM = [
+        { id: 168, name: "Pasquale Iasevoli" },
+        { id: 158, name: "Antonio Esposito" },
+    ];
+
     const handleCreateTask = async () => {
+        const names = FLEET_MAINTENANCE_TEAM.map(m => m.name).join(" e ");
         const confirmed = await showConfirm({
             title: "Creare Task Manutenzione?",
-            message: "Verrà generato un ticket automatico nella Task Board con tutti i dettagli delle anomalie.",
+            message: `Verrà generato un ticket per ${names} nella Task Board con tutti i dettagli delle anomalie.`,
             confirmText: "Genera Task",
             type: "info"
         });
@@ -411,18 +418,23 @@ function ChecklistDetailModal({ checklist, vehicle, onClose, StandardModal, onRe
                 `📝 Note: ${checklist.notes || 'Nessuna'}\n\n` +
                 `--- GENERATO DA SISTEMA CONTROLLO FLOTTA ---`;
 
-            const payload = {
+            const basePayload = {
                 title: `🛠️ RIPARAZIONE ${vehicle?.internal_code} (${failedItems.length} FIX)`,
                 description: description,
                 priority: 9,
-                assigned_to: user?.id,
                 checklist: failedItems,
                 category: "Manutenzione",
                 tags: ["flotta", "auto_fix"]
             };
 
-            await tasksApi.createTask(payload);
-            toast.success("Task creato correttamente!");
+            // Crea un task per ogni responsabile manutenzione
+            await Promise.all(
+                FLEET_MAINTENANCE_TEAM.map(member =>
+                    tasksApi.createTask({ ...basePayload, assigned_to: member.id })
+                )
+            );
+
+            toast.success(`Task creato per ${names}!`);
             onClose();
         } catch (err) {
             console.error(err);
