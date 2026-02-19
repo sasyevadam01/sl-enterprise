@@ -376,24 +376,38 @@ async def cancel_request(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Annulla una richiesta (se non ancora presa in carico)."""
+    """Annulla una richiesta. Super admin può annullare qualsiasi richiesta in qualsiasi stato."""
     request = db.query(LogisticsRequest).filter(LogisticsRequest.id == request_id).first()
     if not request:
         raise HTTPException(404, "Richiesta non trovata")
     
-    # Solo il richiedente può annullare (o un coordinatore)
-    if request.requester_id != current_user.id and not current_user.has_permission("supervise_logistics"):
+    is_admin = current_user.has_permission("supervise_logistics") or current_user.role == "super_admin"
+    is_owner = request.requester_id == current_user.id
+    
+    if not is_admin and not is_owner:
         raise HTTPException(403, "Non puoi annullare questa richiesta")
     
-    if request.status != "pending":
-        raise HTTPException(400, "Impossibile annullare: richiesta già in lavorazione o completata")
+    # Utenti normali: solo pending. Admin: qualsiasi stato attivo
+    if not is_admin and request.status != "pending":
+        raise HTTPException(400, "Impossibile annullare: richiesta già in lavorazione")
+    
+    if request.status in ("completed", "cancelled"):
+        raise HTTPException(400, "Richiesta già chiusa, impossibile annullare")
     
     request.status = "cancelled"
     request.cancelled_at = datetime.utcnow()
     request.cancelled_by_id = current_user.id
-    request.cancellation_reason = reason
+    request.cancellation_reason = reason or f"Annullata da {current_user.full_name or current_user.username}"
     
     db.commit()
+    
+    # WS Broadcast per aggiornare le dashboard
+    try:
+        lm = get_logistics_manager()
+        await lm.broadcast("logistics", {"type": "request_updated", "request_id": request.id})
+    except Exception as e:
+        print(f"[WS ERROR] Broadcast cancel fallito: {e}")
+    
     return {"message": "Richiesta annullata"}
 
 

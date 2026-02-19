@@ -3,16 +3,19 @@
  * Dashboard Coordinatore Logistica
  * Visualizzazione Mappa, Feed Live e KPI
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
+import AuthContext from '../../context/AuthContext';
 import api, { logisticsApi } from '../../api/client';
 import LogisticsMap from './LogisticsMap';
-import { User, ArrowRight, Radio } from 'lucide-react';
+import { User, ArrowRight, Radio, XCircle } from 'lucide-react';
 import MaterialIcon from './components/MaterialIcon';
 import { useUI } from '../../components/ui/CustomUI';
 import './LogisticsStyles.css';
 
 export default function LogisticsDashboardPage() {
+    const { user } = useContext(AuthContext);
     const [requests, setRequests] = useState([]);
+    const [cancellingId, setCancellingId] = useState(null);
     const [operators, setOperators] = useState([]); // Real-time operators
     const [stats, setStats] = useState({
         active: 0,
@@ -130,6 +133,25 @@ export default function LogisticsDashboardPage() {
         });
     };
 
+    const isSuperAdmin = user?.role === 'super_admin' || user?.permissions?.includes('supervise_logistics') || user?.permissions?.includes('*');
+
+    const handleAdminCancel = async (requestId) => {
+        if (!window.confirm('Sei sicuro di voler annullare questa richiesta?')) return;
+        setCancellingId(requestId);
+        try {
+            await logisticsApi.cancelRequest(requestId, 'Annullata da Super Admin');
+            toast.success('Richiesta annullata con successo');
+            // Aggiorna i dati
+            await loadData();
+            setSelectedBanchina(null);
+        } catch (err) {
+            console.error('Errore annullamento:', err);
+            toast.error(err.response?.data?.detail || 'Errore durante l\'annullamento');
+        } finally {
+            setCancellingId(null);
+        }
+    };
+
     const formatTime = (seconds) => {
         const mins = Math.floor(seconds / 60);
         const secs = Math.floor(seconds % 60);
@@ -206,6 +228,18 @@ export default function LogisticsDashboardPage() {
                                                 </div>
                                             )}
                                         </div>
+
+                                        {/* Super Admin Cancel Button */}
+                                        {isSuperAdmin && (
+                                            <button
+                                                onClick={() => handleAdminCancel(req.id)}
+                                                disabled={cancellingId === req.id}
+                                                className="mt-2 w-full py-2 flex items-center justify-center gap-1 border-2 border-red-200 text-red-500 font-bold text-xs rounded-lg hover:bg-red-50 transition cursor-pointer disabled:opacity-50"
+                                            >
+                                                <XCircle size={14} />
+                                                {cancellingId === req.id ? 'Annullamento...' : 'ANNULLA RICHIESTA'}
+                                            </button>
+                                        )}
                                     </div>
                                 ))}
                             </div>
