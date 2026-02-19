@@ -7,14 +7,23 @@ import json
 from datetime import datetime
 from typing import Optional
 from pywebpush import webpush, WebPushException
+from dotenv import load_dotenv
 
-# Chiavi VAPID - GENERA UNA VOLTA E SALVA IN .env
-# Puoi generare con: python -c "from pywebpush import webpush; print(webpush.generate_vapid_claims())"
+# Carica .env esplicitamente (in caso di import prima di database.py)
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
+
+# Chiavi VAPID
 VAPID_PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY", "")
 VAPID_PUBLIC_KEY = os.getenv("VAPID_PUBLIC_KEY", "")
 VAPID_CLAIMS = {
     "sub": "mailto:admin@sl-enterprise.com"
 }
+
+# Log di avvio
+if VAPID_PRIVATE_KEY and VAPID_PUBLIC_KEY:
+    print(f"[PUSH] VAPID keys loaded OK (public: {VAPID_PUBLIC_KEY[:20]}...)")
+else:
+    print("[PUSH] ⚠️ VAPID keys NOT configured — push notifications disabled")
 
 
 def get_vapid_public_key() -> str:

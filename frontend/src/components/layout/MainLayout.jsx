@@ -38,9 +38,18 @@ export default function MainLayout() {
     // Auto-subscribe push notifications al login
     useEffect(() => {
         if (user && isSupported && !isSubscribed) {
+            console.log('[Push] Auto-subscribe: user logged in, attempting subscription...');
             // Ritardo breve per non bloccare il rendering iniziale
-            const timer = setTimeout(() => subscribe(), 2000);
+            const timer = setTimeout(() => {
+                subscribe().then(ok => {
+                    console.log('[Push] Auto-subscribe result:', ok);
+                }).catch(err => {
+                    console.error('[Push] Auto-subscribe error:', err);
+                });
+            }, 2000);
             return () => clearTimeout(timer);
+        } else if (user) {
+            console.log(`[Push] Skip auto-subscribe: supported=${isSupported} subscribed=${isSubscribed}`);
         }
     }, [user, isSupported, isSubscribed, subscribe]);
 
