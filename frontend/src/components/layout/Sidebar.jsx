@@ -160,7 +160,7 @@ const getMenuItems = (hasPermission) => {
             { title: 'Report Forniture Blocchi', path: '/admin/production/reports', permission: 'view_production_reports', icon: '📊' },
             { type: 'divider', label: 'Logistica Materiali' }, // Visual separator
             { title: 'Richiesta Materiali', path: '/logistics/request', permission: 'request_logistics', icon: '📋' },
-            { title: 'Gestione Richieste', path: '/logistics/pool', permission: 'manage_logistics_pool', icon: '🚛' },
+            { title: 'Gestione Richieste', path: '/logistics/pool', permission: 'manage_logistics_pool', icon: '🚛', titleColor: '#0ea5e9' },
             { title: 'Mappa Richieste', path: '/logistics/dashboard', permission: 'supervise_logistics', icon: '📊' },
             { title: 'Config. Logistica', path: '/admin/logistics', permission: 'manage_logistics_config', icon: '📦' },
             { type: 'divider', label: 'Check List Obbligatorie' },
@@ -260,7 +260,7 @@ function SidebarItem({ item, isOpen, pendingCounts, onItemClick, onResetBadge })
                                     <span className={`${isChildActive ? 'text-brand-green' : 'text-slate-400'}`}>
                                         {getIcon(child.icon, "w-4 h-4")}
                                     </span>
-                                    <span className="flex-1">{child.title}</span>
+                                    <span className="flex-1" style={child.titleColor ? { color: child.titleColor, fontWeight: 700 } : undefined}>{child.title}</span>
                                     {child.path === '/hr/approvals' && (pendingCounts.leaves + pendingCounts.events) > 0 && (
                                         <span className="bg-brand-orange/20 text-brand-orange text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
                                             {pendingCounts.leaves + pendingCounts.events}
