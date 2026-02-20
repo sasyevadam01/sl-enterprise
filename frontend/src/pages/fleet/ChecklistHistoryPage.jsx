@@ -98,9 +98,22 @@ export default function ChecklistHistoryPage() {
         const activeVehicles = vehicles.filter(v => v.is_active !== false);
         const checkedIds = new Set(checklists.map(c => c.vehicle_id));
         const prevCheckedIds = new Set(prevDayChecklists.map(c => c.vehicle_id));
+
+        // Map vehicle_id -> operator name from yesterday
+        const prevOperatorMap = {};
+        prevDayChecklists.forEach(c => {
+            if (!prevOperatorMap[c.vehicle_id]) {
+                prevOperatorMap[c.vehicle_id] = c.operator?.full_name || c.operator?.username || null;
+            }
+        });
+
         const unchecked = activeVehicles
             .filter(v => !checkedIds.has(v.id))
-            .map(v => ({ ...v, missedYesterday: !prevCheckedIds.has(v.id) }));
+            .map(v => ({
+                ...v,
+                missedYesterday: !prevCheckedIds.has(v.id),
+                yesterdayOperator: prevOperatorMap[v.id] || null
+            }));
         const total = activeVehicles.length;
         const checked = checkedIds.size;
         const pct = total > 0 ? Math.round((checked / total) * 100) : 0;
@@ -280,6 +293,11 @@ export default function ChecklistHistoryPage() {
                                                                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
                                                                     {v.brand || ''} • {v.vehicle_type}
                                                                 </p>
+                                                                {v.yesterdayOperator && (
+                                                                    <p className="text-[10px] text-blue-500 font-bold mt-0.5 flex items-center gap-1">
+                                                                        <User size={10} /> Ieri: {v.yesterdayOperator}
+                                                                    </p>
+                                                                )}
                                                             </div>
                                                         </div>
                                                         {v.missedYesterday && (
