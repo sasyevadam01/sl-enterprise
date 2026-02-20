@@ -639,7 +639,7 @@ async def get_production_reports(
             urgent_count += req.quantity
 
         # Aggregazione per settore con breakdown memory/spugna
-        sector_key = req.target_sector or 'non_specificato'
+        sector_key = (req.target_sector or 'non_specificato').lower()
         if sector_key not in by_sector:
             by_sector[sector_key] = {"memory": 0, "sponge": 0, "total": 0}
         by_sector[sector_key]["total"] += req.quantity
@@ -675,7 +675,7 @@ async def get_production_reports(
 
         # Sector label for Excel
         sector_labels = {'pantografo': 'Pantografo', 'giostra': 'Giostra', 'altro': 'Altro'}
-        sector_display = sector_labels.get(req.target_sector, '') if req.target_sector else ''
+        sector_display = sector_labels.get(req.target_sector.lower(), '') if req.target_sector else ''
 
         # Row for Excel
         data_rows.append({
