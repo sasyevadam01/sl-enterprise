@@ -6,6 +6,9 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+
+IT_TZ = ZoneInfo("Europe/Rome")
 from typing import List, Optional
 from pydantic import BaseModel
 import os
@@ -425,7 +428,7 @@ def get_current_shift():
     """Determina il turno corrente in base all'ora.
     Returns: 'morning', 'evening', or None (fuori finestra).
     """
-    now = datetime.now()
+    now = datetime.now(IT_TZ)
     hour = now.hour
     minute = now.minute
     time_val = hour * 60 + minute  # minuti dalla mezzanotte
@@ -683,7 +686,7 @@ async def create_checklist(
         # 6. Determine Shift
         current_shift = get_current_shift()
         if not current_shift:
-            now = datetime.now()
+            now = datetime.now(IT_TZ)
             h, m = now.hour, now.minute
             if h * 60 + m < 360:  # Before 06:00
                 raise HTTPException(400, "Checklist non disponibile. Il prossimo turno inizia alle 06:00.")
@@ -693,7 +696,7 @@ async def create_checklist(
                 raise HTTPException(400, "Turno terminato. Il prossimo check sarà disponibile domani alle 06:00.")
 
         # 7. Check if this vehicle was already checked THIS shift TODAY
-        today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        today_start = datetime.now(IT_TZ).replace(hour=0, minute=0, second=0, microsecond=0)
         already_done = db.query(FleetChecklist).filter(
             FleetChecklist.vehicle_id == vehicle_id,
             FleetChecklist.shift == current_shift,
@@ -774,7 +777,7 @@ async def get_shift_info(
 ):
     """Restituisce il turno corrente e i mezzi già controllati per questo turno."""
     current_shift = get_current_shift()
-    now = datetime.now()
+    now = datetime.now(IT_TZ)
     today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
     
     # Determine next shift info for display

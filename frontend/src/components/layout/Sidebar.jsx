@@ -140,8 +140,6 @@ const getMenuItems = (hasPermission) => {
         titleColor: '#ef4444',
         children: [
             { title: 'Control Room', path: '/logistics/control-room', permission: 'admin_users', icon: '🎯' },
-            { title: 'Mappa Richieste', path: '/logistics/dashboard', permission: 'admin_users', icon: '📊' },
-            { title: 'Config. Logistica', path: '/admin/logistics', permission: 'admin_users', icon: '⚙️' },
         ],
     });
 
