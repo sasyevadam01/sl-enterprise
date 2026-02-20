@@ -182,6 +182,107 @@ async def delete_vehicle(
 
 
 # ============================================================
+# BLOCCO VEICOLI PER SICUREZZA
+# ============================================================
+
+BLOCK_PREFIX = "[BLOCK_INFO]"
+BLOCK_SUFFIX = "[/BLOCK_INFO]"
+
+
+def _parse_block_info(notes: str) -> dict:
+    """Estrae le info di blocco dal campo notes."""
+    if not notes or BLOCK_PREFIX not in notes:
+        return None
+    try:
+        start = notes.index(BLOCK_PREFIX) + len(BLOCK_PREFIX)
+        end = notes.index(BLOCK_SUFFIX)
+        return json.loads(notes[start:end])
+    except (ValueError, json.JSONDecodeError):
+        return None
+
+
+def _strip_block_info(notes: str) -> str:
+    """Rimuove le info di blocco dal campo notes."""
+    if not notes or BLOCK_PREFIX not in notes:
+        return notes or ""
+    try:
+        start = notes.index(BLOCK_PREFIX)
+        end = notes.index(BLOCK_SUFFIX) + len(BLOCK_SUFFIX)
+        cleaned = (notes[:start] + notes[end:]).strip()
+        return cleaned if cleaned else None
+    except ValueError:
+        return notes
+
+
+class BlockVehicleRequest(BaseModel):
+    reason: str  # Motivazione obbligatoria
+
+
+@router.patch("/vehicles/{vehicle_id}/block", summary="Blocca Veicolo per Sicurezza")
+async def block_vehicle(
+    vehicle_id: int,
+    body: BlockVehicleRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Blocca un veicolo impedendone l'utilizzo. Solo utenti autorizzati (PERMESSO_ZERO)."""
+    vehicle = db.query(FleetVehicle).filter(FleetVehicle.id == vehicle_id).first()
+    if not vehicle:
+        raise HTTPException(404, "Mezzo non trovato")
+    if vehicle.status == 'blocked':
+        raise HTTPException(400, "Mezzo già bloccato")
+
+    # Salva stato precedente e info blocco nel campo notes
+    now = datetime.now(IT_TZ)
+    block_info = {
+        "by": current_user.full_name or current_user.username,
+        "by_id": current_user.id,
+        "reason": body.reason.strip(),
+        "at": now.isoformat(),
+        "previous_status": vehicle.status or "operational"
+    }
+    block_tag = f"{BLOCK_PREFIX}{json.dumps(block_info, ensure_ascii=False)}{BLOCK_SUFFIX}"
+
+    # Prepend block info to notes (preserva note esistenti)
+    existing_notes = _strip_block_info(vehicle.notes)  # Clean any old block info
+    vehicle.notes = f"{block_tag}\n{existing_notes}" if existing_notes else block_tag
+    vehicle.status = "blocked"
+
+    db.commit()
+    db.refresh(vehicle)
+    return {
+        "message": f"Veicolo {vehicle.internal_code} bloccato per sicurezza",
+        "block_info": block_info
+    }
+
+
+@router.patch("/vehicles/{vehicle_id}/unblock", summary="Sblocca Veicolo")
+async def unblock_vehicle(
+    vehicle_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Sblocca un veicolo precedentemente bloccato."""
+    vehicle = db.query(FleetVehicle).filter(FleetVehicle.id == vehicle_id).first()
+    if not vehicle:
+        raise HTTPException(404, "Mezzo non trovato")
+    if vehicle.status != 'blocked':
+        raise HTTPException(400, "Mezzo non è bloccato")
+
+    # Recupera stato precedente
+    block_info = _parse_block_info(vehicle.notes)
+    previous_status = block_info.get("previous_status", "operational") if block_info else "operational"
+
+    # Ripristina
+    vehicle.status = previous_status
+    vehicle.notes = _strip_block_info(vehicle.notes)
+
+    db.commit()
+    db.refresh(vehicle)
+    return {"message": f"Veicolo {vehicle.internal_code} sbloccato", "restored_status": previous_status}
+
+
+# ============================================================
 # TICKET GUASTI
 # ============================================================
 
@@ -560,6 +661,17 @@ async def create_checklist(
         vehicle = db.query(FleetVehicle).filter(FleetVehicle.id == vehicle_id).first()
         if not vehicle:
             raise HTTPException(404, "Veicolo non trovato")
+
+        # 1b. Blocco Sicurezza — impedisce check su veicoli bloccati
+        if vehicle.status == 'blocked':
+            block_info = _parse_block_info(vehicle.notes)
+            reason = block_info.get('reason', 'Motivo non specificato') if block_info else 'Motivo non specificato'
+            blocker = block_info.get('by', 'Sconosciuto') if block_info else 'Sconosciuto'
+            raise HTTPException(
+                403,
+                f"⛔ VEICOLO BLOCCATO PER SICUREZZA — Non è consentito effettuare il check. "
+                f"Motivo: {reason}. Bloccato da: {blocker}"
+            )
 
         # 2. setup directories
         BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

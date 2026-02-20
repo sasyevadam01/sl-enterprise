@@ -167,6 +167,8 @@ export const fleetApi = {
   },
   resolveChecklist: (id, notes) => client.put(`/fleet/checklists/${id}/resolve`, { notes }),
   getShiftInfo: () => client.get("/fleet/shift-info"),
+  blockVehicle: (vehicleId, reason) => client.patch(`/fleet/vehicles/${vehicleId}/block`, { reason }),
+  unblockVehicle: (vehicleId) => client.patch(`/fleet/vehicles/${vehicleId}/unblock`),
 };
 
 export const ovenApi = {

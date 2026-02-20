@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { fleetApi } from '../../api/client';
 import { useUI, StandardModal } from '../../components/ui/CustomUI';
 import { useAuth } from '../../context/AuthContext';
+import { useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 // date-fns removed: shift-info endpoint handles date logic server-side
 import {
@@ -23,7 +24,11 @@ import {
     Truck,
     Tablet,
     Camera,
-    Upload
+    Upload,
+    Lock,
+    Unlock,
+    ShieldAlert,
+    X
 } from 'lucide-react';
 
 const ForkliftIcon = ({ className = "w-6 h-6", color = "currentColor" }) => (
@@ -60,7 +65,7 @@ const CHECKS = [
 export default function VehicleChecklistPage() {
     const { toast } = useUI();
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const { user, hasPermission } = useAuth();
     const [step, setStep] = useState(1); // 1: Select, 2: Check, 3: Success
     const [vehicles, setVehicles] = useState([]);
     const [selectedVehicle, setSelectedVehicle] = useState(null);
@@ -95,6 +100,13 @@ export default function VehicleChecklistPage() {
     const [activeView, setActiveView] = useState('checklist'); // checklist, management
     const canManageFleet = user?.permissions?.includes('manage_fleet') || user?.permissions?.includes('*');
 
+    // Vehicle Block State
+    const [blockModal, setBlockModal] = useState(null); // vehicle object to block
+    const [blockReason, setBlockReason] = useState('');
+    const [blockingInProgress, setBlockingInProgress] = useState(false);
+    const [blockedAlert, setBlockedAlert] = useState(null); // vehicle object for alert
+    const canBlockVehicles = hasPermission('PERMESSO_ZERO') || hasPermission('PANNELLO_ADMIN');
+
     // Management State
     const [showVehicleModal, setShowVehicleModal] = useState(false);
     const [vehicleToEdit, setVehicleToEdit] = useState(null);
@@ -116,7 +128,7 @@ export default function VehicleChecklistPage() {
     const loadData = async () => {
         try {
             const [vData, shiftData] = await Promise.all([
-                fleetApi.getVehicles({ status: 'operational' }),
+                fleetApi.getVehicles(),  // Load ALL vehicles (operational + blocked)
                 fleetApi.getShiftInfo()
             ]);
 
@@ -200,9 +212,56 @@ export default function VehicleChecklistPage() {
     const [confirmVehicle, setConfirmVehicle] = useState(null);
 
     const handleSelectVehicle = (v) => {
+        if (v.status === 'blocked') {
+            setBlockedAlert(v);
+            return;
+        }
         if (checkedVehicles[v.id]) return;
         setConfirmVehicle(v);
     };
+
+    const handleBlockVehicle = async () => {
+        if (!blockModal || !blockReason.trim()) {
+            toast.error('Inserisci un motivo per il blocco');
+            return;
+        }
+        setBlockingInProgress(true);
+        try {
+            await fleetApi.blockVehicle(blockModal.id, blockReason.trim());
+            toast.success(`Veicolo ${blockModal.internal_code} bloccato`);
+            setBlockModal(null);
+            setBlockReason('');
+            loadData();
+        } catch (err) {
+            toast.error(err.response?.data?.detail || 'Errore blocco veicolo');
+        } finally {
+            setBlockingInProgress(false);
+        }
+    };
+
+    const handleUnblockVehicle = async (v) => {
+        if (!window.confirm(`Sbloccare il veicolo ${v.internal_code}?`)) return;
+        try {
+            await fleetApi.unblockVehicle(v.id);
+            toast.success(`Veicolo ${v.internal_code} sbloccato`);
+            loadData();
+        } catch (err) {
+            toast.error(err.response?.data?.detail || 'Errore sblocco veicolo');
+        }
+    };
+
+    // Parse block info from notes
+    const getBlockInfo = useCallback((v) => {
+        if (v.status !== 'blocked' || !v.notes) return null;
+        try {
+            const prefix = '[BLOCK_INFO]';
+            const suffix = '[/BLOCK_INFO]';
+            const start = v.notes.indexOf(prefix) + prefix.length;
+            const end = v.notes.indexOf(suffix);
+            if (start < prefix.length || end < 0) return null;
+            return JSON.parse(v.notes.substring(start, end));
+        } catch { return null; }
+    }, []);
 
     const confirmSelection = () => {
         if (confirmVehicle) {
@@ -616,57 +675,96 @@ export default function VehicleChecklistPage() {
                                                         const operatorName = checkInfo?.operator;
                                                         const checkTime = checkInfo?.time;
                                                         const vTabletStatus = checkInfo?.tabletStatus;
+                                                        const isBlocked = v.status === 'blocked';
+                                                        const blockInfo = isBlocked ? getBlockInfo(v) : null;
 
                                                         const isMitsubishi = v.brand?.toLowerCase().includes('mitsubishi');
                                                         const accentColor = isMitsubishi ? 'emerald' : 'amber';
 
                                                         return (
-                                                            <button
-                                                                key={v.id}
-                                                                onClick={() => handleSelectVehicle(v)}
-                                                                disabled={isChecked}
-                                                                className={`w-full flex items-center gap-4 px-4 py-3.5 text-left transition-all
-                                                                    ${isChecked
-                                                                        ? 'bg-slate-50 opacity-60 cursor-not-allowed'
-                                                                        : `hover:bg-${accentColor}-50 active:bg-${accentColor}-100 cursor-pointer`
-                                                                    }`}
-                                                            >
-                                                                {/* Vehicle Number */}
-                                                                <div className={`flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg border ${isChecked
-                                                                    ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
-                                                                    : `bg-${accentColor}-50 text-${accentColor}-700 border-${accentColor}-200`
-                                                                    }`}>
-                                                                    {isChecked ? <CheckCircle2 size={20} /> : v.internal_code}
-                                                                </div>
+                                                            <div key={v.id} className="relative group">
+                                                                <button
+                                                                    onClick={() => handleSelectVehicle(v)}
+                                                                    disabled={isChecked && !isBlocked}
+                                                                    className={`w-full flex items-center gap-3 md:gap-4 px-3 md:px-4 py-3 md:py-3.5 text-left transition-all
+                                                                        ${isBlocked
+                                                                            ? 'bg-red-50 cursor-pointer'
+                                                                            : isChecked
+                                                                                ? 'bg-slate-50 opacity-60 cursor-not-allowed'
+                                                                                : `hover:bg-${accentColor}-50 active:bg-${accentColor}-100 cursor-pointer`
+                                                                        }`}
+                                                                >
+                                                                    {/* Vehicle Number */}
+                                                                    <div className={`flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center font-black text-sm md:text-lg border
+                                                                        ${isBlocked
+                                                                            ? 'bg-red-100 text-red-600 border-red-300'
+                                                                            : isChecked
+                                                                                ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                                                                                : `bg-${accentColor}-50 text-${accentColor}-700 border-${accentColor}-200`
+                                                                        }`}>
+                                                                        {isBlocked ? <Lock size={18} /> : isChecked ? <CheckCircle2 size={20} /> : v.internal_code}
+                                                                    </div>
 
-                                                                {/* Info */}
-                                                                <div className="flex-grow min-w-0">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <span className={`font-bold text-sm ${isChecked ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
-                                                                            {v.brand || 'N/D'} {v.internal_code}
-                                                                        </span>
-                                                                        {/* Tablet Status */}
-                                                                        {isChecked && vTabletStatus === 'broken' && (
-                                                                            <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-bold">TABLET KO</span>
+                                                                    {/* Info */}
+                                                                    <div className="flex-grow min-w-0">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span className={`font-bold text-sm ${isBlocked ? 'text-red-700' : isChecked ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
+                                                                                {v.brand || 'N/D'} {v.internal_code}
+                                                                            </span>
+                                                                            {isBlocked && (
+                                                                                <span className="text-[9px] bg-red-500 text-white px-2 py-0.5 rounded-full font-black uppercase tracking-wider animate-pulse">
+                                                                                    ⛔ BLOCCATO
+                                                                                </span>
+                                                                            )}
+                                                                            {isChecked && vTabletStatus === 'broken' && (
+                                                                                <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-bold">TABLET KO</span>
+                                                                            )}
+                                                                        </div>
+                                                                        <div className={`text-xs truncate ${isBlocked ? 'text-red-400 font-semibold' : 'text-slate-400'}`}>
+                                                                            {isBlocked
+                                                                                ? (blockInfo?.reason || 'Bloccato per sicurezza')
+                                                                                : isChecked
+                                                                                    ? `${operatorName} • ${checkTime || ''}`
+                                                                                    : v.assigned_operator || v.model || type
+                                                                            }
+                                                                        </div>
+                                                                    </div>
+
+                                                                    {/* Action Indicator */}
+                                                                    <div className="flex-shrink-0">
+                                                                        {isBlocked ? (
+                                                                            <ShieldAlert size={18} className="text-red-500" />
+                                                                        ) : isChecked ? (
+                                                                            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">FATTO</span>
+                                                                        ) : (
+                                                                            <ArrowRight size={16} className={`text-${accentColor}-400`} />
                                                                         )}
                                                                     </div>
-                                                                    <div className="text-xs text-slate-400 truncate">
-                                                                        {isChecked
-                                                                            ? `${operatorName} • ${checkTime || ''}`
-                                                                            : v.assigned_operator || v.model || type
-                                                                        }
-                                                                    </div>
-                                                                </div>
+                                                                </button>
 
-                                                                {/* Action Indicator */}
-                                                                <div className="flex-shrink-0">
-                                                                    {isChecked ? (
-                                                                        <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">FATTO</span>
-                                                                    ) : (
-                                                                        <ArrowRight size={16} className={`text-${accentColor}-400`} />
-                                                                    )}
-                                                                </div>
-                                                            </button>
+                                                                {/* Block/Unblock Toggle for authorized users */}
+                                                                {canBlockVehicles && !isChecked && (
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            if (isBlocked) {
+                                                                                handleUnblockVehicle(v);
+                                                                            } else {
+                                                                                setBlockModal(v);
+                                                                                setBlockReason('');
+                                                                            }
+                                                                        }}
+                                                                        title={isBlocked ? 'Sblocca veicolo' : 'Blocca veicolo'}
+                                                                        className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-all z-10
+                                                                            ${isBlocked
+                                                                                ? 'bg-green-100 text-green-600 hover:bg-green-200'
+                                                                                : 'bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 opacity-0 group-hover:opacity-100'
+                                                                            } cursor-pointer`}
+                                                                    >
+                                                                        {isBlocked ? <Unlock size={14} /> : <Lock size={14} />}
+                                                                    </button>
+                                                                )}
+                                                            </div>
                                                         );
                                                     })}
                                                 </div>
@@ -1289,6 +1387,118 @@ export default function VehicleChecklistPage() {
                     >
                         Ho capito, vado a farla
                     </button>
+                </div>
+            </StandardModal>
+
+            {/* ═══════════════════════════════════════════════ */}
+            {/* BLOCKED VEHICLE ALERT (Full-screen safety warning) */}
+            {/* ═══════════════════════════════════════════════ */}
+            <AnimatePresence>
+                {blockedAlert && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[9999] bg-red-600 flex flex-col items-center justify-center p-6 text-white"
+                        onClick={() => setBlockedAlert(null)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.5, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.8 }}
+                            className="text-center max-w-md"
+                        >
+                            <div className="w-28 h-28 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-8 animate-pulse">
+                                <ShieldAlert size={64} className="text-white" />
+                            </div>
+
+                            <h1 className="text-3xl md:text-5xl font-black uppercase tracking-tight mb-4 leading-tight">
+                                ⛔ Veicolo Bloccato
+                            </h1>
+
+                            <div className="bg-white/10 rounded-3xl p-6 mb-6 backdrop-blur-sm border border-white/20">
+                                <p className="text-xl font-black mb-2">
+                                    {blockedAlert.brand} — {blockedAlert.internal_code}
+                                </p>
+                                <p className="text-white/80 text-lg font-bold uppercase tracking-widest">
+                                    NON UTILIZZARE QUESTO MEZZO
+                                </p>
+                            </div>
+
+                            {(() => {
+                                const info = getBlockInfo(blockedAlert);
+                                return info ? (
+                                    <div className="space-y-2 mb-8 text-sm">
+                                        <p className="text-white/90">
+                                            <span className="font-black uppercase tracking-widest text-[10px] text-white/50 block mb-1">Motivo</span>
+                                            {info.reason}
+                                        </p>
+                                        <p className="text-white/70">
+                                            <span className="font-black uppercase tracking-widest text-[10px] text-white/50 block mb-1">Bloccato da</span>
+                                            {info.by} — {new Date(info.at).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                        </p>
+                                    </div>
+                                ) : null;
+                            })()}
+
+                            <button
+                                onClick={() => setBlockedAlert(null)}
+                                className="w-full py-5 bg-white text-red-600 rounded-2xl font-black uppercase tracking-widest text-sm shadow-lg hover:bg-red-50 transition-all active:scale-95 cursor-pointer"
+                            >
+                                Ho capito — Chiudi
+                            </button>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* ═══════════════════════════════════════════════ */}
+            {/* BLOCK REASON MODAL (for coordinators/security) */}
+            {/* ═══════════════════════════════════════════════ */}
+            <StandardModal
+                isOpen={!!blockModal}
+                onClose={() => { setBlockModal(null); setBlockReason(''); }}
+                title={`Blocca Veicolo ${blockModal?.internal_code || ''}`}
+            >
+                <div className="p-6 space-y-6">
+                    <div className="flex items-center gap-4 bg-red-50 border border-red-200 rounded-2xl p-4">
+                        <div className="w-14 h-14 bg-red-100 rounded-2xl flex items-center justify-center text-red-500 shrink-0">
+                            <Lock size={28} />
+                        </div>
+                        <div>
+                            <p className="font-black text-red-700 text-sm uppercase tracking-wider">Blocco per Sicurezza</p>
+                            <p className="text-red-400 text-xs mt-1">Il veicolo sarà inutilizzabile fino allo sblocco. Tutti vedranno l'avviso.</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">
+                            Motivo del blocco *
+                        </label>
+                        <textarea
+                            value={blockReason}
+                            onChange={(e) => setBlockReason(e.target.value)}
+                            placeholder="Es: Freni non funzionanti, perdita olio, guasto forche..."
+                            rows={3}
+                            className="w-full border border-slate-200 rounded-xl p-4 text-sm focus:border-red-400 focus:ring-1 focus:ring-red-400 outline-none resize-none"
+                        />
+                    </div>
+
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => { setBlockModal(null); setBlockReason(''); }}
+                            className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all cursor-pointer"
+                        >
+                            Annulla
+                        </button>
+                        <button
+                            onClick={handleBlockVehicle}
+                            disabled={!blockReason.trim() || blockingInProgress}
+                            className="flex-1 py-4 bg-red-600 hover:bg-red-700 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-sm transition-all active:scale-95 cursor-pointer"
+                        >
+                            {blockingInProgress ? 'Blocco...' : '🔒 Blocca Veicolo'}
+                        </button>
+                    </div>
                 </div>
             </StandardModal>
         </div >
