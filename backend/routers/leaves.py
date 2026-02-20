@@ -79,11 +79,20 @@ async def create_leave_request(
     if not employee:
         raise HTTPException(status_code=404, detail="Dipendente non trovato")
     
+    # Per permessi orari: auto-calcola ore dalla differenza temporale
+    data = request_data.model_dump()
+    if request_data.leave_type in ("permit", "sudden_permit"):
+        if request_data.end_date <= request_data.start_date:
+            raise HTTPException(status_code=400, detail="L'ora di fine deve essere successiva all'ora di inizio")
+        if not data.get("hours"):
+            diff_seconds = (request_data.end_date - request_data.start_date).total_seconds()
+            data["hours"] = max(1, round(diff_seconds / 3600))
+    
     # Crea richiesta
     leave_req = LeaveRequest(
         employee_id=employee_id,
-        requested_by=current_user.id,  # Track who made the request
-        **request_data.model_dump()
+        requested_by=current_user.id,
+        **data
     )
     db.add(leave_req)
     
