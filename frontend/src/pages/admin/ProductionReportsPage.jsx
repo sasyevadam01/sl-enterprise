@@ -319,26 +319,52 @@ export default function ProductionReportsPage() {
                     </div>
 
                     {/* Settore: Pantografo vs Giostra */}
-                    <div className="grid grid-cols-2 md:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {/* Pantografo */}
                         <div className="master-card p-4 dashboard-card">
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-3 mb-3">
                                 <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
                                     <Target className="text-indigo-600" size={20} />
                                 </div>
                                 <div>
-                                    <p className="text-slate-500 text-xs uppercase">Pantografo</p>
-                                    <p className="text-2xl font-bold text-slate-800">{stats.by_sector?.pantografo || 0}</p>
+                                    <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Pantografo</p>
+                                    <p className="text-2xl font-bold text-slate-800">{stats.by_sector?.pantografo?.total || 0}</p>
+                                </div>
+                            </div>
+                            <div className="flex gap-4 pl-[52px]">
+                                <div className="flex items-center gap-1.5">
+                                    <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                                    <span className="text-xs text-slate-500">Memory</span>
+                                    <span className="text-xs font-bold text-slate-700">{stats.by_sector?.pantografo?.memory || 0}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <span className="w-2 h-2 rounded-full bg-cyan-500"></span>
+                                    <span className="text-xs text-slate-500">Spugna</span>
+                                    <span className="text-xs font-bold text-slate-700">{stats.by_sector?.pantografo?.sponge || 0}</span>
                                 </div>
                             </div>
                         </div>
+                        {/* Giostra */}
                         <div className="master-card p-4 dashboard-card">
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-3 mb-3">
                                 <div className="w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center">
                                     <Target className="text-teal-600" size={20} />
                                 </div>
                                 <div>
-                                    <p className="text-slate-500 text-xs uppercase">Giostra</p>
-                                    <p className="text-2xl font-bold text-slate-800">{stats.by_sector?.giostra || 0}</p>
+                                    <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Giostra</p>
+                                    <p className="text-2xl font-bold text-slate-800">{stats.by_sector?.giostra?.total || 0}</p>
+                                </div>
+                            </div>
+                            <div className="flex gap-4 pl-[52px]">
+                                <div className="flex items-center gap-1.5">
+                                    <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                                    <span className="text-xs text-slate-500">Memory</span>
+                                    <span className="text-xs font-bold text-slate-700">{stats.by_sector?.giostra?.memory || 0}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <span className="w-2 h-2 rounded-full bg-cyan-500"></span>
+                                    <span className="text-xs text-slate-500">Spugna</span>
+                                    <span className="text-xs font-bold text-slate-700">{stats.by_sector?.giostra?.sponge || 0}</span>
                                 </div>
                             </div>
                         </div>

@@ -638,9 +638,15 @@ async def get_production_reports(
         if hasattr(req, 'is_urgent') and req.is_urgent:
             urgent_count += req.quantity
 
-        # Aggregazione per settore
+        # Aggregazione per settore con breakdown memory/spugna
         sector_key = req.target_sector or 'non_specificato'
-        by_sector[sector_key] = by_sector.get(sector_key, 0) + req.quantity
+        if sector_key not in by_sector:
+            by_sector[sector_key] = {"memory": 0, "sponge": 0, "total": 0}
+        by_sector[sector_key]["total"] += req.quantity
+        if req.request_type == 'memory':
+            by_sector[sector_key]["memory"] += req.quantity
+        else:
+            by_sector[sector_key]["sponge"] += req.quantity
         # Count Type
         by_type[mat_label] = by_type.get(mat_label, 0) + req.quantity
         
