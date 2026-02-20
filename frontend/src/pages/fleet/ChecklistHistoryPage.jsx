@@ -20,7 +20,10 @@ import {
     Filter,
     Search,
     Camera,
-    Maximize2
+    Maximize2,
+    ShieldCheck,
+    ShieldAlert,
+    ChevronDown as ChevronDownIcon
 } from 'lucide-react';
 import StylishCalendar from '../../components/ui/StylishCalendar';
 import { isValid } from 'date-fns';
@@ -37,6 +40,8 @@ export default function ChecklistHistoryPage() {
     const [loading, setLoading] = useState(true);
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [showCalendar, setShowCalendar] = useState(false);
+    const [prevDayChecklists, setPrevDayChecklists] = useState([]);
+    const [showUnchecked, setShowUnchecked] = useState(false);
 
     // Filters
     const [filterVehicle, setFilterVehicle] = useState('');
@@ -53,12 +58,15 @@ export default function ChecklistHistoryPage() {
         setLoading(true);
         try {
             const formattedDate = format(selectedDate, 'yyyy-MM-dd');
-            const [historyData, vehiclesData] = await Promise.all([
+            const prevDate = format(subDays(selectedDate, 1), 'yyyy-MM-dd');
+            const [historyData, prevDayData, vehiclesData] = await Promise.all([
                 fleetApi.getChecklists({ date: formattedDate, limit: 1000 }),
+                fleetApi.getChecklists({ date: prevDate, limit: 1000 }),
                 fleetApi.getVehicles()
             ]);
 
             setChecklists(historyData);
+            setPrevDayChecklists(prevDayData);
             setVehicles(vehiclesData);
         } catch (err) {
             console.error(err);
@@ -83,6 +91,20 @@ export default function ChecklistHistoryPage() {
     }, [checklists, filterVehicle, searchQuery, vehicles]);
 
     const findVehicle = (id) => vehicles.find(v => v.id === id);
+
+    // Coverage computation
+    const coverage = useMemo(() => {
+        const activeVehicles = vehicles.filter(v => v.is_active !== false);
+        const checkedIds = new Set(checklists.map(c => c.vehicle_id));
+        const prevCheckedIds = new Set(prevDayChecklists.map(c => c.vehicle_id));
+        const unchecked = activeVehicles
+            .filter(v => !checkedIds.has(v.id))
+            .map(v => ({ ...v, missedYesterday: !prevCheckedIds.has(v.id) }));
+        const total = activeVehicles.length;
+        const checked = checkedIds.size;
+        const pct = total > 0 ? Math.round((checked / total) * 100) : 0;
+        return { total, checked, unchecked, pct };
+    }, [vehicles, checklists, prevDayChecklists]);
 
     return (
         <div className="min-h-screen pb-20">
@@ -179,6 +201,101 @@ export default function ChecklistHistoryPage() {
                         </button>
                     </div>
                 </div>
+
+                {/* Coverage KPI Bar */}
+                {!loading && (
+                    <div className="flex flex-col gap-4 mb-12">
+                        <div className="grid grid-cols-3 gap-4">
+                            <div className="bg-white border border-gray-200 rounded-[28px] p-6 flex items-center gap-4 shadow-sm">
+                                <div className="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center">
+                                    <ShieldCheck className="text-emerald-600" size={28} />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Controllati</p>
+                                    <p className="text-3xl font-black text-gray-900">{coverage.checked}</p>
+                                </div>
+                            </div>
+                            <div className="bg-white border border-gray-200 rounded-[28px] p-6 flex items-center gap-4 shadow-sm">
+                                <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center">
+                                    <ShieldAlert className="text-red-500" size={28} />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Non Controllati</p>
+                                    <p className="text-3xl font-black text-gray-900">{coverage.unchecked.length}</p>
+                                </div>
+                            </div>
+                            <div className="bg-white border border-gray-200 rounded-[28px] p-6 flex items-center gap-4 shadow-sm">
+                                <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center">
+                                    <span className="text-blue-600 font-black text-lg">%</span>
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Copertura</p>
+                                    <p className={`text-3xl font-black ${coverage.pct >= 80 ? 'text-emerald-600' : coverage.pct >= 50 ? 'text-amber-500' : 'text-red-500'}`}>{coverage.pct}%</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Unchecked vehicles expandable section */}
+                        {coverage.unchecked.length > 0 && (
+                            <div className="bg-white border border-red-100 rounded-[28px] overflow-hidden shadow-sm">
+                                <button
+                                    onClick={() => setShowUnchecked(!showUnchecked)}
+                                    className="w-full flex items-center justify-between px-8 py-5 hover:bg-red-50/50 transition-colors cursor-pointer"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <ShieldAlert className="text-red-500" size={20} />
+                                        <span className="font-black text-sm text-gray-900 uppercase tracking-widest">
+                                            Mezzi Non Controllati ({coverage.unchecked.length})
+                                        </span>
+                                    </div>
+                                    <ChevronDownIcon
+                                        size={20}
+                                        className={`text-gray-400 transition-transform duration-300 ${showUnchecked ? 'rotate-180' : ''}`}
+                                    />
+                                </button>
+
+                                <AnimatePresence>
+                                    {showUnchecked && (
+                                        <motion.div
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: 'auto', opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            transition={{ duration: 0.3 }}
+                                            className="overflow-hidden"
+                                        >
+                                            <div className="px-8 pb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                                {coverage.unchecked.map(v => (
+                                                    <div
+                                                        key={v.id}
+                                                        className={`flex items-center justify-between px-5 py-4 rounded-2xl border transition-colors ${v.missedYesterday
+                                                                ? 'bg-red-50 border-red-200'
+                                                                : 'bg-gray-50 border-gray-200'
+                                                            }`}
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            <Car size={18} className={v.missedYesterday ? 'text-red-400' : 'text-gray-400'} />
+                                                            <div>
+                                                                <p className="font-black text-gray-900 text-sm">{v.internal_code || `#${v.id}`}</p>
+                                                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                                                                    {v.brand || ''} • {v.vehicle_type}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        {v.missedYesterday && (
+                                                            <span className="px-3 py-1 bg-red-500 text-white rounded-xl text-[9px] font-black uppercase tracking-wider whitespace-nowrap">
+                                                                ⚠ Anche ieri
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* Content Grid */}
                 {loading ? (
