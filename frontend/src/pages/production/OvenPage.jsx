@@ -320,7 +320,7 @@ export default function OvenPage() {
 
             {/* Overdue Alert */}
             {overdueItems.length > 0 && (
-                <div className="bg-red-50 border-2 border-red-300 rounded-2xl p-4 mb-6 flex items-center gap-3 animate-pulse">
+                <div className="bg-red-50 border-2 border-red-300 rounded-2xl p-4 mb-6 flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center flex-shrink-0">
                         <AlertTriangle size={20} className="text-white" />
                     </div>
@@ -378,7 +378,7 @@ export default function OvenPage() {
                                         </div>
                                     </div>
                                     {isOverdue && (
-                                        <span className="px-2.5 py-1 bg-red-500 text-white text-[10px] font-black rounded-lg uppercase tracking-wider animate-pulse">
+                                        <span className="px-2.5 py-1 bg-red-500 text-white text-[10px] font-black rounded-lg uppercase tracking-wider">
                                             SCADUTO
                                         </span>
                                     )}
@@ -404,20 +404,20 @@ export default function OvenPage() {
                                 </div>
 
                                 {/* Footer */}
-                                <div className="flex items-center justify-between">
+                                <div className="flex flex-col gap-2">
                                     <div className="flex items-center gap-1.5 text-xs text-slate-400">
                                         <User size={12} />
                                         <span>{item.operator_name || '?'}</span>
                                         <span className="mx-1">•</span>
                                         <span>{getTimeSince(item.inserted_at)}</span>
                                     </div>
-                                    <div className="flex items-center gap-2 relative">
+                                    <div className="flex items-center gap-2 relative flex-wrap">
                                         {/* Prolunga Button */}
                                         <button
                                             onClick={() => setExtendingId(extendingId === item.id ? null : item.id)}
-                                            className="px-3 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100"
+                                            className="flex-1 min-w-0 px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer active:scale-95 flex items-center justify-center gap-1.5 bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100"
                                         >
-                                            <Timer size={14} /> Prolunga
+                                            <Timer size={14} className="shrink-0" /> Prolunga
                                         </button>
                                         {/* Prolunga Popover */}
                                         {extendingId === item.id && (
@@ -437,12 +437,12 @@ export default function OvenPage() {
                                         {/* Rimuovi Button */}
                                         <button
                                             onClick={() => handleRemove(item.id)}
-                                            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 ${isOverdue
+                                            className={`flex-1 min-w-0 px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer active:scale-95 flex items-center justify-center gap-1.5 ${isOverdue
                                                 ? 'bg-red-600 hover:bg-red-700 text-white shadow-sm'
                                                 : 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
                                                 }`}
                                         >
-                                            <CheckCircle2 size={14} /> Rimuovi
+                                            <CheckCircle2 size={14} className="shrink-0" /> Rimuovi
                                         </button>
                                     </div>
                                 </div>
