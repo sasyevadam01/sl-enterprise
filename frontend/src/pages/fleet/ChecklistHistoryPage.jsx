@@ -101,6 +101,10 @@ export default function ChecklistHistoryPage() {
         const checkedIds = new Set(checklists.map(c => c.vehicle_id));
         const prevCheckedIds = new Set(prevDayChecklists.map(c => c.vehicle_id));
 
+        // Per-shift coverage
+        const morningCheckedIds = new Set(checklists.filter(c => c.shift === 'morning').map(c => c.vehicle_id));
+        const eveningCheckedIds = new Set(checklists.filter(c => c.shift === 'evening').map(c => c.vehicle_id));
+
         // Map vehicle_id -> operator name from yesterday
         const prevOperatorMap = {};
         prevDayChecklists.forEach(c => {
@@ -119,7 +123,13 @@ export default function ChecklistHistoryPage() {
         const total = activeVehicles.length;
         const checked = checkedIds.size;
         const pct = total > 0 ? Math.round((checked / total) * 100) : 0;
-        return { total, checked, unchecked, pct };
+
+        const morningChecked = morningCheckedIds.size;
+        const eveningChecked = eveningCheckedIds.size;
+        const morningPct = total > 0 ? Math.round((morningChecked / total) * 100) : 0;
+        const eveningPct = total > 0 ? Math.round((eveningChecked / total) * 100) : 0;
+
+        return { total, checked, unchecked, pct, morningChecked, eveningChecked, morningPct, eveningPct };
     }, [vehicles, checklists, prevDayChecklists]);
 
     return (
@@ -222,8 +232,8 @@ export default function ChecklistHistoryPage() {
                         <button
                             onClick={() => setFilterShift(filterShift === 'morning' ? '' : 'morning')}
                             className={`flex-1 py-3 rounded-[18px] md:rounded-[24px] font-black text-xs uppercase tracking-widest transition-all border cursor-pointer flex items-center justify-center gap-2 ${filterShift === 'morning'
-                                    ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
-                                    : 'bg-white text-amber-600 border-amber-200 hover:bg-amber-50'
+                                ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
+                                : 'bg-white text-amber-600 border-amber-200 hover:bg-amber-50'
                                 }`}
                         >
                             ☀️ Mattutino
@@ -231,8 +241,8 @@ export default function ChecklistHistoryPage() {
                         <button
                             onClick={() => setFilterShift(filterShift === 'evening' ? '' : 'evening')}
                             className={`flex-1 py-3 rounded-[18px] md:rounded-[24px] font-black text-xs uppercase tracking-widest transition-all border cursor-pointer flex items-center justify-center gap-2 ${filterShift === 'evening'
-                                    ? 'bg-indigo-500 text-white border-indigo-500 shadow-sm'
-                                    : 'bg-white text-indigo-600 border-indigo-200 hover:bg-indigo-50'
+                                ? 'bg-indigo-500 text-white border-indigo-500 shadow-sm'
+                                : 'bg-white text-indigo-600 border-indigo-200 hover:bg-indigo-50'
                                 }`}
                         >
                             🌙 Serale
@@ -243,6 +253,7 @@ export default function ChecklistHistoryPage() {
                 {/* Coverage KPI Bar */}
                 {!loading && (
                     <div className="flex flex-col gap-3 md:gap-4 mb-6 md:mb-12">
+                        {/* Row 1: Controllati + Non Controllati + Copertura Totale */}
                         <div className="grid grid-cols-3 gap-2 md:gap-4">
                             <div className="bg-white border border-gray-200 rounded-[20px] md:rounded-[28px] p-3 md:p-6 flex flex-col md:flex-row items-center gap-2 md:gap-4 shadow-sm">
                                 <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-emerald-50 flex items-center justify-center shrink-0">
@@ -269,6 +280,30 @@ export default function ChecklistHistoryPage() {
                                 <div className="text-center md:text-left">
                                     <p className="text-[8px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest">Copertura</p>
                                     <p className={`text-xl md:text-3xl font-black ${coverage.pct >= 80 ? 'text-emerald-600' : coverage.pct >= 50 ? 'text-amber-500' : 'text-red-500'}`}>{coverage.pct}%</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Row 2: Per-Shift Coverage */}
+                        <div className="grid grid-cols-2 gap-2 md:gap-4">
+                            <div className="bg-amber-50 border border-amber-200 rounded-[20px] md:rounded-[28px] p-3 md:p-5 flex items-center gap-3 shadow-sm">
+                                <span className="text-lg md:text-xl">☀️</span>
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-[8px] md:text-[10px] font-black text-amber-500 uppercase tracking-widest">Mattutino</p>
+                                    <div className="flex items-baseline gap-1.5">
+                                        <span className={`text-lg md:text-2xl font-black ${coverage.morningPct >= 80 ? 'text-emerald-600' : coverage.morningPct >= 50 ? 'text-amber-600' : 'text-red-500'}`}>{coverage.morningPct}%</span>
+                                        <span className="text-[10px] md:text-xs text-amber-400 font-bold">{coverage.morningChecked}/{coverage.total}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="bg-indigo-50 border border-indigo-200 rounded-[20px] md:rounded-[28px] p-3 md:p-5 flex items-center gap-3 shadow-sm">
+                                <span className="text-lg md:text-xl">🌙</span>
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-[8px] md:text-[10px] font-black text-indigo-500 uppercase tracking-widest">Serale</p>
+                                    <div className="flex items-baseline gap-1.5">
+                                        <span className={`text-lg md:text-2xl font-black ${coverage.eveningPct >= 80 ? 'text-emerald-600' : coverage.eveningPct >= 50 ? 'text-amber-600' : 'text-red-500'}`}>{coverage.eveningPct}%</span>
+                                        <span className="text-[10px] md:text-xs text-indigo-400 font-bold">{coverage.eveningChecked}/{coverage.total}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
