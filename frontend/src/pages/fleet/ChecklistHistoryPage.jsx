@@ -23,7 +23,8 @@ import {
     Maximize2,
     ShieldCheck,
     ShieldAlert,
-    ChevronDown as ChevronDownIcon
+    ChevronDown as ChevronDownIcon,
+    RotateCcw
 } from 'lucide-react';
 import StylishCalendar from '../../components/ui/StylishCalendar';
 import { isValid } from 'date-fns';
@@ -268,8 +269,8 @@ export default function ChecklistHistoryPage() {
                                                     <div
                                                         key={v.id}
                                                         className={`flex items-center justify-between px-5 py-4 rounded-2xl border transition-colors ${v.missedYesterday
-                                                                ? 'bg-red-50 border-red-200'
-                                                                : 'bg-gray-50 border-gray-200'
+                                                            ? 'bg-red-50 border-red-200'
+                                                            : 'bg-gray-50 border-gray-200'
                                                             }`}
                                                     >
                                                         <div className="flex items-center gap-3">
@@ -505,6 +506,26 @@ function ChecklistDetailModal({ checklist, vehicle, onClose, StandardModal, onRe
         }
     };
 
+    const handleRecurring = async () => {
+        const confirmed = await showConfirm({
+            title: "Problema Ricorrente",
+            message: `Confermi che il problema su ${vehicle?.internal_code || 'questo mezzo'} è ricorrente e già in fase di risoluzione?`,
+            confirmText: "Conferma Ricorrente",
+            type: "info"
+        });
+        if (!confirmed) return;
+
+        try {
+            await fleetApi.resolveChecklist(checklist.id, "[RICORRENTE] Problema già noto e in fase di risoluzione.");
+            toast.success("Segnalazione archiviata come RICORRENTE.");
+            onRefresh();
+            onClose();
+        } catch (err) {
+            console.error(err);
+            toast.error("Errore archiviazione.");
+        }
+    };
+
     // Responsabili manutenzione flotta
     const FLEET_MAINTENANCE_TEAM = [
         { id: 168, name: "Pasquale Iasevoli" },
@@ -713,18 +734,24 @@ function ChecklistDetailModal({ checklist, vehicle, onClose, StandardModal, onRe
 
                 {/* Critical Actions */}
                 {isWarning && !isResolved && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6">
                         <button
                             onClick={handleResolveClick}
-                            className="bg-emerald-600 hover:bg-emerald-500 text-white h-20 rounded-[32px] font-black uppercase tracking-widest flex items-center justify-center gap-4 transition-all shadow-sm active:scale-95 group"
+                            className="bg-emerald-600 hover:bg-emerald-500 text-white h-20 rounded-[32px] font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all shadow-sm active:scale-95 group text-xs"
                         >
-                            <CheckCircle2 size={28} className="group-hover:rotate-12 transition-transform" /> Risolvi
+                            <CheckCircle2 size={24} className="group-hover:rotate-12 transition-transform" /> Risolvi
+                        </button>
+                        <button
+                            onClick={handleRecurring}
+                            className="bg-amber-500 hover:bg-amber-400 text-white h-20 rounded-[32px] font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all shadow-sm active:scale-95 group text-[10px] leading-tight text-center"
+                        >
+                            <RotateCcw size={22} className="group-hover:-rotate-180 transition-transform duration-500 shrink-0" /> Ricorrente<br />Già in Risoluzione
                         </button>
                         <button
                             onClick={handleCreateTask}
-                            className="bg-indigo-600 hover:bg-indigo-500 text-white h-20 rounded-[32px] font-black uppercase tracking-widest flex items-center justify-center gap-4 transition-all shadow-sm active:scale-95 group"
+                            className="bg-indigo-600 hover:bg-indigo-500 text-white h-20 rounded-[32px] font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all shadow-sm active:scale-95 group text-xs"
                         >
-                            <ExternalLink size={24} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" /> Task
+                            <ExternalLink size={22} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" /> Task
                         </button>
                     </div>
                 )}
