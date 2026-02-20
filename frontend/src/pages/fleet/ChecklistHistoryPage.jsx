@@ -123,14 +123,14 @@ export default function ChecklistHistoryPage() {
     return (
         <div className="min-h-screen pb-20">
             {/* Header / Navigation */}
-            <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-gray-200 px-6 py-6 transition-all duration-300">
-                <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-gray-200 px-4 py-4 md:px-6 md:py-6 transition-all duration-300">
+                <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6">
                     <div className="flex items-center gap-4">
                         <div className="p-3 bg-green-600 rounded-2xl shadow-sm">
                             <Car size={28} className="text-white" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-black text-gray-900 tracking-widest leading-none">
+                            <h1 className="text-lg md:text-2xl font-black text-gray-900 tracking-widest leading-none">
                                 STORICO CHECK
                             </h1>
                             <p className="text-green-600 text-[10px] font-black uppercase tracking-widest mt-1">
@@ -140,7 +140,7 @@ export default function ChecklistHistoryPage() {
                     </div>
 
                     {/* Date Navigation */}
-                    <div className="flex items-center gap-2 bg-gray-50 p-2 rounded-[24px] border border-gray-200 shadow-sm">
+                    <div className="flex items-center justify-center gap-1 md:gap-2 bg-gray-50 p-1.5 md:p-2 rounded-[20px] md:rounded-[24px] border border-gray-200 shadow-sm">
                         <button
                             onClick={handlePrevDay}
                             className="p-3 hover:bg-gray-100 rounded-2xl transition-all text-gray-400 hover:text-gray-900 group active:scale-95"
@@ -151,10 +151,10 @@ export default function ChecklistHistoryPage() {
                         <div className="relative">
                             <button
                                 onClick={(e) => { e.stopPropagation(); setShowCalendar(!showCalendar); }}
-                                className="flex items-center gap-3 px-8 py-3 bg-green-50 hover:bg-green-100 rounded-[20px] transition-all border border-green-200 group overflow-hidden"
+                                className="flex items-center gap-2 md:gap-3 px-4 md:px-8 py-2.5 md:py-3 bg-green-50 hover:bg-green-100 rounded-[16px] md:rounded-[20px] transition-all border border-green-200 group overflow-hidden"
                             >
-                                <CalendarIcon size={18} className="text-green-600 group-hover:rotate-12 transition-transform" />
-                                <span className="font-black text-gray-900 min-w-[160px] text-center tracking-tight">
+                                <CalendarIcon size={16} className="text-green-600 group-hover:rotate-12 transition-transform shrink-0" />
+                                <span className="font-black text-gray-900 text-xs md:text-base text-center tracking-tight">
                                     {isDateToday(selectedDate) ? "OGGI" : format(selectedDate, 'EEEE d MMMM', { locale: it }).toUpperCase()}
                                 </span>
                             </button>
@@ -179,9 +179,9 @@ export default function ChecklistHistoryPage() {
                 </div>
             </div>
 
-            <div className="max-w-7xl mx-auto px-6 mt-12">
+            <div className="max-w-7xl mx-auto px-4 md:px-6 mt-6 md:mt-12">
                 {/* Filters Row */}
-                <div className="flex flex-col md:flex-row gap-4 mb-12">
+                <div className="flex flex-col gap-3 md:gap-4 mb-6 md:mb-12">
                     <div className="relative flex-1 group">
                         <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-600 transition-colors" size={20} />
                         <input
@@ -189,17 +189,17 @@ export default function ChecklistHistoryPage() {
                             placeholder="Cerca mezzo o operatore..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-white border border-gray-200 rounded-[24px] py-4 pl-14 pr-6 text-gray-900 focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-500/30 transition-all font-bold placeholder:text-gray-400 tracking-tight shadow-sm"
+                            className="w-full bg-white border border-gray-200 rounded-[18px] md:rounded-[24px] py-3 md:py-4 pl-12 md:pl-14 pr-4 md:pr-6 text-sm md:text-base text-gray-900 focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-500/30 transition-all font-bold placeholder:text-gray-400 tracking-tight shadow-sm"
                         />
                     </div>
 
-                    <div className="flex gap-3">
-                        <div className="relative">
-                            <Filter className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
+                    <div className="flex flex-col sm:flex-row gap-2 md:gap-3">
+                        <div className="relative flex-1 sm:flex-initial">
+                            <Filter className="absolute left-4 md:left-5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
                             <select
                                 value={filterVehicle}
                                 onChange={(e) => setFilterVehicle(e.target.value)}
-                                className="bg-white border border-gray-200 rounded-[24px] pl-14 pr-10 py-4 text-gray-700 font-bold focus:outline-none focus:ring-4 focus:ring-green-500/10 transition-all appearance-none cursor-pointer hover:bg-gray-50 tracking-tight shadow-sm"
+                                className="w-full sm:w-auto bg-white border border-gray-200 rounded-[18px] md:rounded-[24px] pl-11 md:pl-14 pr-8 md:pr-10 py-3 md:py-4 text-sm md:text-base text-gray-700 font-bold focus:outline-none focus:ring-4 focus:ring-green-500/10 transition-all appearance-none cursor-pointer hover:bg-gray-50 tracking-tight shadow-sm"
                             >
                                 <option value="">TUTTI I MEZZI</option>
                                 {vehicles.map(v => (
@@ -209,7 +209,7 @@ export default function ChecklistHistoryPage() {
                         </div>
                         <button
                             onClick={() => { setSelectedDate(new Date()); setFilterVehicle(''); setSearchQuery(''); }}
-                            className="px-6 bg-white border border-gray-200 rounded-[24px] text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all font-black text-xs tracking-widest flex items-center gap-2 uppercase shadow-sm"
+                            className="px-5 py-3 md:py-0 md:px-6 bg-white border border-gray-200 rounded-[18px] md:rounded-[24px] text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all font-black text-xs tracking-widest flex items-center justify-center gap-2 uppercase shadow-sm"
                         >
                             Reset
                         </button>
@@ -218,33 +218,33 @@ export default function ChecklistHistoryPage() {
 
                 {/* Coverage KPI Bar */}
                 {!loading && (
-                    <div className="flex flex-col gap-4 mb-12">
-                        <div className="grid grid-cols-3 gap-4">
-                            <div className="bg-white border border-gray-200 rounded-[28px] p-6 flex items-center gap-4 shadow-sm">
-                                <div className="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center">
-                                    <ShieldCheck className="text-emerald-600" size={28} />
+                    <div className="flex flex-col gap-3 md:gap-4 mb-6 md:mb-12">
+                        <div className="grid grid-cols-3 gap-2 md:gap-4">
+                            <div className="bg-white border border-gray-200 rounded-[20px] md:rounded-[28px] p-3 md:p-6 flex flex-col md:flex-row items-center gap-2 md:gap-4 shadow-sm">
+                                <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-emerald-50 flex items-center justify-center shrink-0">
+                                    <ShieldCheck className="text-emerald-600" size={20} />
                                 </div>
-                                <div>
-                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Controllati</p>
-                                    <p className="text-3xl font-black text-gray-900">{coverage.checked}</p>
-                                </div>
-                            </div>
-                            <div className="bg-white border border-gray-200 rounded-[28px] p-6 flex items-center gap-4 shadow-sm">
-                                <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center">
-                                    <ShieldAlert className="text-red-500" size={28} />
-                                </div>
-                                <div>
-                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Non Controllati</p>
-                                    <p className="text-3xl font-black text-gray-900">{coverage.unchecked.length}</p>
+                                <div className="text-center md:text-left">
+                                    <p className="text-[8px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest">Controllati</p>
+                                    <p className="text-xl md:text-3xl font-black text-gray-900">{coverage.checked}</p>
                                 </div>
                             </div>
-                            <div className="bg-white border border-gray-200 rounded-[28px] p-6 flex items-center gap-4 shadow-sm">
-                                <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center">
-                                    <span className="text-blue-600 font-black text-lg">%</span>
+                            <div className="bg-white border border-gray-200 rounded-[20px] md:rounded-[28px] p-3 md:p-6 flex flex-col md:flex-row items-center gap-2 md:gap-4 shadow-sm">
+                                <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-red-50 flex items-center justify-center shrink-0">
+                                    <ShieldAlert className="text-red-500" size={20} />
                                 </div>
-                                <div>
-                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Copertura</p>
-                                    <p className={`text-3xl font-black ${coverage.pct >= 80 ? 'text-emerald-600' : coverage.pct >= 50 ? 'text-amber-500' : 'text-red-500'}`}>{coverage.pct}%</p>
+                                <div className="text-center md:text-left">
+                                    <p className="text-[8px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest leading-tight">Non Contr.</p>
+                                    <p className="text-xl md:text-3xl font-black text-gray-900">{coverage.unchecked.length}</p>
+                                </div>
+                            </div>
+                            <div className="bg-white border border-gray-200 rounded-[20px] md:rounded-[28px] p-3 md:p-6 flex flex-col md:flex-row items-center gap-2 md:gap-4 shadow-sm">
+                                <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-blue-50 flex items-center justify-center shrink-0">
+                                    <span className="text-blue-600 font-black text-sm md:text-lg">%</span>
+                                </div>
+                                <div className="text-center md:text-left">
+                                    <p className="text-[8px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest">Copertura</p>
+                                    <p className={`text-xl md:text-3xl font-black ${coverage.pct >= 80 ? 'text-emerald-600' : coverage.pct >= 50 ? 'text-amber-500' : 'text-red-500'}`}>{coverage.pct}%</p>
                                 </div>
                             </div>
                         </div>
@@ -318,7 +318,7 @@ export default function ChecklistHistoryPage() {
 
                 {/* Content Grid */}
                 {loading ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
                         {[1, 2, 3, 4, 5, 6].map(i => (
                             <div key={i} className="h-72 bg-gray-100 rounded-[40px] border border-gray-200 animate-pulse"></div>
                         ))}
@@ -327,7 +327,7 @@ export default function ChecklistHistoryPage() {
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="flex flex-col items-center justify-center py-40 bg-gray-50 rounded-[60px] border border-dashed border-gray-200"
+                        className="flex flex-col items-center justify-center py-20 md:py-40 bg-gray-50 rounded-[32px] md:rounded-[60px] border border-dashed border-gray-200"
                     >
                         <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-8 relative">
                             <CalendarIcon size={48} className="text-gray-300" />
@@ -345,7 +345,7 @@ export default function ChecklistHistoryPage() {
                 ) : (
                     <motion.div
                         layout
-                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8"
                     >
                         <AnimatePresence mode="popLayout">
                             {filteredChecklists.map((chk, index) => (
@@ -396,46 +396,48 @@ function ChecklistCard({ checklist, vehicle, index, onClick }) {
         >
             {/* Background Glow */}
             <div className={`
-                absolute inset-0 rounded-[40px] transition-all duration-700 blur-2xl opacity-0 group-hover:opacity-10
+                absolute inset-0 rounded-[24px] md:rounded-[40px] transition-all duration-700 blur-2xl opacity-0 group-hover:opacity-10
                 ${isWarning ? 'bg-red-500' : isResolved ? 'bg-amber-500' : 'bg-emerald-500'}
             `}></div>
 
-            <div className="relative h-full bg-white border border-gray-200 rounded-[40px] p-8 hover:border-gray-300 transition-all duration-500 flex flex-col justify-between group-hover:shadow-xl group-hover:-translate-y-2">
+            <div className="relative h-full bg-white border border-gray-200 rounded-[24px] md:rounded-[40px] p-5 md:p-8 hover:border-gray-300 transition-all duration-500 flex flex-col justify-between group-hover:shadow-xl group-hover:-translate-y-2">
 
                 <div>
-                    <div className="flex justify-between items-start mb-8">
-                        <div className="flex items-center gap-5">
+                    <div className="flex justify-between items-start mb-5 md:mb-8">
+                        <div className="flex items-center gap-3 md:gap-5 min-w-0">
                             <div className={`
-                                w-16 h-16 rounded-[24px] flex items-center justify-center shadow-sm relative overflow-hidden group-hover:scale-110 transition-transform duration-500
+                                w-12 h-12 md:w-16 md:h-16 rounded-[16px] md:rounded-[24px] flex items-center justify-center shadow-sm relative overflow-hidden group-hover:scale-110 transition-transform duration-500 shrink-0
                                 ${isWarning ? 'bg-red-50 text-red-500' : isResolved ? 'bg-amber-50 text-amber-500' : 'bg-emerald-50 text-emerald-500'}
                             `}>
                                 <div className="absolute inset-0 bg-gray-50 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                <Car size={36} />
+                                <Car className="w-6 h-6 md:w-9 md:h-9" />
                             </div>
-                            <div>
-                                <h3 className="text-2xl font-black text-gray-900 leading-none group-hover:text-green-600 transition-colors tracking-tight">
+                            <div className="min-w-0">
+                                <h3 className="text-lg md:text-2xl font-black text-gray-900 leading-none group-hover:text-green-600 transition-colors tracking-tight truncate">
                                     {vehicle?.internal_code || 'N/A'}
                                 </h3>
-                                <p className="text-gray-400 text-[11px] font-black uppercase tracking-widest mt-1 opacity-70">
+                                <p className="text-gray-400 text-[10px] md:text-[11px] font-black uppercase tracking-widest mt-1 opacity-70 truncate">
                                     {vehicle?.brand || 'Generic'} • {vehicle?.vehicle_type}
                                 </p>
                             </div>
                         </div>
 
-                        <div className={`
-                            px-4 py-2 rounded-2xl font-black text-[10px] uppercase tracking-widest border
-                            ${isWarning ? 'bg-red-500 text-white border-red-500/20 shadow-sm' : isResolved ? 'bg-amber-500 text-black border-amber-500/20 shadow-sm' : 'bg-emerald-50 text-emerald-600 border-emerald-200'}
-                        `}>
-                            {isWarning ? 'DANGER' : isResolved ? 'FIXED' : 'SAFE'}
-                        </div>
-                        {checklist.shift && (
-                            <div className={`px-3 py-1.5 rounded-xl font-black text-[9px] uppercase tracking-widest border mt-2 text-center ${checklist.shift === 'morning'
-                                ? 'bg-amber-50 text-amber-600 border-amber-200'
-                                : 'bg-indigo-50 text-indigo-600 border-indigo-200'
-                                }`}>
-                                {checklist.shift === 'morning' ? '☀️ Mattutino' : '🌙 Serale'}
+                        <div className="flex flex-col items-end gap-1.5 shrink-0 ml-2">
+                            <div className={`
+                                px-3 md:px-4 py-1.5 md:py-2 rounded-xl md:rounded-2xl font-black text-[9px] md:text-[10px] uppercase tracking-widest border
+                                ${isWarning ? 'bg-red-500 text-white border-red-500/20 shadow-sm' : isResolved ? 'bg-amber-500 text-black border-amber-500/20 shadow-sm' : 'bg-emerald-50 text-emerald-600 border-emerald-200'}
+                            `}>
+                                {isWarning ? 'DANGER' : isResolved ? 'FIXED' : 'SAFE'}
                             </div>
-                        )}
+                            {checklist.shift && (
+                                <div className={`px-2.5 py-1 rounded-lg md:rounded-xl font-black text-[8px] md:text-[9px] uppercase tracking-widest border text-center ${checklist.shift === 'morning'
+                                    ? 'bg-amber-50 text-amber-600 border-amber-200'
+                                    : 'bg-indigo-50 text-indigo-600 border-indigo-200'
+                                    }`}>
+                                    {checklist.shift === 'morning' ? '☀️ Matt.' : '🌙 Sera'}
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     <div className="space-y-6">
@@ -624,7 +626,7 @@ function ChecklistDetailModal({ checklist, vehicle, onClose, StandardModal, onRe
                 </div>
 
                 {/* Details Sections */}
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                     <div className="bg-gray-50 p-6 rounded-[32px] border border-gray-200">
                         <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Operatore</span>
                         <p className="text-gray-900 font-black text-lg">{checklist.operator?.full_name || 'N/A'}</p>
@@ -752,7 +754,7 @@ function ChecklistDetailModal({ checklist, vehicle, onClose, StandardModal, onRe
 
                 {/* Critical Actions */}
                 {isWarning && !isResolved && (
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4 pt-4 md:pt-6">
                         <button
                             onClick={handleResolveClick}
                             className="bg-emerald-600 hover:bg-emerald-500 text-white h-20 rounded-[32px] font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all shadow-sm active:scale-95 group text-xs"
