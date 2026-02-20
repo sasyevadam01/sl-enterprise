@@ -24,7 +24,8 @@ import {
     ShieldCheck,
     ShieldAlert,
     ChevronDown as ChevronDownIcon,
-    RotateCcw
+    RotateCcw,
+    Wrench
 } from 'lucide-react';
 import StylishCalendar from '../../components/ui/StylishCalendar';
 import { isValid } from 'date-fns';
@@ -521,6 +522,26 @@ function ChecklistCard({ checklist, vehicle, index, onClick }) {
                                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">Check-in Time</span>
                             </div>
                         </div>
+
+                        {/* Resolver Info */}
+                        {isResolved && checklist.resolver && (
+                            <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-2xl p-3">
+                                <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+                                    <Wrench size={14} />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest">Risolto da</span>
+                                    <p className="text-amber-900 font-bold text-sm truncate leading-tight">
+                                        {checklist.resolver.full_name || checklist.resolver.username}
+                                    </p>
+                                </div>
+                                {checklist.resolved_at && (
+                                    <span className="text-[9px] font-bold text-amber-400 uppercase tracking-widest shrink-0">
+                                        {safeFormat(checklist.resolved_at, 'dd/MM HH:mm')}
+                                    </span>
+                                )}
+                            </div>
+                        )}
 
                         {/* Note Preview */}
                         {(isWarning || checklist.notes) && (

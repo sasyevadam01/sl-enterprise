@@ -902,16 +902,16 @@ export default function VehicleChecklistPage() {
                                                     animate={{ opacity: 1, y: 0 }}
                                                     transition={{ delay: idx * 0.03 }}
                                                     key={item.key}
-                                                    className={`group flex items-center justify-between p-6 rounded-[28px] border transition-all duration-300 
+                                                    className={`group flex items-center justify-between p-3 md:p-6 rounded-[20px] md:rounded-[28px] border transition-all duration-300 
                                                         ${isOK ? 'bg-emerald-50 border-emerald-200' :
                                                             isKO ? 'bg-red-50 border-red-200' :
                                                                 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm'
                                                         }`}
                                                 >
-                                                    <div className="flex items-center gap-6">
-                                                        <span className="text-slate-300 font-black text-sm italic w-4">{idx + 1}</span>
-                                                        <div className="flex flex-col">
-                                                            <span className="text-slate-900 font-bold tracking-tight text-lg">{item.label}</span>
+                                                    <div className="flex items-center gap-2 md:gap-6 min-w-0 flex-1 mr-2 md:mr-4">
+                                                        <span className="text-slate-300 font-black text-xs md:text-sm italic w-4 shrink-0">{idx + 1}</span>
+                                                        <div className="flex flex-col min-w-0">
+                                                            <span className="text-slate-900 font-bold tracking-tight text-sm md:text-lg leading-tight">{item.label}</span>
                                                             {isKO && (
                                                                 <div className="flex items-center gap-2 mt-2 text-red-400">
                                                                     <AlertTriangle size={12} />
@@ -928,10 +928,10 @@ export default function VehicleChecklistPage() {
                                                         </div>
                                                     </div>
 
-                                                    <div className="flex gap-3">
+                                                    <div className="flex gap-2 md:gap-3 shrink-0">
                                                         <button
                                                             onClick={() => handleCheck(item.key, true)}
-                                                            className={`px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all cursor-pointer
+                                                            className={`px-3 md:px-6 py-2 md:py-3 rounded-xl md:rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-widest transition-all cursor-pointer
                                                                 ${isOK
                                                                     ? 'bg-emerald-500 text-white shadow-sm'
                                                                     : 'bg-slate-100 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 border border-slate-200'}`}
@@ -940,7 +940,7 @@ export default function VehicleChecklistPage() {
                                                         </button>
                                                         <button
                                                             onClick={() => handleCheck(item.key, false)}
-                                                            className={`px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all cursor-pointer
+                                                            className={`px-3 md:px-6 py-2 md:py-3 rounded-xl md:rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-widest transition-all cursor-pointer
                                                                 ${isKO
                                                                     ? 'bg-red-500 text-white shadow-sm'
                                                                     : 'bg-slate-100 text-slate-400 hover:bg-red-50 hover:text-red-500 border border-slate-200'}`}

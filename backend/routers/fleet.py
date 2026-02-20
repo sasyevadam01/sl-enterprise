@@ -475,6 +475,7 @@ class ChecklistResponse(BaseModel):
     resolution_notes: Optional[str] = None
     resolved_at: Optional[datetime] = None
     operator: Optional[OperatorInfo] = None
+    resolver: Optional[OperatorInfo] = None
     tablet_status: Optional[str] = "ok"
     tablet_photo_url: Optional[str] = None
     
@@ -757,7 +758,7 @@ async def list_checklists(
     current_user: User = Depends(get_current_user)
 ):
     """Storico checklist."""
-    query = db.query(FleetChecklist).options(joinedload(FleetChecklist.operator))
+    query = db.query(FleetChecklist).options(joinedload(FleetChecklist.operator), joinedload(FleetChecklist.resolver))
     if vehicle_id:
         query = query.filter(FleetChecklist.vehicle_id == vehicle_id)
     if operator_id:
