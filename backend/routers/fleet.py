@@ -538,6 +538,7 @@ async def create_checklist(
         notes = form.get("notes")
         tablet_status = form.get("tablet_status", "ok")
         tablet_photo = form.get("photo")
+        vehicle_photo = form.get("vehicle_photo")
 
         # Parse JSON
         try:
@@ -637,6 +638,14 @@ async def create_checklist(
         # OR it was an invalid string (handled by process_and_save_image returning None)
         if not tablet_filename:
              raise HTTPException(400, "Foto Tablet obbligatoria (Mancante o file non valido)")
+
+        # 3b. Save Vehicle Photo (Mandatory)
+        vehicle_photo_filename = None
+        if vehicle_photo:
+            vehicle_photo_filename = await process_and_save_image(vehicle_photo, CHECKLIST_DIR, prefix="vehicle_")
+        
+        if not vehicle_photo_filename:
+            raise HTTPException(400, "Foto Mezzo obbligatoria (Mancante o file non valido)")
         
         # 4. Process Specific Issue Photos
         # Iterate over cheks to find issues that expect a photo
@@ -682,6 +691,7 @@ async def create_checklist(
            status = 'warning' 
         
         tablet_photo_url = f"/uploads/checklists/{tablet_filename}" if tablet_filename else None
+        vehicle_photo_url = f"/uploads/checklists/{vehicle_photo_filename}" if vehicle_photo_filename else None
 
         # 6. Determine Shift
         current_shift = get_current_shift()
@@ -715,7 +725,8 @@ async def create_checklist(
             shift=current_shift,
             notes=notes,
             tablet_status=tablet_status,
-            tablet_photo_url=tablet_photo_url
+            tablet_photo_url=tablet_photo_url,
+            vehicle_photo_url=vehicle_photo_url
         )
         db.add(checklist)
         db.commit()

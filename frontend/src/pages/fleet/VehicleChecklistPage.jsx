@@ -81,6 +81,10 @@ export default function VehicleChecklistPage() {
     const [photoPreview, setPhotoPreview] = useState(null);
     const [tabletNote, setTabletNote] = useState("");
 
+    // Vehicle Photo State
+    const [vehiclePhoto, setVehiclePhoto] = useState(null);
+    const [vehiclePhotoPreview, setVehiclePhotoPreview] = useState(null);
+
     // Feature: Disable checked vehicles
     const [checkedVehicles, setCheckedVehicles] = useState({}); // { vehicle_id: { operator, tabletStatus, time } }
 
@@ -211,6 +215,9 @@ export default function VehicleChecklistPage() {
             setTabletPhoto(null);
             setPhotoPreview(null);
             setTabletNote("");
+            // Reset Vehicle Photo State
+            setVehiclePhoto(null);
+            setVehiclePhotoPreview(null);
 
             setConfirmVehicle(null);
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -224,6 +231,18 @@ export default function VehicleChecklistPage() {
             const reader = new FileReader();
             reader.onloadend = () => {
                 setPhotoPreview(reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleVehiclePhotoCapture = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setVehiclePhoto(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setVehiclePhotoPreview(reader.result);
             };
             reader.readAsDataURL(file);
         }
@@ -283,6 +302,10 @@ export default function VehicleChecklistPage() {
 
         if (!tabletPhoto) {
             return { valid: false, msg: "FOTO TABLET OBBLIGATORIA! Devi scattare una foto al tablet di bordo." };
+        }
+
+        if (!vehiclePhoto) {
+            return { valid: false, msg: "FOTO MEZZO OBBLIGATORIA! Devi scattare una foto completa del mezzo." };
         }
 
         if (tabletStatus === 'broken' && (!tabletNote || tabletNote.length < 5)) {
@@ -349,7 +372,8 @@ export default function VehicleChecklistPage() {
                 notes: subNotes,
                 tabletPhoto,
                 tabletStatus,
-                issuePhotos
+                issuePhotos,
+                vehiclePhoto
             });
 
             // FIX: Show success immediately, then refresh data in background
@@ -366,9 +390,12 @@ export default function VehicleChecklistPage() {
 
             // Check for Photo Error to show Modal
             if (err.response?.status === 400 && errorMsg.includes("Foto")) {
+                const isMezzoError = errorMsg.includes("Mezzo");
                 setValidationError({
-                    title: "Manca la Foto del Tablet!",
-                    message: "Non puoi completare il check senza aver scattato la foto del tablet.\n\nAssicurati che il tablet sia visibile e funzionante."
+                    title: isMezzoError ? "Manca la Foto del Mezzo!" : "Manca la Foto del Tablet!",
+                    message: isMezzoError
+                        ? "Non puoi completare il check senza aver scattato la foto del mezzo.\n\nAssicurati che il mezzo sia visibile per intero."
+                        : "Non puoi completare il check senza aver scattato la foto del tablet.\n\nAssicurati che il tablet sia visibile e funzionante."
                 });
             } else {
                 toast.error(errorMsg);
@@ -763,6 +790,67 @@ export default function VehicleChecklistPage() {
                                                         </label>
                                                     )}
                                                 </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Vehicle Photo Section */}
+                                    <div id="vehicle-photo-section" className="bg-white border border-slate-200 rounded-[32px] p-6 mb-8 group hover:border-emerald-300 transition-all shadow-sm">
+                                        <div className="flex items-center gap-4 mb-6">
+                                            <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-200">
+                                                <Car size={24} />
+                                            </div>
+                                            <div>
+                                                <h4 className="text-lg font-black text-slate-900 uppercase tracking-wider">Foto Mezzo Completa</h4>
+                                                <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Scatta una foto del mezzo per intero (obbligatoria)</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex justify-between">
+                                                <span>Foto Mezzo (Obbligatoria)</span>
+                                                {vehiclePhoto && <span className="text-emerald-400 flex items-center gap-1"><CheckCircle2 size={10} /> Caricata</span>}
+                                            </label>
+
+                                            <div className="relative group/vphoto">
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    capture="environment"
+                                                    onChange={handleVehiclePhotoCapture}
+                                                    className="hidden"
+                                                    id="vehicle-photo-input"
+                                                />
+
+                                                {vehiclePhotoPreview ? (
+                                                    <div className="relative w-full h-48 rounded-2xl overflow-hidden border border-slate-200 bg-slate-50">
+                                                        <img src={vehiclePhotoPreview} alt="Vehicle Preview" className="w-full h-full object-cover opacity-80" />
+                                                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover/vphoto:opacity-100 transition-opacity">
+                                                            <button
+                                                                onClick={() => {
+                                                                    setVehiclePhoto(null);
+                                                                    setVehiclePhotoPreview(null);
+                                                                }}
+                                                                className="p-3 bg-red-500 rounded-full text-white shadow-lg hover:scale-110 transition-transform"
+                                                            >
+                                                                <Trash2 size={20} />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <label
+                                                        htmlFor="vehicle-photo-input"
+                                                        className="w-full h-48 rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-4 cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/50 transition-all text-slate-400 hover:text-emerald-500"
+                                                    >
+                                                        <div className="p-4 rounded-full bg-slate-100 group-hover:bg-emerald-100 transition-colors">
+                                                            <Camera size={32} />
+                                                        </div>
+                                                        <div className="text-center">
+                                                            <span className="block text-xs font-black uppercase tracking-widest">Scatta Foto Mezzo</span>
+                                                            <span className="text-[10px] opacity-60">Inquadra il mezzo per intero</span>
+                                                        </div>
+                                                    </label>
+                                                )}
                                             </div>
                                         </div>
                                     </div>

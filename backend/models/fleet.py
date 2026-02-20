@@ -116,6 +116,9 @@ class FleetChecklist(Base):
     tablet_photo_url = Column(String(255), nullable=True)
     tablet_status = Column(String(20), default='ok')
     
+    # Foto Mezzo Completa
+    vehicle_photo_url = Column(String(255), nullable=True)
+    
     # Risoluzione Problemi
     resolution_notes = Column(Text, nullable=True)
     resolved_at = Column(DateTime, nullable=True)

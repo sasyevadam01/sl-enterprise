@@ -137,7 +137,7 @@ export const fleetApi = {
   },
   getChecklists: (params) => client.get("/fleet/checklists", { params }),
   getLatestChecklist: (vehicleId) => client.get(`/fleet/vehicles/${vehicleId}/checklist/latest`),
-  submitChecklistV2: async ({ vehicleId, checks, notes, tabletPhoto, tabletStatus, issuePhotos }) => {
+  submitChecklistV2: async ({ vehicleId, checks, notes, tabletPhoto, tabletStatus, issuePhotos, vehiclePhoto }) => {
     const formData = new FormData();
     const data = {
       vehicle_id: vehicleId,
@@ -148,6 +148,9 @@ export const fleetApi = {
     formData.append('notes', notes || '');
     formData.append('tablet_status', tabletStatus || 'ok');
     formData.append('photo', tabletPhoto);
+    if (vehiclePhoto) {
+      formData.append('vehicle_photo', vehiclePhoto);
+    }
 
     // Append issue photos
     if (issuePhotos) {
