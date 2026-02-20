@@ -682,11 +682,12 @@ export default function VehicleChecklistPage() {
                                                         const accentColor = isMitsubishi ? 'emerald' : 'amber';
 
                                                         return (
-                                                            <div key={v.id} className="relative group">
+                                                            <div key={v.id} className="flex items-stretch">
+                                                                {/* Main clickable area */}
                                                                 <button
                                                                     onClick={() => handleSelectVehicle(v)}
                                                                     disabled={isChecked && !isBlocked}
-                                                                    className={`w-full flex items-center gap-3 md:gap-4 px-3 md:px-4 py-3 md:py-3.5 text-left transition-all
+                                                                    className={`flex-1 flex items-center gap-3 md:gap-4 px-3 md:px-4 py-3 md:py-3.5 text-left transition-all min-w-0
                                                                         ${isBlocked
                                                                             ? 'bg-red-50 cursor-pointer'
                                                                             : isChecked
@@ -707,7 +708,7 @@ export default function VehicleChecklistPage() {
 
                                                                     {/* Info */}
                                                                     <div className="flex-grow min-w-0">
-                                                                        <div className="flex items-center gap-2">
+                                                                        <div className="flex items-center gap-2 flex-wrap">
                                                                             <span className={`font-bold text-sm ${isBlocked ? 'text-red-700' : isChecked ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
                                                                                 {v.brand || 'N/D'} {v.internal_code}
                                                                             </span>
@@ -742,11 +743,10 @@ export default function VehicleChecklistPage() {
                                                                     </div>
                                                                 </button>
 
-                                                                {/* Block/Unblock Toggle for authorized users */}
+                                                                {/* Block/Unblock Toggle - separate inline button, always visible */}
                                                                 {canBlockVehicles && !isChecked && (
                                                                     <button
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
+                                                                        onClick={() => {
                                                                             if (isBlocked) {
                                                                                 handleUnblockVehicle(v);
                                                                             } else {
@@ -755,13 +755,13 @@ export default function VehicleChecklistPage() {
                                                                             }
                                                                         }}
                                                                         title={isBlocked ? 'Sblocca veicolo' : 'Blocca veicolo'}
-                                                                        className={`absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg transition-all z-10
+                                                                        className={`flex-shrink-0 w-12 flex items-center justify-center border-l transition-all
                                                                             ${isBlocked
-                                                                                ? 'bg-green-100 text-green-600 hover:bg-green-200'
-                                                                                : 'bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 opacity-0 group-hover:opacity-100'
+                                                                                ? 'bg-green-50 text-green-600 hover:bg-green-100 border-green-200'
+                                                                                : 'bg-slate-50 text-slate-300 hover:bg-red-50 hover:text-red-500 border-slate-100'
                                                                             } cursor-pointer`}
                                                                     >
-                                                                        {isBlocked ? <Unlock size={14} /> : <Lock size={14} />}
+                                                                        {isBlocked ? <Unlock size={16} /> : <Lock size={16} />}
                                                                     </button>
                                                                 )}
                                                             </div>
