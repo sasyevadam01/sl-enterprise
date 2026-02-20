@@ -224,27 +224,61 @@ export default function VehicleChecklistPage() {
         }
     };
 
-    const handlePhotoCapture = (e) => {
+    // Compress image using canvas to prevent memory crash on Android
+    const compressImage = (file, maxDimension = 1280, quality = 0.7) => {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            const objectUrl = URL.createObjectURL(file);
+            img.onload = () => {
+                URL.revokeObjectURL(objectUrl);
+                let { width, height } = img;
+                if (width > maxDimension || height > maxDimension) {
+                    const ratio = Math.min(maxDimension / width, maxDimension / height);
+                    width = Math.round(width * ratio);
+                    height = Math.round(height * ratio);
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                const dataUrl = canvas.toDataURL('image/jpeg', quality);
+                canvas.toBlob((blob) => {
+                    if (!blob) { reject(new Error('Compression failed')); return; }
+                    const compressedFile = new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' });
+                    resolve({ file: compressedFile, preview: dataUrl });
+                }, 'image/jpeg', quality);
+            };
+            img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error('Failed to load image')); };
+            img.src = objectUrl;
+        });
+    };
+
+    const handlePhotoCapture = async (e) => {
         const file = e.target.files[0];
         if (file) {
-            setTabletPhoto(file);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setPhotoPreview(reader.result);
-            };
-            reader.readAsDataURL(file);
+            try {
+                const { file: compressed, preview } = await compressImage(file);
+                setTabletPhoto(compressed);
+                setPhotoPreview(preview);
+            } catch (err) {
+                console.error('Photo compression failed:', err);
+                toast.error("Errore elaborazione foto. Riprova.");
+            }
         }
     };
 
-    const handleVehiclePhotoCapture = (e) => {
+    const handleVehiclePhotoCapture = async (e) => {
         const file = e.target.files[0];
         if (file) {
-            setVehiclePhoto(file);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setVehiclePhotoPreview(reader.result);
-            };
-            reader.readAsDataURL(file);
+            try {
+                const { file: compressed, preview } = await compressImage(file);
+                setVehiclePhoto(compressed);
+                setVehiclePhotoPreview(preview);
+            } catch (err) {
+                console.error('Photo compression failed:', err);
+                toast.error("Errore elaborazione foto. Riprova.");
+            }
         }
     };
 
