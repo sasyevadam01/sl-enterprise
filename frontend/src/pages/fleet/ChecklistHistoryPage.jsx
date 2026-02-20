@@ -403,8 +403,9 @@ function ChecklistCard({ checklist, vehicle, index, onClick }) {
             <div className="relative h-full bg-white border border-gray-200 rounded-[24px] md:rounded-[40px] p-5 md:p-8 hover:border-gray-300 transition-all duration-500 flex flex-col justify-between group-hover:shadow-xl group-hover:-translate-y-2">
 
                 <div>
-                    <div className="flex justify-between items-start mb-5 md:mb-8">
-                        <div className="flex items-center gap-3 md:gap-5 min-w-0">
+                    <div className="mb-5 md:mb-8">
+                        {/* Vehicle Info Row */}
+                        <div className="flex items-center gap-3 md:gap-5 mb-3">
                             <div className={`
                                 w-12 h-12 md:w-16 md:h-16 rounded-[16px] md:rounded-[24px] flex items-center justify-center shadow-sm relative overflow-hidden group-hover:scale-110 transition-transform duration-500 shrink-0
                                 ${isWarning ? 'bg-red-50 text-red-500' : isResolved ? 'bg-amber-50 text-amber-500' : 'bg-emerald-50 text-emerald-500'}
@@ -412,7 +413,7 @@ function ChecklistCard({ checklist, vehicle, index, onClick }) {
                                 <div className="absolute inset-0 bg-gray-50 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                                 <Car className="w-6 h-6 md:w-9 md:h-9" />
                             </div>
-                            <div className="min-w-0">
+                            <div className="min-w-0 flex-1">
                                 <h3 className="text-lg md:text-2xl font-black text-gray-900 leading-none group-hover:text-green-600 transition-colors tracking-tight truncate">
                                     {vehicle?.internal_code || 'N/A'}
                                 </h3>
@@ -421,20 +422,20 @@ function ChecklistCard({ checklist, vehicle, index, onClick }) {
                                 </p>
                             </div>
                         </div>
-
-                        <div className="flex flex-col items-end gap-1.5 shrink-0 ml-2">
+                        {/* Badges Row - always below on mobile */}
+                        <div className="flex items-center gap-2 pl-0 md:pl-[76px]">
                             <div className={`
-                                px-3 md:px-4 py-1.5 md:py-2 rounded-xl md:rounded-2xl font-black text-[9px] md:text-[10px] uppercase tracking-widest border
+                                px-3 py-1.5 rounded-xl font-black text-[9px] md:text-[10px] uppercase tracking-widest border
                                 ${isWarning ? 'bg-red-500 text-white border-red-500/20 shadow-sm' : isResolved ? 'bg-amber-500 text-black border-amber-500/20 shadow-sm' : 'bg-emerald-50 text-emerald-600 border-emerald-200'}
                             `}>
                                 {isWarning ? 'DANGER' : isResolved ? 'FIXED' : 'SAFE'}
                             </div>
                             {checklist.shift && (
-                                <div className={`px-2.5 py-1 rounded-lg md:rounded-xl font-black text-[8px] md:text-[9px] uppercase tracking-widest border text-center ${checklist.shift === 'morning'
+                                <div className={`px-2.5 py-1 rounded-lg font-black text-[8px] md:text-[9px] uppercase tracking-widest border text-center ${checklist.shift === 'morning'
                                     ? 'bg-amber-50 text-amber-600 border-amber-200'
                                     : 'bg-indigo-50 text-indigo-600 border-indigo-200'
                                     }`}>
-                                    {checklist.shift === 'morning' ? '☀️ Matt.' : '🌙 Sera'}
+                                    {checklist.shift === 'morning' ? '☀️ Mattutino' : '🌙 Serale'}
                                 </div>
                             )}
                         </div>

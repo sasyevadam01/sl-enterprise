@@ -411,14 +411,26 @@ export default function OvenPage() {
                                         <span className="mx-1">•</span>
                                         <span>{getTimeSince(item.inserted_at)}</span>
                                     </div>
-                                    <div className="flex items-center gap-2 relative flex-wrap">
-                                        {/* Prolunga Button */}
-                                        <button
-                                            onClick={() => setExtendingId(extendingId === item.id ? null : item.id)}
-                                            className="flex-1 min-w-0 px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer active:scale-95 flex items-center justify-center gap-1.5 bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100"
-                                        >
-                                            <Timer size={14} className="shrink-0" /> Prolunga
-                                        </button>
+                                    <div className="relative">
+                                        <div className="flex flex-col gap-2">
+                                            {/* Prolunga Button */}
+                                            <button
+                                                onClick={() => setExtendingId(extendingId === item.id ? null : item.id)}
+                                                className="w-full px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer active:scale-95 flex items-center justify-center gap-1.5 bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100"
+                                            >
+                                                <Timer size={14} className="shrink-0" /> Prolunga Tempo
+                                            </button>
+                                            {/* Rimuovi Button */}
+                                            <button
+                                                onClick={() => handleRemove(item.id)}
+                                                className={`w-full px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer active:scale-95 flex items-center justify-center gap-1.5 ${isOverdue
+                                                    ? 'bg-red-600 hover:bg-red-700 text-white shadow-sm'
+                                                    : 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+                                                    }`}
+                                            >
+                                                <CheckCircle2 size={14} className="shrink-0" /> Rimuovi dal Forno
+                                            </button>
+                                        </div>
                                         {/* Prolunga Popover */}
                                         {extendingId === item.id && (
                                             <div className="absolute bottom-full right-0 mb-2 bg-white rounded-xl shadow-xl border border-slate-200 p-2 z-20 min-w-[140px]">
@@ -434,16 +446,6 @@ export default function OvenPage() {
                                                 ))}
                                             </div>
                                         )}
-                                        {/* Rimuovi Button */}
-                                        <button
-                                            onClick={() => handleRemove(item.id)}
-                                            className={`flex-1 min-w-0 px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer active:scale-95 flex items-center justify-center gap-1.5 ${isOverdue
-                                                ? 'bg-red-600 hover:bg-red-700 text-white shadow-sm'
-                                                : 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
-                                                }`}
-                                        >
-                                            <CheckCircle2 size={14} className="shrink-0" /> Rimuovi
-                                        </button>
                                     </div>
                                 </div>
                             </div>
