@@ -47,6 +47,7 @@ export default function ChecklistHistoryPage() {
     // Filters
     const [filterVehicle, setFilterVehicle] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
+    const [filterShift, setFilterShift] = useState('');
 
     // Detail Modal
     const [selectedChecklist, setSelectedChecklist] = useState(null);
@@ -87,9 +88,10 @@ export default function ChecklistHistoryPage() {
             const matchesSearch = !searchQuery ||
                 vehicle?.internal_code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 chk.operator?.full_name?.toLowerCase().includes(searchQuery.toLowerCase());
-            return matchesVehicle && matchesSearch;
+            const matchesShift = !filterShift || chk.shift === filterShift;
+            return matchesVehicle && matchesSearch && matchesShift;
         });
-    }, [checklists, filterVehicle, searchQuery, vehicles]);
+    }, [checklists, filterVehicle, searchQuery, vehicles, filterShift]);
 
     const findVehicle = (id) => vehicles.find(v => v.id === id);
 
@@ -208,10 +210,32 @@ export default function ChecklistHistoryPage() {
                             </select>
                         </div>
                         <button
-                            onClick={() => { setSelectedDate(new Date()); setFilterVehicle(''); setSearchQuery(''); }}
+                            onClick={() => { setSelectedDate(new Date()); setFilterVehicle(''); setSearchQuery(''); setFilterShift(''); }}
                             className="px-5 py-3 md:py-0 md:px-6 bg-white border border-gray-200 rounded-[18px] md:rounded-[24px] text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all font-black text-xs tracking-widest flex items-center justify-center gap-2 uppercase shadow-sm"
                         >
                             Reset
+                        </button>
+                    </div>
+
+                    {/* Shift Filter Buttons */}
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setFilterShift(filterShift === 'morning' ? '' : 'morning')}
+                            className={`flex-1 py-3 rounded-[18px] md:rounded-[24px] font-black text-xs uppercase tracking-widest transition-all border cursor-pointer flex items-center justify-center gap-2 ${filterShift === 'morning'
+                                    ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
+                                    : 'bg-white text-amber-600 border-amber-200 hover:bg-amber-50'
+                                }`}
+                        >
+                            ☀️ Mattutino
+                        </button>
+                        <button
+                            onClick={() => setFilterShift(filterShift === 'evening' ? '' : 'evening')}
+                            className={`flex-1 py-3 rounded-[18px] md:rounded-[24px] font-black text-xs uppercase tracking-widest transition-all border cursor-pointer flex items-center justify-center gap-2 ${filterShift === 'evening'
+                                    ? 'bg-indigo-500 text-white border-indigo-500 shadow-sm'
+                                    : 'bg-white text-indigo-600 border-indigo-200 hover:bg-indigo-50'
+                                }`}
+                        >
+                            🌙 Serale
                         </button>
                     </div>
                 </div>

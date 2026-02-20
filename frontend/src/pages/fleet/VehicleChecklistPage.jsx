@@ -505,21 +505,21 @@ export default function VehicleChecklistPage() {
 
                                         {/* Progress Counter */}
                                         {shiftInfo.available && (
-                                            <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-200">
-                                                        <ClipboardCheck size={20} />
+                                            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                                                <div className="flex items-center gap-3 mb-3">
+                                                    <div className="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-200 shrink-0">
+                                                        <ClipboardCheck size={18} />
                                                     </div>
-                                                    <div>
-                                                        <h4 className="text-slate-900 font-black uppercase text-sm tracking-widest">Avanzamento Turno</h4>
-                                                        <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Mezzi Controllati</p>
+                                                    <div className="min-w-0">
+                                                        <h4 className="text-slate-900 font-black uppercase text-xs tracking-widest leading-tight">Avanzamento Turno</h4>
+                                                        <p className="text-slate-400 text-[9px] font-bold uppercase tracking-widest">Mezzi Controllati</p>
                                                     </div>
                                                 </div>
-                                                <div className="flex items-end flex-col">
+                                                <div className="flex items-center justify-between">
                                                     <span className="text-2xl font-black text-slate-900 tracking-tighter">
                                                         {Object.keys(checkedVehicles).length} <span className="text-slate-400 text-sm">/ {vehicles.length}</span>
                                                     </span>
-                                                    <div className="w-32 h-1.5 bg-slate-200 rounded-full overflow-hidden mt-1">
+                                                    <div className="w-24 sm:w-32 h-2 bg-slate-200 rounded-full overflow-hidden">
                                                         <div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${(Object.keys(checkedVehicles).length / vehicles.length) * 100}%` }}></div>
                                                     </div>
                                                 </div>
