@@ -105,7 +105,7 @@ export default function VehicleChecklistPage() {
     const [blockReason, setBlockReason] = useState('');
     const [blockingInProgress, setBlockingInProgress] = useState(false);
     const [blockedAlert, setBlockedAlert] = useState(null); // vehicle object for alert
-    const canBlockVehicles = hasPermission('PERMESSO_ZERO') || hasPermission('PANNELLO_ADMIN');
+    const canBlockVehicles = hasPermission('block_vehicles') || hasPermission('PANNELLO_ADMIN');
 
     // Management State
     const [showVehicleModal, setShowVehicleModal] = useState(false);

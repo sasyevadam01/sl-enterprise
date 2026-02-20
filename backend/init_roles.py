@@ -19,7 +19,7 @@ DEFAULT_ROLES = [
         "label": "Amministratore",
         "description": "Gestione utenti e configurazioni",
         "is_static": True,
-        "permissions": ["view_dashboard", "manage_employees", "view_hr_management", "view_approvals", "manage_attendance", "view_hr_calendar", "request_events", "manage_tasks", "manage_shifts", "view_announcements", "access_factory", "manage_kpi", "admin_users", "admin_audit", "supervise_logistics", "request_logistics", "manage_production_config", "view_production_reports", "perform_checklists", "view_checklist_history", "manage_logistics_config"],
+        "permissions": ["view_dashboard", "manage_employees", "view_hr_management", "view_approvals", "manage_attendance", "view_hr_calendar", "request_events", "manage_tasks", "manage_shifts", "view_announcements", "access_factory", "manage_kpi", "admin_users", "admin_audit", "supervise_logistics", "request_logistics", "manage_production_config", "view_production_reports", "perform_checklists", "view_checklist_history", "manage_logistics_config", "block_vehicles"],
         "default_home": "/dashboard"
     },
     {
@@ -43,7 +43,7 @@ DEFAULT_ROLES = [
         "label": "Coordinatore",
         "description": "Gestione turni e task del team",
         "is_static": False,
-        "permissions": ["manage_shifts", "manage_tasks", "view_announcements", "request_events", "view_hr_calendar", "supervise_logistics", "view_dashboard", "request_logistics", "manage_logistics_pool"],
+        "permissions": ["manage_shifts", "manage_tasks", "view_announcements", "request_events", "view_hr_calendar", "supervise_logistics", "view_dashboard", "request_logistics", "manage_logistics_pool", "block_vehicles"],
         "default_home": "/hr/tasks"
     },
     {
@@ -83,7 +83,7 @@ DEFAULT_ROLES = [
         "label": "Sicurezza",
         "description": "Responsabile Sicurezza e Controlli",
         "is_static": False,
-        "permissions": ["view_dashboard", "view_announcements", "view_checklist_history", "manage_tasks", "perform_checklists", "access_factory", "manage_shifts"],
+        "permissions": ["view_dashboard", "view_announcements", "view_checklist_history", "manage_tasks", "perform_checklists", "access_factory", "manage_shifts", "block_vehicles"],
         "default_home": "/dashboard"
     },
 ]
