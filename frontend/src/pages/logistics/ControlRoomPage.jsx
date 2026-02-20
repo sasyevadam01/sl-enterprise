@@ -10,7 +10,8 @@ import { useUI } from '../../components/ui/CustomUI';
 import MaterialIcon from './components/MaterialIcon';
 import {
     AlertTriangle, Clock, CheckCircle2, XCircle, Zap,
-    RefreshCw, Package, User, MapPin, Timer, ChevronDown, Eye
+    RefreshCw, Package, User, MapPin, Timer, ChevronDown, Eye,
+    Trophy, Medal, TrendingUp, TrendingDown
 } from 'lucide-react';
 import './ControlRoomStyles.css';
 
@@ -33,6 +34,8 @@ export default function ControlRoomPage() {
     const [expandedId, setExpandedId] = useState(null);
     const wsRef = useRef(null);
     const reconnectRef = useRef(null);
+    const [leaderboard, setLeaderboard] = useState([]);
+    const [leaderboardLoading, setLeaderboardLoading] = useState(true);
 
     const loadData = useCallback(async () => {
         try {
@@ -78,6 +81,20 @@ export default function ControlRoomPage() {
             setLoading(false);
         }
     }, [filter]);
+
+    const loadLeaderboard = useCallback(async () => {
+        try {
+            const now = new Date();
+            const data = await logisticsApi.getLeaderboard(now.getMonth() + 1, now.getFullYear());
+            setLeaderboard(data.entries || []);
+        } catch (err) {
+            console.error('Leaderboard load error:', err);
+        } finally {
+            setLeaderboardLoading(false);
+        }
+    }, []);
+
+    useEffect(() => { loadLeaderboard(); }, [loadLeaderboard]);
 
     useEffect(() => { loadData(); }, [loadData]);
 
@@ -129,6 +146,14 @@ export default function ControlRoomPage() {
         const secs = Math.floor(seconds % 60);
         if (mins >= 60) return `${Math.floor(mins / 60)}h ${mins % 60}m`;
         return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    const formatReactionTime = (seconds) => {
+        if (!seconds) return '-';
+        if (seconds < 60) return `${seconds}s`;
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}m ${secs}s`;
     };
 
     const formatTimeAgo = (dateStr) => {
@@ -414,6 +439,110 @@ export default function ControlRoomPage() {
             <div className="cr-footer">
                 <span>Ultimo aggiornamento: {new Date().toLocaleTimeString('it-IT')}</span>
                 <span>{requests.length} risultati</span>
+            </div>
+
+            {/* LEADERBOARD SECTION */}
+            <div className="cr-leaderboard-section">
+                <div className="cr-leaderboard-header">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(245,158,11,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f59e0b' }}>
+                            <Trophy size={22} />
+                        </div>
+                        <div>
+                            <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Classifica Operatori</h2>
+                            <p style={{ margin: 0, fontSize: '0.7rem', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                                {new Date().toLocaleString('it-IT', { month: 'long', year: 'numeric' })}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {leaderboardLoading ? (
+                    <div className="cr-loading" style={{ padding: '2rem 0' }}>
+                        <RefreshCw size={24} className="animate-spin" style={{ color: '#f59e0b' }} />
+                    </div>
+                ) : leaderboard.length === 0 ? (
+                    <div className="cr-empty" style={{ padding: '2rem 0' }}>
+                        <Trophy size={36} style={{ color: '#475569' }} />
+                        <p>Nessun dato disponibile per questo mese</p>
+                    </div>
+                ) : (
+                    <>
+                        {/* Podium - Top 3 */}
+                        {leaderboard.length >= 1 && (
+                            <div className="cr-podium">
+                                {leaderboard.slice(0, 3).map((entry, idx) => {
+                                    const medals = ['🥇', '🥈', '🥉'];
+                                    const podiumColors = [
+                                        { bg: 'linear-gradient(135deg, #fef3c7, #fde68a)', border: '#f59e0b', text: '#92400e' },
+                                        { bg: 'linear-gradient(135deg, #f1f5f9, #e2e8f0)', border: '#94a3b8', text: '#475569' },
+                                        { bg: 'linear-gradient(135deg, #fed7aa, #fdba74)', border: '#f97316', text: '#9a3412' }
+                                    ];
+                                    const style = podiumColors[idx];
+                                    return (
+                                        <div key={entry.employee_id} className="cr-podium-card" style={{ background: style.bg, borderColor: style.border }}>
+                                            <div className="cr-podium-medal">{medals[idx]}</div>
+                                            <div className="cr-podium-name" style={{ color: style.text }}>{entry.employee_name}</div>
+                                            <div className="cr-podium-score">
+                                                <span className="cr-podium-points">{entry.net_points}</span>
+                                                <span className="cr-podium-label">punti netti</span>
+                                            </div>
+                                            <div className="cr-podium-stats">
+                                                <span title="Missioni completate">📦 {entry.missions_completed}</span>
+                                                <span title="Tempo medio reazione">{formatReactionTime(entry.avg_reaction_seconds)}</span>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {/* Full Table */}
+                        <div className="cr-leaderboard-table-wrapper">
+                            <table className="cr-leaderboard-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Operatore</th>
+                                        <th>Missioni</th>
+                                        <th>Punti</th>
+                                        <th>Penalità</th>
+                                        <th>Netto</th>
+                                        <th>Reazione</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {leaderboard.map((entry) => (
+                                        <tr key={entry.employee_id} className={entry.rank <= 3 ? 'cr-lb-top' : ''}>
+                                            <td className="cr-lb-rank">
+                                                {entry.rank <= 3 ? ['🥇', '🥈', '🥉'][entry.rank - 1] : entry.rank}
+                                            </td>
+                                            <td className="cr-lb-name">
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                    <div className="cr-operator-avatar" style={{ width: 28, height: 28, fontSize: '0.65rem' }}>
+                                                        {entry.employee_name?.charAt(0)}
+                                                    </div>
+                                                    {entry.employee_name}
+                                                </div>
+                                            </td>
+                                            <td>{entry.missions_completed}</td>
+                                            <td style={{ color: '#22c55e', fontWeight: 700 }}>+{entry.total_points}</td>
+                                            <td style={{ color: entry.penalties_received > 0 ? '#ef4444' : '#94a3b8', fontWeight: 600 }}>
+                                                {entry.penalties_received > 0 ? `-${entry.penalties_received}` : '0'}
+                                            </td>
+                                            <td style={{ fontWeight: 900, color: entry.net_points >= 0 ? '#22c55e' : '#ef4444' }}>
+                                                {entry.net_points}
+                                            </td>
+                                            <td style={{ color: '#64748b', fontSize: '0.8rem' }}>
+                                                {formatReactionTime(entry.avg_reaction_seconds)}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );
