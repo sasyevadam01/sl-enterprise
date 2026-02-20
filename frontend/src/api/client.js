@@ -171,6 +171,7 @@ export const ovenApi = {
   getHistory: (limit = 30) => client.get("/oven/items/history", { params: { limit } }),
   insertItem: (data) => client.post("/oven/items", data),
   removeItem: (id) => client.put(`/oven/items/${id}/remove`),
+  extendItem: (id, extraMinutes) => client.put(`/oven/items/${id}/extend`, { extra_minutes: extraMinutes }),
   getStats: () => client.get("/oven/stats"),
 };
 
@@ -510,18 +511,23 @@ export const pickingApi = {
   toggleUrgency: (id) => client.patch(`/production/requests/${id}/urgency`),
 
   // Reporting
-  // Reporting
-  getReports: (startDate, endDate, shiftType = 'all') =>
-    client.get("/production/reports", { params: { start_date: startDate, end_date: endDate, shift_type: shiftType } }),
+  getReports: (startDate, endDate, shiftType = 'all', targetSector = null) => {
+    const params = { start_date: startDate, end_date: endDate, shift_type: shiftType };
+    if (targetSector) params.target_sector = targetSector;
+    return client.get("/production/reports", { params });
+  },
 
-  downloadReport: (startDate, endDate, shiftType = 'all') =>
-    client.get("/production/reports", {
-      params: { start_date: startDate, end_date: endDate, shift_type: shiftType, format: 'excel' },
-      responseType: 'blob'
-    }),
+  downloadReport: (startDate, endDate, shiftType = 'all', targetSector = null) => {
+    const params = { start_date: startDate, end_date: endDate, shift_type: shiftType, format: 'excel' };
+    if (targetSector) params.target_sector = targetSector;
+    return client.get("/production/reports", { params, responseType: 'blob' });
+  },
 
-  getExportUrl: (startDate, endDate, shiftType = 'all') =>
-    `${API_BASE_URL}/production/reports?start_date=${startDate}&end_date=${endDate}&shift_type=${shiftType}&format=excel`,
+  getExportUrl: (startDate, endDate, shiftType = 'all', targetSector = null) => {
+    let url = `${API_BASE_URL}/production/reports?start_date=${startDate}&end_date=${endDate}&shift_type=${shiftType}&format=excel`;
+    if (targetSector) url += `&target_sector=${targetSector}`;
+    return url;
+  },
 };
 
 export const adminApi = {

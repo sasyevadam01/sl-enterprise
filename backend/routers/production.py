@@ -533,6 +533,7 @@ async def get_production_reports(
     start_date: datetime,
     end_date: datetime,
     shift_type: Optional[str] = "all", # morning, afternoon, night, custom, all
+    target_sector: Optional[str] = None,  # pantografo, giostra - filtro settore
     format: str = "json", # json or excel
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -590,6 +591,10 @@ async def get_production_reports(
     else:
         filtered_requests = requests
 
+    # Filtro per settore (pantografo / giostra)
+    if target_sector:
+        filtered_requests = [r for r in filtered_requests if r.target_sector == target_sector]
+
     # 3. Data Aggregation
     data_rows = []
     
@@ -606,6 +611,7 @@ async def get_production_reports(
     trimmed_count = 0
     cancelled_count = 0  # NEW: Cancellation tracking
     urgent_count = 0     # NEW: Urgent blocks tracking
+    by_sector = {}       # Aggregazione per settore
     
     time_created_processing = [] # minutes
     time_processing_delivered = [] # minutes
@@ -631,7 +637,10 @@ async def get_production_reports(
         # NEW: Count urgent requests
         if hasattr(req, 'is_urgent') and req.is_urgent:
             urgent_count += req.quantity
-            
+
+        # Aggregazione per settore
+        sector_key = req.target_sector or 'non_specificato'
+        by_sector[sector_key] = by_sector.get(sector_key, 0) + req.quantity
         # Count Type
         by_type[mat_label] = by_type.get(mat_label, 0) + req.quantity
         
@@ -658,11 +667,16 @@ async def get_production_reports(
             delta = (req.delivered_at - req.processed_at).total_seconds() / 60
             time_processing_delivered.append(delta)
 
+        # Sector label for Excel
+        sector_labels = {'pantografo': 'Pantografo', 'giostra': 'Giostra', 'altro': 'Altro'}
+        sector_display = sector_labels.get(req.target_sector, '') if req.target_sector else ''
+
         # Row for Excel
         data_rows.append({
             "ID": req.id,
             "Data": req.created_at.strftime("%Y-%m-%d %H:%M"),
             "Utente Ordine": creator,
+            "Settore": sector_display,
             "Tipo": req.request_type,
             "Materiale": mat_label,
             "Misure": req.dimensions,
@@ -698,7 +712,9 @@ async def get_production_reports(
         "cancelled_percentage": round((cancelled_count / total_blocks * 100) if total_blocks > 0 else 0, 1),
         # NEW: Urgent stats
         "urgent_count": urgent_count,
-        "urgent_percentage": round((urgent_count / total_blocks * 100) if total_blocks > 0 else 0, 1)
+        "urgent_percentage": round((urgent_count / total_blocks * 100) if total_blocks > 0 else 0, 1),
+        # Aggregazione per settore
+        "by_sector": by_sector
     }
 
     if format == 'json':

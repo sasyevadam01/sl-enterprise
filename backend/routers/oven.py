@@ -189,6 +189,43 @@ async def remove_item(
     return serialize_item(item)
 
 
+class ExtendOvenRequest(BaseModel):
+    extra_minutes: int  # 15, 30, 60
+
+
+@router.put("/items/{item_id}/extend", summary="Prolunga Tempo Forno")
+async def extend_item(
+    item_id: int,
+    data: ExtendOvenRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Prolunga il tempo previsto di permanenza nel forno."""
+    item = db.query(OvenItem).filter(OvenItem.id == item_id).first()
+    if not item:
+        raise HTTPException(404, "Item non trovato.")
+    if item.status != "in_oven":
+        raise HTTPException(400, "Impossibile prolungare: item già rimosso.")
+
+    if data.extra_minutes not in (15, 30, 60):
+        raise HTTPException(400, "Valori consentiti: 15, 30, 60 minuti.")
+
+    item.expected_minutes += data.extra_minutes
+
+    # Log della prolunga nel campo notes
+    now_str = datetime.utcnow().strftime("%H:%M")
+    user_name = current_user.full_name or current_user.username
+    extend_log = f"[PROLUNGA] +{data.extra_minutes}min da {user_name} alle {now_str}"
+    if item.notes:
+        item.notes += f" | {extend_log}"
+    else:
+        item.notes = extend_log
+
+    db.commit()
+    db.refresh(item)
+    return serialize_item(item)
+
+
 @router.get("/stats", summary="Statistiche Forno")
 async def get_stats(
     db: Session = Depends(get_db),

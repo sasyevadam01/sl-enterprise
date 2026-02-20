@@ -7,7 +7,7 @@ import { ovenApi } from '../../api/client';
 import toast from 'react-hot-toast';
 import {
     Flame, Clock, Plus, Trash2, User, Package,
-    AlertTriangle, CheckCircle2, History, ChevronDown
+    AlertTriangle, CheckCircle2, History, ChevronDown, Timer
 } from 'lucide-react';
 
 const ITEM_TYPES = [
@@ -214,6 +214,7 @@ export default function OvenPage() {
     const [loading, setLoading] = useState(true);
     const [showInsert, setShowInsert] = useState(false);
     const [showHistory, setShowHistory] = useState(false);
+    const [extendingId, setExtendingId] = useState(null);
     const [, setTick] = useState(0);
 
     const loadData = useCallback(async () => {
@@ -267,6 +268,17 @@ export default function OvenPage() {
             loadData();
         } catch (err) {
             toast.error(err.response?.data?.detail || 'Errore rimozione');
+        }
+    };
+
+    const handleExtend = async (id, extraMinutes) => {
+        try {
+            await ovenApi.extendItem(id, extraMinutes);
+            toast.success(`Tempo prolungato di ${extraMinutes} min`);
+            setExtendingId(null);
+            loadData();
+        } catch (err) {
+            toast.error(err.response?.data?.detail || 'Errore prolunga');
         }
     };
 
@@ -399,15 +411,40 @@ export default function OvenPage() {
                                         <span className="mx-1">•</span>
                                         <span>{getTimeSince(item.inserted_at)}</span>
                                     </div>
-                                    <button
-                                        onClick={() => handleRemove(item.id)}
-                                        className={`px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 ${isOverdue
-                                            ? 'bg-red-600 hover:bg-red-700 text-white shadow-sm'
-                                            : 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
-                                            }`}
-                                    >
-                                        <CheckCircle2 size={14} /> Rimuovi
-                                    </button>
+                                    <div className="flex items-center gap-2 relative">
+                                        {/* Prolunga Button */}
+                                        <button
+                                            onClick={() => setExtendingId(extendingId === item.id ? null : item.id)}
+                                            className="px-3 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100"
+                                        >
+                                            <Timer size={14} /> Prolunga
+                                        </button>
+                                        {/* Prolunga Popover */}
+                                        {extendingId === item.id && (
+                                            <div className="absolute bottom-full right-0 mb-2 bg-white rounded-xl shadow-xl border border-slate-200 p-2 z-20 min-w-[140px]">
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 mb-1">Aggiungi tempo</p>
+                                                {[15, 30, 60].map(mins => (
+                                                    <button
+                                                        key={mins}
+                                                        onClick={() => handleExtend(item.id, mins)}
+                                                        className="w-full text-left px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-amber-50 hover:text-amber-700 rounded-lg transition-colors cursor-pointer"
+                                                    >
+                                                        +{mins} min
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {/* Rimuovi Button */}
+                                        <button
+                                            onClick={() => handleRemove(item.id)}
+                                            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer active:scale-95 flex items-center gap-1.5 ${isOverdue
+                                                ? 'bg-red-600 hover:bg-red-700 text-white shadow-sm'
+                                                : 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+                                                }`}
+                                        >
+                                            <CheckCircle2 size={14} /> Rimuovi
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         );
