@@ -860,7 +860,7 @@ async def create_checklist(
         raise HTTPException(500, f"Critical Error: {str(e)}")
 
 
-@router.get("/checklists", summary="Storico Checklist", response_model=List[ChecklistResponse])
+@router.get("/checklists", summary="Storico Checklist")
 async def list_checklists(
     vehicle_id: int = None,
     operator_id: int = None,
@@ -870,15 +870,47 @@ async def list_checklists(
     current_user: User = Depends(get_current_user)
 ):
     """Storico checklist."""
-    query = db.query(FleetChecklist).options(joinedload(FleetChecklist.operator), joinedload(FleetChecklist.resolver))
-    if vehicle_id:
-        query = query.filter(FleetChecklist.vehicle_id == vehicle_id)
-    if operator_id:
-        query = query.filter(FleetChecklist.operator_id == operator_id)
-    if date:
-        query = query.filter(func.date(FleetChecklist.timestamp) == date)
-    
-    return query.order_by(FleetChecklist.timestamp.desc()).limit(limit).all()
+    import traceback as tb
+    try:
+        query = db.query(FleetChecklist).options(joinedload(FleetChecklist.operator), joinedload(FleetChecklist.resolver))
+        if vehicle_id:
+            query = query.filter(FleetChecklist.vehicle_id == vehicle_id)
+        if operator_id:
+            query = query.filter(FleetChecklist.operator_id == operator_id)
+        if date:
+            query = query.filter(func.date(FleetChecklist.timestamp) == date)
+        
+        results = query.order_by(FleetChecklist.timestamp.desc()).limit(limit).all()
+        
+        out = []
+        for c in results:
+            op_info = None
+            if c.operator:
+                op_info = {"id": c.operator.id, "username": c.operator.username, "full_name": getattr(c.operator, 'full_name', None)}
+            res_info = None
+            if c.resolver:
+                res_info = {"id": c.resolver.id, "username": c.resolver.username, "full_name": getattr(c.resolver, 'full_name', None)}
+            out.append({
+                "id": c.id,
+                "vehicle_id": c.vehicle_id,
+                "operator_id": c.operator_id,
+                "timestamp": c.timestamp.isoformat() if c.timestamp else None,
+                "checklist_data": c.checklist_data or {},
+                "status": c.status,
+                "shift": c.shift,
+                "notes": c.notes,
+                "resolution_notes": c.resolution_notes,
+                "resolved_at": c.resolved_at.isoformat() if c.resolved_at else None,
+                "operator": op_info,
+                "resolver": res_info,
+                "tablet_status": c.tablet_status or "ok",
+                "tablet_photo_url": c.tablet_photo_url,
+            })
+        return out
+    except Exception as e:
+        print(f"[CHECKLISTS ERROR] {e}")
+        tb.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/vehicles/{vehicle_id}/checklist/latest", summary="Ultima Checklist")
@@ -900,51 +932,58 @@ async def get_shift_info(
     current_user: User = Depends(get_current_user)
 ):
     """Restituisce il turno corrente e i mezzi già controllati per questo turno."""
-    current_shift = get_current_shift()
-    now = datetime.now(IT_TZ)
-    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    
-    # Determine next shift info for display
-    h, m = now.hour, now.minute
-    time_val = h * 60 + m
-    
-    if current_shift:
-        label = get_shift_label(current_shift)
-        # Get vehicles already checked for this shift today
-        checked = db.query(FleetChecklist).filter(
-            FleetChecklist.shift == current_shift,
-            FleetChecklist.timestamp >= today_start
-        ).all()
+    import traceback as tb
+    try:
+        current_shift = get_current_shift()
+        now = datetime.now(IT_TZ)
+        # Use naive datetime for SQLite comparison
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
         
-        checked_map = {}
-        for c in checked:
-            op = db.query(User).filter(User.id == c.operator_id).first()
-            checked_map[str(c.vehicle_id)] = {
-                "operator": op.full_name or op.username if op else "?",
-                "tabletStatus": c.tablet_status or "ok",
-                "time": c.timestamp.strftime("%H:%M") if c.timestamp else None
+        # Determine next shift info for display
+        h, m = now.hour, now.minute
+        time_val = h * 60 + m
+        
+        if current_shift:
+            label = get_shift_label(current_shift)
+            # Get vehicles already checked for this shift today
+            checked = db.query(FleetChecklist).filter(
+                FleetChecklist.shift == current_shift,
+                FleetChecklist.timestamp >= today_start
+            ).all()
+            
+            checked_map = {}
+            for c in checked:
+                op = db.query(User).filter(User.id == c.operator_id).first()
+                checked_map[str(c.vehicle_id)] = {
+                    "operator": op.full_name or op.username if op else "?",
+                    "tabletStatus": c.tablet_status or "ok",
+                    "time": c.timestamp.strftime("%H:%M") if c.timestamp else None
+                }
+            
+            return {
+                "shift": current_shift,
+                "label": label,
+                "available": True,
+                "checked_vehicles": checked_map,
+                "message": None
             }
-        
-        return {
-            "shift": current_shift,
-            "label": label,
-            "available": True,
-            "checked_vehicles": checked_map,
-            "message": None
-        }
-    else:
-        # Outside any shift window
-        if time_val < 360:
-            msg = "Nessun check disponibile. Il turno mattutino inizia alle 06:00."
-        elif 830 < time_val < 840:
-            msg = "Pausa — il prossimo check sarà disponibile alle 14:00."
         else:
-            msg = "Turno terminato. Il prossimo check sarà disponibile domani alle 06:00."
-        
-        return {
-            "shift": None,
-            "label": "Fuori Turno",
-            "available": False,
-            "checked_vehicles": {},
-            "message": msg
-        }
+            # Outside any shift window
+            if time_val < 360:
+                msg = "Nessun check disponibile. Il turno mattutino inizia alle 06:00."
+            elif 830 < time_val < 840:
+                msg = "Pausa — il prossimo check sarà disponibile alle 14:00."
+            else:
+                msg = "Turno terminato. Il prossimo check sarà disponibile domani alle 06:00."
+            
+            return {
+                "shift": None,
+                "label": "Fuori Turno",
+                "available": False,
+                "checked_vehicles": {},
+                "message": msg
+            }
+    except Exception as e:
+        print(f"[SHIFT-INFO ERROR] {e}")
+        tb.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))

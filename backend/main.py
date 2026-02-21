@@ -13,7 +13,7 @@ from routers import (
     auth, users, employees, leaves, disciplinary, notifications, expiries, fleet, returns,
     tasks, events, audit, hr_stats, shifts, announcements, facility, factory, kpi, roles,
     admin_settings, mobile, maintenance, reports, bonuses, chat, production, logistics,
-    block_calculator, oven
+    block_calculator, oven, fleet_charge
 )
 
 
@@ -80,6 +80,14 @@ async def lifespan(app: FastAPI):
                  if "shift" not in cols:
                      print("[MIGRATION] Aggiunto campo 'shift' a fleet_checklists")
                      conn.execute(text("ALTER TABLE fleet_checklists ADD COLUMN shift VARCHAR(50)"))
+                     conn.commit()
+
+             # 6. fleet_checklists.vehicle_photo_url (Foto Mezzo)
+             if inspector.has_table("fleet_checklists"):
+                 cols = [c['name'] for c in inspector.get_columns("fleet_checklists")]
+                 if "vehicle_photo_url" not in cols:
+                     print("[MIGRATION] Aggiunto campo 'vehicle_photo_url' a fleet_checklists")
+                     conn.execute(text("ALTER TABLE fleet_checklists ADD COLUMN vehicle_photo_url VARCHAR(255) NULL"))
                      conn.commit()
 
              # 6. Auto-fix: assegna role_id a utenti con role_id NULL
@@ -254,6 +262,7 @@ app.include_router(announcements.router)
 # Parco Mezzi & Resi
 app.include_router(fleet.router)
 app.include_router(returns.router)
+app.include_router(fleet_charge.router)  # Ricarica Mezzi
 
 # Factory / Production
 # app.include_router(factory.router)

@@ -164,6 +164,9 @@ const getMenuItems = (hasPermission) => {
             { type: 'divider', label: 'Check List Obbligatorie' },
             { title: 'Check List Carrelli', path: '/production/checklist', permission: 'perform_checklists', icon: '🚜' },
             { title: 'Storico Check Carrelli', path: '/production/checklist/history', permission: 'view_checklist_history', icon: '📜' },
+            { type: 'divider', label: 'Ricarica Mezzi' },
+            { title: 'Ricarica Mezzi', path: '/fleet/charge', permission: null, icon: '🔋' },
+            { title: 'Controllo Ricariche', path: '/fleet/charge/control', permission: 'view_charge_control', icon: '📊' },
         ],
     });
 

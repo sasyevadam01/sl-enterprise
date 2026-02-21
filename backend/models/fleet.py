@@ -128,3 +128,40 @@ class FleetChecklist(Base):
     vehicle = relationship("FleetVehicle", back_populates="checklists")
     operator = relationship("User", foreign_keys=[operator_id])
     resolver = relationship("User", foreign_keys=[resolved_by])
+
+
+class FleetChargeCycle(Base):
+    """Ciclo di utilizzo/ricarica di un veicolo.
+    
+    Stato: in_use → charging/parked → completed (al prossimo prelievo).
+    """
+    __tablename__ = "fleet_charge_cycles"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    vehicle_id = Column(Integer, ForeignKey("fleet_vehicles.id"), nullable=False)
+
+    # Prelievo
+    operator_id = Column(Integer, ForeignKey("employees.id"), nullable=False)
+    pickup_time = Column(DateTime, nullable=False)
+    pickup_battery_pct = Column(Integer, nullable=False)
+    early_pickup = Column(Boolean, default=False)
+    early_pickup_reason = Column(Text, nullable=True)
+
+    # Riconsegna
+    return_time = Column(DateTime, nullable=True)
+    return_operator_id = Column(Integer, ForeignKey("employees.id"), nullable=True)
+    return_battery_pct = Column(Integer, nullable=True)
+    return_type = Column(String(20), nullable=True)       # 'charge' | 'park'
+    return_banchina_id = Column(Integer, ForeignKey("banchine.id"), nullable=True)
+
+    # Stato ciclo
+    status = Column(String(20), default='in_use')         # in_use, charging, parked, completed
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relazioni
+    vehicle = relationship("FleetVehicle", backref="charge_cycles")
+    pickup_operator = relationship("Employee", foreign_keys=[operator_id])
+    return_operator = relationship("Employee", foreign_keys=[return_operator_id])
+    return_banchina = relationship("Banchina")

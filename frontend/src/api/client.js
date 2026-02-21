@@ -171,6 +171,18 @@ export const fleetApi = {
   unblockVehicle: (vehicleId) => client.patch(`/fleet/vehicles/${vehicleId}/unblock`),
 };
 
+// ── Ricarica Mezzi ──
+export const chargeApi = {
+  getVehicles: () => client.get("/fleet/charge/vehicles"),
+  getMyActive: () => client.get("/fleet/charge/my-active"),
+  pickup: (vehicleId, data) => client.post(`/fleet/charge/pickup/${vehicleId}`, data),
+  returnVehicle: (cycleId, data) => client.post(`/fleet/charge/return/${cycleId}`, data),
+  getDashboard: (days = 7) => client.get("/fleet/charge/dashboard", { params: { days } }),
+  getHistory: (params) => client.get("/fleet/charge/history", { params }),
+  getVehicleHistory: (vehicleId, days = 90) => client.get(`/fleet/charge/vehicle/${vehicleId}/history`, { params: { days } }),
+  getOperatorStats: (days = 30) => client.get("/fleet/charge/operators/stats", { params: { days } }),
+};
+
 export const ovenApi = {
   getItems: () => client.get("/oven/items"),
   getHistory: (limit = 30) => client.get("/oven/items/history", { params: { limit } }),
