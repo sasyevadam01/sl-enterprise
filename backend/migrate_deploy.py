@@ -41,6 +41,10 @@ def run_migrations():
         ("fleet_charge_cycles", "forgot_return", "BOOLEAN DEFAULT 0"),
         ("fleet_charge_cycles", "forced_return_by", "INTEGER REFERENCES employees(id)"),
         
+        # FLEET VEHICLES (Blocco temporaneo sicurezza)
+        ("fleet_vehicles", "is_blocked", "BOOLEAN DEFAULT 0"),
+        ("fleet_vehicles", "block_info", "JSON"),
+        
         # OTHERS (Add here if needed)
     ]
     
