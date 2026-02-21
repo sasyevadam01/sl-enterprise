@@ -12,7 +12,14 @@ SL Enterprise è il sistema MES/ERP integrato per Siervoplast, progettato per ge
 
 ## 🚀 Stato Corrente & Aggiornamenti Recenti
 
-### Ultimo Pull (21/02/2026)
+### Ultimo Sviluppo (21/02/2026 - Oltre le 21:00)
+Abbiamo introdotto migliorie architetturali basate sul feedback visivo e gestionale:
+- **Splash Screen Aziendale Animata**: Creata una schermata di avvio in puro CSS animato al login, che mostra un caricamento con il logo ufficiale **Siervoplast**, e la scritta dedicata al sistema gestionale, con particellari e background premium (`SplashPage.jsx`).
+- **Blocco Veicoli di Emergenza / Sicurezza**:
+  - `Backend`: Creati campi DB dedicati `is_blocked` e `block_info` al posto del controllo testuale nelle note. Introdotte nuove API (`fleet/{id}/block` e `unblock`).
+  - `Frontend`: Sistemato bug UI di propagazione eventi (`stopPropagation`) sul pulsante "Blocca Veicolo" nel frontend. Il pulsante ora opera l'unblock o il block correttamente, salvando data, orario, esecutore e motivo nella tabella.
+
+### Precedente Pull (21/02/2026)
 Abbiamo sincronizzato il codice con le ultime modifiche remote e applicato nuove features:
 - **Fleet Management (Ricarica)**: Implementato Fast Pickup, Takeover forzato (Passaggio di Consegne) con penalità `forgot_return` e calcolo dinamico della ricarica proporzionata alla batteria rimanente.
 - **Logistica**: Ottimizzazione del pool di produzione e inserimento dati.
