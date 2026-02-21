@@ -21,6 +21,9 @@ class FleetVehicle(Base):
     is_4_0 = Column(Boolean, default=False)  # Industria 4.0
     status = Column(String(20), default='operational')  # operational, breakdown, maintenance
     
+    is_blocked = Column(Boolean, default=False)
+    block_info = Column(JSON, nullable=True) # {"reason": str, "by": str, "at": str}
+    
     notes = Column(Text, nullable=True)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)

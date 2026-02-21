@@ -185,35 +185,6 @@ async def delete_vehicle(
 # BLOCCO VEICOLI PER SICUREZZA
 # ============================================================
 
-BLOCK_PREFIX = "[BLOCK_INFO]"
-BLOCK_SUFFIX = "[/BLOCK_INFO]"
-
-
-def _parse_block_info(notes: str) -> dict:
-    """Estrae le info di blocco dal campo notes."""
-    if not notes or BLOCK_PREFIX not in notes:
-        return None
-    try:
-        start = notes.index(BLOCK_PREFIX) + len(BLOCK_PREFIX)
-        end = notes.index(BLOCK_SUFFIX)
-        return json.loads(notes[start:end])
-    except (ValueError, json.JSONDecodeError):
-        return None
-
-
-def _strip_block_info(notes: str) -> str:
-    """Rimuove le info di blocco dal campo notes."""
-    if not notes or BLOCK_PREFIX not in notes:
-        return notes or ""
-    try:
-        start = notes.index(BLOCK_PREFIX)
-        end = notes.index(BLOCK_SUFFIX) + len(BLOCK_SUFFIX)
-        cleaned = (notes[:start] + notes[end:]).strip()
-        return cleaned if cleaned else None
-    except ValueError:
-        return notes
-
-
 class BlockVehicleRequest(BaseModel):
     reason: str  # Motivazione obbligatoria
 
@@ -225,34 +196,31 @@ async def block_vehicle(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Blocca un veicolo impedendone l'utilizzo. Solo utenti autorizzati (PERMESSO_ZERO)."""
+    """Blocca un veicolo impedendone l'utilizzo."""
     vehicle = db.query(FleetVehicle).filter(FleetVehicle.id == vehicle_id).first()
     if not vehicle:
         raise HTTPException(404, "Mezzo non trovato")
-    if vehicle.status == 'blocked':
+    if vehicle.is_blocked:
         raise HTTPException(400, "Mezzo già bloccato")
 
-    # Salva stato precedente e info blocco nel campo notes
     now = datetime.now(IT_TZ)
-    block_info = {
+    vehicle.is_blocked = True
+    vehicle.block_info = {
         "by": current_user.full_name or current_user.username,
         "by_id": current_user.id,
         "reason": body.reason.strip(),
         "at": now.isoformat(),
         "previous_status": vehicle.status or "operational"
     }
-    block_tag = f"{BLOCK_PREFIX}{json.dumps(block_info, ensure_ascii=False)}{BLOCK_SUFFIX}"
-
-    # Prepend block info to notes (preserva note esistenti)
-    existing_notes = _strip_block_info(vehicle.notes)  # Clean any old block info
-    vehicle.notes = f"{block_tag}\n{existing_notes}" if existing_notes else block_tag
+    
+    # Manteniamo anche il vecchio meccanismo status=blocked per retrocompatibilità
     vehicle.status = "blocked"
 
     db.commit()
     db.refresh(vehicle)
     return {
         "message": f"Veicolo {vehicle.internal_code} bloccato per sicurezza",
-        "block_info": block_info
+        "block_info": vehicle.block_info
     }
 
 
@@ -266,16 +234,17 @@ async def unblock_vehicle(
     vehicle = db.query(FleetVehicle).filter(FleetVehicle.id == vehicle_id).first()
     if not vehicle:
         raise HTTPException(404, "Mezzo non trovato")
-    if vehicle.status != 'blocked':
+    if not vehicle.is_blocked and vehicle.status != 'blocked':
         raise HTTPException(400, "Mezzo non è bloccato")
 
-    # Recupera stato precedente
-    block_info = _parse_block_info(vehicle.notes)
-    previous_status = block_info.get("previous_status", "operational") if block_info else "operational"
+    # Recupera stato precedente se presente
+    previous_status = "operational"
+    if vehicle.block_info and isinstance(vehicle.block_info, dict):
+        previous_status = vehicle.block_info.get("previous_status", "operational")
 
-    # Ripristina
+    vehicle.is_blocked = False
+    vehicle.block_info = None
     vehicle.status = previous_status
-    vehicle.notes = _strip_block_info(vehicle.notes)
 
     db.commit()
     db.refresh(vehicle)

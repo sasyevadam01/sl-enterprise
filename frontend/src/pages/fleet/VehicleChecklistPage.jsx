@@ -746,7 +746,8 @@ export default function VehicleChecklistPage() {
                                                                 {/* Block/Unblock Toggle - separate inline button, always visible */}
                                                                 {canBlockVehicles && !isChecked && (
                                                                     <button
-                                                                        onClick={() => {
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
                                                                             if (isBlocked) {
                                                                                 handleUnblockVehicle(v);
                                                                             } else {
