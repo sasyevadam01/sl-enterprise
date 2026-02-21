@@ -86,9 +86,16 @@ def _serialize_cycle(cycle: FleetChargeCycle, db: Session = None):
         result["usage_minutes"] = int(delta.total_seconds() / 60)
     if cycle.status == "charging" and cycle.return_time:
         delta = now - cycle.return_time
-        result["charge_minutes"] = int(delta.total_seconds() / 60)
-        result["charge_remaining_minutes"] = max(0, CHARGE_MIN_HOURS * 60 - int(delta.total_seconds() / 60))
-        result["charge_complete"] = delta >= timedelta(hours=CHARGE_MIN_HOURS)
+        charge_minutes = int(delta.total_seconds() / 60)
+        
+        # Miglioramento B: Calcolo dinamico
+        # Stimiamo 0-100% in 5h -> 300 min -> 3 min per 1%
+        battery_start = cycle.return_battery_pct or 0
+        minutes_needed = (100 - battery_start) * 3
+        
+        result["charge_minutes"] = charge_minutes
+        result["charge_remaining_minutes"] = max(0, minutes_needed - charge_minutes)
+        result["charge_complete"] = charge_minutes >= minutes_needed
     return result
 
 def _serialize_vehicle_with_status(vehicle: FleetVehicle, db: Session):
@@ -114,7 +121,12 @@ def _serialize_vehicle_with_status(vehicle: FleetVehicle, db: Session):
             now = _now_it().replace(tzinfo=None)
             delta = now - active_cycle.return_time
             charge_minutes = int(delta.total_seconds() / 60)
-            charge_remaining = max(0, CHARGE_MIN_HOURS * 60 - charge_minutes)
+            
+            # Miglioramento B: Calcolo dinamico
+            battery_start = active_cycle.return_battery_pct or 0
+            minutes_needed = (100 - battery_start) * 3
+            
+            charge_remaining = max(0, minutes_needed - charge_minutes)
             battery_pct = active_cycle.return_battery_pct
             current_operator = _employee_name(active_cycle.return_operator or active_cycle.pickup_operator)
         elif active_cycle.status == "parked":
@@ -220,20 +232,25 @@ async def pickup_vehicle(
         op_name = _employee_name(existing.pickup_operator)
         raise HTTPException(409, f"🔴 Veicolo già in uso da {op_name}")
     
-    # Se in carica, verifica durata minima
+    # Se in carica, verifica durata minima proporzionata
     is_early = False
     if existing and existing.status == "charging":
         now = _now_it().replace(tzinfo=None)
         charge_duration = now - existing.return_time
-        if charge_duration < timedelta(hours=CHARGE_MIN_HOURS):
+        charge_minutes = int(charge_duration.total_seconds() / 60)
+        
+        battery_start = existing.return_battery_pct or 0
+        minutes_needed = (100 - battery_start) * 3
+        
+        if charge_minutes < minutes_needed:
             if not body.early_reason:
-                remaining = timedelta(hours=CHARGE_MIN_HOURS) - charge_duration
-                hours_left = int(remaining.total_seconds() // 3600)
-                mins_left = int((remaining.total_seconds() % 3600) // 60)
+                remaining_minutes = minutes_needed - charge_minutes
+                hours_left = remaining_minutes // 60
+                mins_left = remaining_minutes % 60
                 raise HTTPException(
                     422,
-                    f"⚠️ Carica in corso da {int(charge_duration.total_seconds()//60)} minuti. "
-                    f"Mancano {hours_left}h {mins_left}m alle 6 ore minime. "
+                    f"⚠️ Carica in corso da {charge_minutes} minuti. "
+                    f"Mancano {hours_left}h {mins_left}m al 100%. "
                     f"Invia 'early_reason' per procedere comunque."
                 )
             is_early = True
@@ -262,6 +279,62 @@ async def pickup_vehicle(
         "message": f"✅ Veicolo {vehicle.internal_code} prelevato",
         "cycle_id": new_cycle.id,
         "early_pickup": is_early
+    }
+
+
+@router.post("/takeover/{vehicle_id}", summary="Passaggio di consegne (forzato)")
+async def takeover_vehicle(
+    vehicle_id: int,
+    body: PickupRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Chiude forzatamente il turno aperto da un altro operatore assegnandogli la penalità, e apre un nuovo ciclo."""
+    vehicle = db.query(FleetVehicle).filter(FleetVehicle.id == vehicle_id).first()
+    if not vehicle:
+        raise HTTPException(404, "Veicolo non trovato")
+    
+    if vehicle.status == "blocked":
+        raise HTTPException(403, "⛔ Veicolo bloccato per sicurezza")
+    
+    employee = db.query(Employee).filter(Employee.user_id == current_user.id).first()
+    if not employee:
+        raise HTTPException(400, "Account non collegato a un dipendente")
+    
+    existing = _get_active_cycle(db, vehicle_id)
+    if not existing or existing.status != "in_use":
+        raise HTTPException(400, "Il veicolo non è 'in uso' da nessun operatore")
+    
+    if existing.operator_id == employee.id:
+        raise HTTPException(400, "Non puoi forzare il passaggio su te stesso. Usa Riconsegna e poi Preleva.")
+        
+    now = _now_it().replace(tzinfo=None)
+    
+    # Chiudi ciclo precedente con penalità
+    existing.status = "completed"
+    existing.return_time = now
+    existing.return_battery_pct = body.battery_pct
+    existing.return_type = "takeover"
+    existing.forgot_return = True
+    existing.forced_return_by = employee.id
+    
+    # Crea nuovo ciclo per l'operatore corrente
+    new_cycle = FleetChargeCycle(
+        vehicle_id=vehicle_id,
+        operator_id=employee.id,
+        pickup_time=now,
+        pickup_battery_pct=body.battery_pct,
+        status="in_use",
+        created_at=now,
+    )
+    db.add(new_cycle)
+    db.commit()
+    db.refresh(new_cycle)
+    
+    op_name = _employee_name(existing.pickup_operator)
+    return {
+        "message": f"✅ Passaggio di consegne da {op_name} completato.",
+        "cycle_id": new_cycle.id
     }
 
 
@@ -400,7 +473,8 @@ async def charge_dashboard(
         )
         if next_cycle:
             charge_duration = next_cycle.pickup_time - c.return_time
-            if charge_duration >= timedelta(hours=CHARGE_MIN_HOURS):
+            minutes_needed = (100 - (c.return_battery_pct or 0)) * 3
+            if (charge_duration.total_seconds() / 60) >= minutes_needed:
                 compliant_charges += 1
     
     compliance_rate = (compliant_charges / len(completed_charges) * 100) if completed_charges else 100
@@ -590,6 +664,7 @@ async def operator_stats(
                 "early_pickups": 0,
                 "unnecessary_charges": 0,
                 "critical_ignored": 0,
+                "forgot_returns": 0,
                 "total_usage_minutes": 0,
                 "battery_sum_return": 0,
             }
@@ -605,6 +680,11 @@ async def operator_stats(
             op["parked"] += 1
             if c.return_battery_pct and c.return_battery_pct <= 20:
                 op["critical_ignored"] += 1
+        elif c.return_type == "takeover" and getattr(c, "forgot_return", False):
+            op["forgot_returns"] += 1
+        else:
+            if getattr(c, "forgot_return", False):
+                op["forgot_returns"] += 1
         
         if c.early_pickup:
             op["early_pickups"] += 1
@@ -639,6 +719,10 @@ async def operator_stats(
         if op["critical_ignored"] == 0: score += 2
         elif op["critical_ignored"] <= 3: score += 1
         
+        if op["forgot_returns"] == 0: score += 2
+        elif op["forgot_returns"] <= 2: score += 0
+        else: score -= 2
+        
         if score >= 7:
             rating = "green"
         elif score >= 4:
@@ -654,6 +738,7 @@ async def operator_stats(
             "unnecessary_charge_rate": round(unnecessary_rate, 1),
             "early_pickup_rate": round(early_rate, 1),
             "critical_ignored": op["critical_ignored"],
+            "forgot_returns": op["forgot_returns"],
             "avg_battery_return": avg_battery,
             "avg_usage_minutes": avg_usage,
             "rating": rating,

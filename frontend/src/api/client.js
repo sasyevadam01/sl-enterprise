@@ -176,6 +176,7 @@ export const chargeApi = {
   getVehicles: () => client.get("/fleet/charge/vehicles"),
   getMyActive: () => client.get("/fleet/charge/my-active"),
   pickup: (vehicleId, data) => client.post(`/fleet/charge/pickup/${vehicleId}`, data),
+  takeoverVehicle: (vehicleId, data) => client.post(`/fleet/charge/takeover/${vehicleId}`, data),
   returnVehicle: (cycleId, data) => client.post(`/fleet/charge/return/${cycleId}`, data),
   getDashboard: (days = 7) => client.get("/fleet/charge/dashboard", { params: { days } }),
   getHistory: (params) => client.get("/fleet/charge/history", { params }),

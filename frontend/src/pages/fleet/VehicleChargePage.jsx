@@ -95,6 +95,7 @@ export default function VehicleChargePage() {
     const [earlyWarning, setEarlyWarning] = useState(null);
     const [batteryWarning, setBatteryWarning] = useState(null);
     const [confirmWarning, setConfirmWarning] = useState(null);
+    const [takeoverWarning, setTakeoverWarning] = useState(null);
     const [submitting, setSubmitting] = useState(false);
 
     // ── Load Data ──
@@ -132,10 +133,6 @@ export default function VehicleChargePage() {
 
     // ── Pickup Flow ──
     const handleVehicleClick = (vehicle) => {
-        if (vehicle.charge_status === 'in_use') {
-            toast.error(`🔴 Veicolo in uso da ${vehicle.current_operator}`);
-            return;
-        }
         if (vehicle.vehicle_status === 'blocked') {
             toast.error('⛔ Veicolo bloccato per sicurezza');
             return;
@@ -144,8 +141,19 @@ export default function VehicleChargePage() {
             toast.error('⚠️ Hai già un veicolo in uso. Riconsegnalo prima.');
             return;
         }
+        if (vehicle.charge_status === 'in_use' && vehicle.current_operator === user?.name) { // simplified check
+            toast.error('Sei già su questo veicolo');
+            return;
+        }
         setSelectedVehicle(vehicle);
-        setSelectedBattery(null);
+
+        // A: Pre-selezionare batteria al 100% se carica completa
+        if (vehicle.charge_status === 'charging' && vehicle.charge_remaining_minutes === 0) {
+            setSelectedBattery(100);
+        } else {
+            setSelectedBattery(null);
+        }
+
         setStep('pickup');
     };
 
@@ -155,7 +163,13 @@ export default function VehicleChargePage() {
             return;
         }
 
-        // Check if vehicle was charging and < 6h
+        // Takeover Check
+        if (selectedVehicle.charge_status === 'in_use') {
+            setTakeoverWarning(selectedVehicle);
+            return;
+        }
+
+        // Check if vehicle was charging and < 6h or whatever dynamic minutes
         if (selectedVehicle.charge_status === 'charging' &&
             selectedVehicle.charge_remaining_minutes > 0) {
             setEarlyWarning(selectedVehicle);
@@ -174,20 +188,30 @@ export default function VehicleChargePage() {
             await chargeApi.pickup(selectedVehicle.id, data);
             toast.success(`✅ Veicolo ${selectedVehicle.internal_code} prelevato!`);
 
-            setStep('list');
-            setSelectedVehicle(null);
-            setSelectedBattery(null);
-            setEarlyWarning(null);
-            setEarlyReason('');
+            resetToList();
             await loadData();
         } catch (err) {
             const detail = err.response?.data?.detail || 'Errore durante il prelievo';
-            // If early pickup required, show the warning
             if (err.response?.status === 422 && detail.includes('early_reason')) {
                 setEarlyWarning(selectedVehicle);
             } else {
                 toast.error(detail);
             }
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const executeTakeover = async () => {
+        setSubmitting(true);
+        try {
+            const data = { battery_pct: selectedBattery };
+            await chargeApi.takeoverVehicle(selectedVehicle.id, data);
+            toast.success(`✅ Passaggio di consegne completato su ${selectedVehicle.internal_code}!`);
+            resetToList();
+            await loadData();
+        } catch (err) {
+            toast.error(err.response?.data?.detail || 'Errore durante il passaggio di consegne');
         } finally {
             setSubmitting(false);
         }
@@ -271,6 +295,8 @@ export default function VehicleChargePage() {
         setEarlyWarning(null);
         setEarlyReason('');
         setBatteryWarning(null);
+        setConfirmWarning(null);
+        setTakeoverWarning(null);
     };
 
 
@@ -510,15 +536,21 @@ export default function VehicleChargePage() {
                                 disabled={!selectedBattery || submitting}
                                 className={`w-full py-4 rounded-2xl font-bold text-lg transition-all shadow-lg active:scale-[0.98]
                                     ${selectedBattery
-                                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                        ? selectedVehicle.charge_status === 'in_use'
+                                            ? 'bg-amber-600 text-white hover:bg-amber-700'
+                                            : 'bg-blue-600 text-white hover:bg-blue-700'
                                         : 'bg-slate-200 text-slate-400 cursor-not-allowed'
                                     }`}
                             >
                                 {submitting ? (
                                     <div className="flex items-center justify-center gap-2">
                                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                        Prelievo in corso...
+                                        Operazione in corso...
                                     </div>
+                                ) : selectedVehicle.charge_status === 'in_use' ? (
+                                    `🔄 Forza Passaggio di Consegne`
+                                ) : selectedVehicle.charge_status === 'charging' && selectedVehicle.charge_remaining_minutes === 0 ? (
+                                    `🚀 Fast Pickup al 100%`
                                 ) : (
                                     `🚀 Preleva Veicolo ${selectedVehicle.internal_code}`
                                 )}
@@ -817,6 +849,41 @@ export default function VehicleChargePage() {
                         >
                             ✅ Ho Capito
                         </button>
+                    </motion.div>
+                </div>
+            )}
+
+            {/* Takeover Warning */}
+            {takeoverWarning && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <motion.div
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl"
+                    >
+                        <div className="text-center mb-4">
+                            <AlertTriangle className="w-16 h-16 text-amber-500 mx-auto mb-2" />
+                            <h3 className="text-xl font-bold text-slate-900 mb-3">Passaggio di Consegne</h3>
+                            <p className="text-sm text-slate-600">
+                                Stai forzando la chiusura del turno di <strong>{takeoverWarning.current_operator}</strong> per prelevare il mezzo.
+                                Questa azione assegnerà una <strong className="text-red-600">penalità</strong> all'operatore per essersi dimenticato di riconsegnare il mezzo a fine turno.
+                                Vuoi procedere?
+                            </p>
+                        </div>
+                        <div className="space-y-2 mt-6">
+                            <button
+                                onClick={() => { setTakeoverWarning(null); executeTakeover(); }}
+                                className="w-full py-3 rounded-xl bg-amber-600 text-white font-bold text-sm hover:bg-amber-700"
+                            >
+                                🔄 Conferma Passaggio
+                            </button>
+                            <button
+                                onClick={() => setTakeoverWarning(null)}
+                                className="w-full py-3 rounded-xl border border-slate-300 text-slate-600 font-medium text-sm hover:bg-slate-50"
+                            >
+                                Annulla
+                            </button>
+                        </div>
                     </motion.div>
                 </div>
             )}

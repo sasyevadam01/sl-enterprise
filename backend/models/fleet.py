@@ -155,6 +155,11 @@ class FleetChargeCycle(Base):
     return_type = Column(String(20), nullable=True)       # 'charge' | 'park'
     return_banchina_id = Column(Integer, ForeignKey("banchine.id"), nullable=True)
 
+    # Penalita 
+    forgot_return = Column(Boolean, default=False)        # L'operatore si è dimenticato il mezzo
+    forced_return_by = Column(Integer, ForeignKey("employees.id"), nullable=True) # Chi ha forzato il takeover
+
+
     # Stato ciclo
     status = Column(String(20), default='in_use')         # in_use, charging, parked, completed
 
@@ -164,4 +169,5 @@ class FleetChargeCycle(Base):
     vehicle = relationship("FleetVehicle", backref="charge_cycles")
     pickup_operator = relationship("Employee", foreign_keys=[operator_id])
     return_operator = relationship("Employee", foreign_keys=[return_operator_id])
+    forced_return_operator = relationship("Employee", foreign_keys=[forced_return_by])
     return_banchina = relationship("Banchina")

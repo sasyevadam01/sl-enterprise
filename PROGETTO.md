@@ -13,8 +13,8 @@ SL Enterprise è il sistema MES/ERP integrato per Siervoplast, progettato per ge
 ## 🚀 Stato Corrente & Aggiornamenti Recenti
 
 ### Ultimo Pull (21/02/2026)
-Abbiamo sincronizzato il codice con le ultime modifiche remote:
-- **Fleet Management**: Implementati nuovi allarmi di sicurezza e visualizzazioni migliorate.
+Abbiamo sincronizzato il codice con le ultime modifiche remote e applicato nuove features:
+- **Fleet Management (Ricarica)**: Implementato Fast Pickup, Takeover forzato (Passaggio di Consegne) con penalità `forgot_return` e calcolo dinamico della ricarica proporzionata alla batteria rimanente.
 - **Logistica**: Ottimizzazione del pool di produzione e inserimento dati.
 - **Infrastruttura**: Pulizia e miglioramento degli script di avvio.
 

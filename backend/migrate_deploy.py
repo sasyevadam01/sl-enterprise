@@ -37,6 +37,10 @@ def run_migrations():
         ("users", "pin_hash", "VARCHAR"),
         ("users", "pin_required", "BOOLEAN DEFAULT 1"),
         
+        # FLEET CHARGE (Miglioramenti Takeover/Statistiche)
+        ("fleet_charge_cycles", "forgot_return", "BOOLEAN DEFAULT 0"),
+        ("fleet_charge_cycles", "forced_return_by", "INTEGER REFERENCES employees(id)"),
+        
         # OTHERS (Add here if needed)
     ]
     
