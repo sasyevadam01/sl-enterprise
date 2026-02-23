@@ -22,6 +22,8 @@ def run_migrations():
         ("logistics_requests", "confirmation_code", "VARCHAR(10)"),
         ("logistics_requests", "require_otp", "BOOLEAN DEFAULT 0"),
         ("logistics_requests", "was_released", "BOOLEAN DEFAULT 0"),
+        ("logistics_requests", "prepared_by_id", "INTEGER REFERENCES users(id)"),
+        ("logistics_requests", "prepared_at", "DATETIME"),
         
         # FLEET CHECKLISTS
         ("fleet_checklists", "tablet_photo_url", "VARCHAR(500)"),

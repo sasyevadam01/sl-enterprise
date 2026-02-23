@@ -87,7 +87,7 @@ class LogisticsRequest(Base):
     requester_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     
     # Status Flow
-    status = Column(String(20), default="pending")  # pending, assigned, processing, completed, cancelled
+    status = Column(String(20), default="pending")  # pending, assigned, preparing, prepared, processing, completed, cancelled
     is_urgent = Column(Boolean, default=False)
     
     # Escalation Level (0=None, 1=Coordinators, 2=Controller, 3=Directors)
@@ -104,7 +104,11 @@ class LogisticsRequest(Base):
     # Chi prende in carico
     assigned_to_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     is_forced_assignment = Column(Boolean, default=False)  # True se assegnato dal coordinatore
-    was_released = Column(Boolean, default=False)  # NEW: True se è stata rilasciata (per bonus salvataggio)
+    was_released = Column(Boolean, default=False)  # True se è stata rilasciata (per bonus salvataggio)
+    
+    # Preparazione (stato intermedio)
+    prepared_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # Chi ha preparato il materiale
+    prepared_at = Column(DateTime, nullable=True)  # Quando è stato preparato
     
     # ETA Management
     promised_eta_minutes = Column(Integer, nullable=True)  # ETA promessa dal magazziniere
@@ -126,14 +130,16 @@ class LogisticsRequest(Base):
     banchina = relationship("Banchina")
     requester = relationship("User", foreign_keys=[requester_id], backref="logistics_requests_made")
     assigned_to = relationship("User", foreign_keys=[assigned_to_id], backref="logistics_requests_assigned")
+    prepared_by = relationship("User", foreign_keys=[prepared_by_id], backref="logistics_requests_prepared")
     messages = relationship("LogisticsMessage", back_populates="request", cascade="all, delete-orphan")
 
     @property
     def wait_time_seconds(self):
-        """Tempo di attesa in secondi dalla creazione."""
-        if self.taken_at:
-            return (self.taken_at - self.created_at).total_seconds()
-        return (datetime.utcnow() - self.created_at).total_seconds()
+        """Tempo di attesa in secondi. Per richieste preparate, parte da prepared_at."""
+        base_time = self.prepared_at if self.prepared_at and self.status in ('prepared',) else self.created_at
+        if self.taken_at and self.status not in ('prepared',):
+            return (self.taken_at - base_time).total_seconds()
+        return (datetime.utcnow() - base_time).total_seconds()
 
     @property
     def is_overdue(self):

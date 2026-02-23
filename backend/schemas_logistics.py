@@ -59,6 +59,7 @@ class LogisticsRequestCreate(BaseModel):
 class LogisticsRequestTake(BaseModel):
     """Schema per prendere in carico una richiesta."""
     promised_eta_minutes: int
+    mode: Optional[str] = "delivering"  # "delivering" | "preparing"
 
 
 class LogisticsRequestComplete(BaseModel):
@@ -122,6 +123,11 @@ class LogisticsRequestResponse(BaseModel):
     # Computed
     wait_time_seconds: Optional[float] = None
     is_overdue: Optional[bool] = None
+    
+    # Preparazione
+    prepared_by_id: Optional[int] = None
+    prepared_by_name: Optional[str] = None
+    prepared_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

@@ -19,6 +19,8 @@ import './ControlRoomStyles.css';
 
 const STATUS_MAP = {
     pending: { label: 'In Attesa', color: '#b45309', bg: '#fef3c7', icon: Clock },
+    preparing: { label: 'In Preparazione', color: '#d97706', bg: '#fff7ed', icon: RefreshCw },
+    prepared: { label: 'Preparato', color: '#059669', bg: '#d1fae5', icon: CheckCircle2 },
     processing: { label: 'In Lavorazione', color: '#1d4ed8', bg: '#dbeafe', icon: RefreshCw },
     completed: { label: 'Completata', color: '#15803d', bg: '#dcfce7', icon: CheckCircle2 },
     cancelled: { label: 'Annullata', color: '#dc2626', bg: '#fef2f2', icon: XCircle },
@@ -423,9 +425,7 @@ export default function ControlRoomPage() {
                                                         {req.custom_description && (
                                                             <span className="cr-material-desc">{req.custom_description}</span>
                                                         )}
-                                                        {req.quantity > 1 && (
-                                                            <span className="cr-qty-badge">{req.quantity} {req.unit_of_measure}</span>
-                                                        )}
+                                                        <span className="cr-qty-badge">{req.quantity} {req.unit_of_measure || 'pz'}</span>
                                                     </div>
                                                 </div>
                                             </td>
@@ -554,7 +554,8 @@ export default function ControlRoomPage() {
                                                 <MaterialIcon emoji={req.material_type_icon} size={20} />
                                                 <div>
                                                     <strong>{req.material_type_label}</strong>
-                                                    {req.quantity > 1 && <span className="cr-qty-badge">{req.quantity}</span>}
+                                                    <span className="cr-qty-badge">{req.quantity} {req.unit_of_measure || 'pz'}</span>
+                                                    {req.custom_description && <span className="cr-material-desc">{req.custom_description}</span>}
                                                 </div>
                                             </div>
                                             <span className={`cr-wait-badge ${getWaitClass(req.wait_time_seconds)}`}>

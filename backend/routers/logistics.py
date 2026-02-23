@@ -142,7 +142,11 @@ def enrich_request_response(request: LogisticsRequest) -> dict:
         "eta_respected": request.eta_respected,
         "confirmation_code": request.confirmation_code,
         "wait_time_seconds": request.wait_time_seconds,
-        "is_overdue": request.is_overdue
+        "is_overdue": request.is_overdue,
+        # Preparazione
+        "prepared_by_id": request.prepared_by_id,
+        "prepared_by_name": request.prepared_by.full_name if request.prepared_by else None,
+        "prepared_at": request.prepared_at,
     }
     return data
 
@@ -568,13 +572,17 @@ async def list_requests(
         joinedload(LogisticsRequest.material_type),
         joinedload(LogisticsRequest.banchina),
         joinedload(LogisticsRequest.requester),
-        joinedload(LogisticsRequest.assigned_to)
+        joinedload(LogisticsRequest.assigned_to),
+        joinedload(LogisticsRequest.prepared_by)
     )
     
     # Filtri
     if status:
         if status == "active":
-            query = query.filter(LogisticsRequest.status.in_(["pending", "processing"]))
+            query = query.filter(LogisticsRequest.status.in_(["pending", "preparing", "prepared", "processing"]))
+        elif status == "pending":
+            # Pool: include anche 'prepared' (pronto al ritiro)
+            query = query.filter(LogisticsRequest.status.in_(["pending", "prepared"]))
         else:
             query = query.filter(LogisticsRequest.status == status)
     
@@ -606,14 +614,18 @@ async def list_requests(
     for r in requests:
         item = enrich_request_response(r)
         # Calcola se è "late" (automatico)
-        if r.status == 'pending' and (now - r.created_at).total_seconds() > (threshold_sla * 60):
-            item['is_auto_urgent'] = True
+        if r.status in ('pending', 'prepared'):
+            base_time = r.prepared_at if r.status == 'prepared' and r.prepared_at else r.created_at
+            if (now - base_time).total_seconds() > (threshold_sla * 60):
+                item['is_auto_urgent'] = True
+            else:
+                item['is_auto_urgent'] = False
         else:
             item['is_auto_urgent'] = False
         enriched_items.append(item)
     
     # Conta per stats
-    pending_count = db.query(LogisticsRequest).filter(LogisticsRequest.status == "pending").count()
+    pending_count = db.query(LogisticsRequest).filter(LogisticsRequest.status.in_(["pending", "prepared"])).count()
     urgent_count = db.query(LogisticsRequest).filter(
         LogisticsRequest.is_urgent == True,
         LogisticsRequest.status.in_(["pending", "processing"])
@@ -662,11 +674,18 @@ async def take_request(
     if not request:
         raise HTTPException(404, "Richiesta non trovata")
     
-    if request.status not in ["pending", "assigned"]:
+    if request.status not in ["pending", "assigned", "prepared"]:
         raise HTTPException(400, f"Richiesta non disponibile (status: {request.status})")
     
+    # Determina modalità
+    mode = data.mode if hasattr(data, 'mode') and data.mode else "delivering"
+    
+    # Se la richiesta è già preparata, forza delivering
+    if request.status == "prepared":
+        mode = "delivering"
+    
     # Prendi in carico
-    request.status = "processing"
+    request.status = "preparing" if mode == "preparing" else "processing"
     request.assigned_to_id = current_user.id
     request.taken_at = datetime.utcnow()
     request.promised_eta_minutes = data.promised_eta_minutes
@@ -676,13 +695,50 @@ async def take_request(
     # WebSocket Broadcast
     try:
         lm = get_logistics_manager()
-        await lm.broadcast("logistics", {"type": "request_updated", "request_id": request_id, "status": "processing"})
+        await lm.broadcast("logistics", {"type": "request_updated", "request_id": request_id, "status": request.status})
     except Exception as e:
         print(f"[WS ERROR] Broadcast fallito per take_request: {e}")
     
-    # TODO: Notifica al richiedente
+    return {"message": "Richiesta presa in carico", "eta_minutes": data.promised_eta_minutes, "mode": mode}
+
+
+@router.patch("/requests/{request_id}/mark-prepared")
+async def mark_prepared(
+    request_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Segna una richiesta come preparata. Torna in pool per il ritiro."""
+    request = db.query(LogisticsRequest).filter(LogisticsRequest.id == request_id).first()
+    if not request:
+        raise HTTPException(404, "Richiesta non trovata")
     
-    return {"message": "Richiesta presa in carico", "eta_minutes": data.promised_eta_minutes}
+    if request.status != "preparing":
+        raise HTTPException(400, "La richiesta non è in fase di preparazione")
+    
+    if request.assigned_to_id != current_user.id:
+        raise HTTPException(403, "Non sei assegnato a questa richiesta")
+    
+    # Segna come preparato
+    request.status = "prepared"
+    request.prepared_by_id = current_user.id
+    request.prepared_at = datetime.utcnow()
+    
+    # Rilascia per il ritiro: azzera assegnazione
+    request.assigned_to_id = None
+    request.taken_at = None
+    request.promised_eta_minutes = None
+    
+    db.commit()
+    
+    # WebSocket Broadcast
+    try:
+        lm = get_logistics_manager()
+        await lm.broadcast("logistics", {"type": "request_prepared", "request_id": request_id})
+    except Exception as e:
+        print(f"[WS ERROR] Broadcast fallito per mark_prepared: {e}")
+    
+    return {"message": "Materiale preparato! Torna in piscina per il ritiro."}
 
 
 @router.patch("/requests/{request_id}/complete")
@@ -779,15 +835,20 @@ async def release_request(
     if request.assigned_to_id != current_user.id:
         raise HTTPException(403, "Non sei assegnato a questa richiesta")
     
-    if request.status != "processing":
+    if request.status not in ("processing", "preparing"):
         raise HTTPException(400, "Richiesta non in elaborazione")
     
-    # Rilascia
-    request.status = "pending"
+    # Se rilascia da preparing, torna a pending (o prepared se era già preparata prima)
+    # Se rilascia da processing, torna a pending (o prepared se era stata preparata)
+    if request.prepared_by_id and request.status == "processing":
+        # Era già preparata, torna a "prepared"
+        request.status = "prepared"
+    else:
+        request.status = "pending"
     request.assigned_to_id = None
     request.taken_at = None
     request.promised_eta_minutes = None
-    request.was_released = True  # NEW: Segna come rilasciata (per bonus salvataggio)
+    request.was_released = True
     
     # Penalità per rilascio
     penalty = int(get_config_value(db, "penalty_release_task", "1"))

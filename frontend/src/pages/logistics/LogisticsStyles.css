@@ -432,6 +432,26 @@
   margin-bottom: 0.75rem;
 }
 
+.prepared-banner {
+  background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+  color: #065f46;
+  text-align: center;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  border: 1px solid #6ee7b7;
+}
+
+.btn-prepared {
+  background: linear-gradient(145deg, #f59e0b, #d97706) !important;
+}
+
+.btn-prepared:hover {
+  background: linear-gradient(145deg, #d97706, #b45309) !important;
+}
+
 .btn-take {
   width: 100%;
   padding: 1rem;

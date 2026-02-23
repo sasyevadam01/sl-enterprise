@@ -13,7 +13,7 @@ import {
     Warehouse, Trophy, Package, Waves, ClipboardList, BarChart3,
     Sparkles, MapPin, User, Clock, AlertCircle, ArrowRight, Inbox,
     MessageCircle, XCircle, CheckCircle, AlertTriangle, Zap, Timer,
-    Rocket, Info, Send
+    Rocket, Info, Send, PackageCheck, Truck
 } from 'lucide-react';
 import MaterialIcon from './components/MaterialIcon';
 import './LogisticsStyles.css';
@@ -42,6 +42,11 @@ export default function LogisticsPoolPage() {
     // Multi-Take State
     const [isSelectionMode, setIsSelectionMode] = useState(false);
     const [selectedRequestIds, setSelectedRequestIds] = useState(new Set());
+
+    // Mode Choice State (preparing vs delivering)
+    const [showModeModal, setShowModeModal] = useState(false);
+    const [pendingEta, setPendingEta] = useState(null);
+    const [markingPreparedId, setMarkingPreparedId] = useState(null);
 
     // ── Notification Sound (Web Audio API — no files needed) ──
     const playNotificationSound = () => {
@@ -142,8 +147,10 @@ export default function LogisticsPoolPage() {
             const poolData = await logisticsApi.getRequests({ status: 'pending' });
             setPoolRequests(poolData.items || []);
 
-            const queueData = await logisticsApi.getRequests({ my_assigned: true, status: 'processing' });
-            setMyQueue(queueData.items || []);
+            // Queue: include sia processing che preparing
+            const queueProcessing = await logisticsApi.getRequests({ my_assigned: true, status: 'processing' });
+            const queuePreparing = await logisticsApi.getRequests({ my_assigned: true, status: 'preparing' });
+            setMyQueue([...(queuePreparing.items || []), ...(queueProcessing.items || [])]);
         } catch (err) {
             console.error('Errore caricamento richieste:', err);
         }
@@ -183,14 +190,56 @@ export default function LogisticsPoolPage() {
     const handleTake = async (etaMinutes) => {
         if (!selectedRequest) return;
 
+        // Se la richiesta è già 'prepared', skip mode choice → va direttamente a delivering
+        if (selectedRequest.status === 'prepared') {
+            try {
+                await logisticsApi.takeRequest(selectedRequest.id, etaMinutes, 'delivering');
+                setShowEtaModal(false);
+                setSelectedRequest(null);
+                toast.success('Ritiro preso in carico!');
+                await loadRequests();
+            } catch (err) {
+                console.error('Errore presa in carico:', err);
+                toast.error('Errore nella presa in carico');
+                setShowEtaModal(false);
+            }
+            return;
+        }
+
+        // Per richieste pending: mostra scelta PREPARO / CONSEGNO
+        setPendingEta(etaMinutes);
+        setShowEtaModal(false);
+        setShowModeModal(true);
+    };
+
+    const handleModeChoice = async (mode) => {
+        if (!selectedRequest || !pendingEta) return;
         try {
-            await logisticsApi.takeRequest(selectedRequest.id, etaMinutes);
-            setShowEtaModal(false);
+            await logisticsApi.takeRequest(selectedRequest.id, pendingEta, mode);
+            setShowModeModal(false);
             setSelectedRequest(null);
+            setPendingEta(null);
+            toast.success(mode === 'preparing' ? 'Preparazione avviata!' : 'Consegna avviata!');
             await loadRequests();
         } catch (err) {
             console.error('Errore presa in carico:', err);
-            setShowEtaModal(false);
+            toast.error('Errore nella presa in carico');
+            setShowModeModal(false);
+        }
+    };
+
+    // --- Mark Prepared Handler ---
+    const handleMarkPrepared = async (requestId) => {
+        setMarkingPreparedId(requestId);
+        try {
+            await logisticsApi.markPrepared(requestId);
+            toast.success('Materiale preparato! Torna in piscina per il ritiro.');
+            await loadRequests();
+        } catch (err) {
+            console.error('Errore mark prepared:', err);
+            toast.error('Errore nel segnare come preparato');
+        } finally {
+            setMarkingPreparedId(null);
         }
     };
 
@@ -396,6 +445,14 @@ export default function LogisticsPoolPage() {
                                     </div>
                                 )}
 
+                                {/* Badge PREPARATO */}
+                                {req.status === 'prepared' && (
+                                    <div className="prepared-banner">
+                                        <PackageCheck size={14} className="inline-block mr-1" />
+                                        PREPARATO da {req.prepared_by_name} — Pronto al ritiro
+                                    </div>
+                                )}
+
                                 {!isSelectionMode && (
                                     <button
                                         className="btn-take"
@@ -472,12 +529,22 @@ export default function LogisticsPoolPage() {
                                     >
                                         <XCircle size={18} />
                                     </button>
-                                    <button
-                                        className="btn-complete"
-                                        onClick={() => handleCompleteClick(req)}
-                                    >
-                                        <CheckCircle size={16} className="inline-block mr-1" style={{ verticalAlign: 'text-bottom' }} /> CONSEGNATO
-                                    </button>
+                                    {req.status === 'preparing' ? (
+                                        <button
+                                            className="btn-complete btn-prepared"
+                                            onClick={() => handleMarkPrepared(req.id)}
+                                            disabled={markingPreparedId === req.id}
+                                        >
+                                            <PackageCheck size={16} className="inline-block mr-1" style={{ verticalAlign: 'text-bottom' }} /> PREPARATO ✓
+                                        </button>
+                                    ) : (
+                                        <button
+                                            className="btn-complete"
+                                            onClick={() => handleCompleteClick(req)}
+                                        >
+                                            <CheckCircle size={16} className="inline-block mr-1" style={{ verticalAlign: 'text-bottom' }} /> CONSEGNATO
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         ))
@@ -677,6 +744,60 @@ export default function LogisticsPoolPage() {
                             CONFERMA
                         </button>
                     </div>
+                </div>
+            </LogisticsModal>
+
+            {/* Mode Choice Modal — Preparing vs Delivering */}
+            <LogisticsModal
+                isOpen={showModeModal}
+                onClose={() => { setShowModeModal(false); setPendingEta(null); }}
+                title="Cosa farai?"
+                icon={<Package size={40} className="text-brand-green" />}
+            >
+                <div>
+                    <p className="text-slate-500 text-center mb-2 text-sm">
+                        {selectedRequest?.material_type_label} → Banchina {selectedRequest?.banchina_code}
+                    </p>
+                    <p className="text-slate-400 text-center mb-6 text-xs">
+                        Scegli come vuoi gestire questa richiesta
+                    </p>
+
+                    <div className="space-y-3 mb-6">
+                        {/* PREPARO */}
+                        <button
+                            className="w-full p-4 bg-amber-50 hover:bg-amber-100 border-2 border-amber-200 hover:border-amber-400 rounded-xl transition-all duration-200 flex items-center gap-4 text-left group cursor-pointer"
+                            onClick={() => handleModeChoice('preparing')}
+                        >
+                            <div className="w-12 h-12 bg-amber-100 group-hover:bg-amber-200 rounded-full flex items-center justify-center flex-shrink-0 transition">
+                                <PackageCheck size={24} className="text-amber-600" />
+                            </div>
+                            <div>
+                                <strong className="text-slate-800 text-lg block">PREPARO</strong>
+                                <span className="text-slate-500 text-sm">Sto solo preparando il materiale, qualcun altro verrà a ritirarlo</span>
+                            </div>
+                        </button>
+
+                        {/* CONSEGNO */}
+                        <button
+                            className="w-full p-4 bg-green-50 hover:bg-green-100 border-2 border-green-200 hover:border-green-400 rounded-xl transition-all duration-200 flex items-center gap-4 text-left group cursor-pointer"
+                            onClick={() => handleModeChoice('delivering')}
+                        >
+                            <div className="w-12 h-12 bg-green-100 group-hover:bg-green-200 rounded-full flex items-center justify-center flex-shrink-0 transition">
+                                <Truck size={24} className="text-green-600" />
+                            </div>
+                            <div>
+                                <strong className="text-slate-800 text-lg block">CONSEGNO</strong>
+                                <span className="text-slate-500 text-sm">Lo porto direttamente io alla banchina</span>
+                            </div>
+                        </button>
+                    </div>
+
+                    <button
+                        className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-medium transition border border-slate-200"
+                        onClick={() => { setShowModeModal(false); setPendingEta(null); }}
+                    >
+                        Annulla
+                    </button>
                 </div>
             </LogisticsModal>
 
