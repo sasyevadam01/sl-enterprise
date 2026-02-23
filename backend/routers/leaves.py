@@ -41,10 +41,12 @@ async def list_leave_requests(
         query = query.filter(LeaveRequest.employee_id == employee_id)
 
     if start_date and end_date:
-        # Overlap logic: leave_start <= end_date AND leave_end >= start_date
+        # Overlap logic using DATE-only comparison (ignores time component)
+        # This ensures hourly permits (e.g. 14:00-16:00) are caught when filtering by day
+        from sqlalchemy import func as sa_func
         query = query.filter(
-            LeaveRequest.start_date <= end_date,
-            LeaveRequest.end_date >= start_date
+            sa_func.date(LeaveRequest.start_date) <= sa_func.date(end_date),
+            sa_func.date(LeaveRequest.end_date) >= sa_func.date(start_date)
         )
     
     from sqlalchemy.orm import joinedload

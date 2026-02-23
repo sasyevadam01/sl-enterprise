@@ -431,10 +431,11 @@ async def export_shifts_pdf(
     # Get employee IDs from the filtered list
     filtered_emp_ids = [emp.id for emp in employees]
     
+    from sqlalchemy import func as sa_func
     leaves = db.query(LeaveRequest).filter(
         LeaveRequest.status == 'approved',
-        LeaveRequest.start_date <= e_date,
-        LeaveRequest.end_date >= s_date,
+        sa_func.date(LeaveRequest.start_date) <= sa_func.date(e_date),
+        sa_func.date(LeaveRequest.end_date) >= sa_func.date(s_date),
         LeaveRequest.employee_id.in_(filtered_emp_ids)  # Filter by team!
     ).all()
     
