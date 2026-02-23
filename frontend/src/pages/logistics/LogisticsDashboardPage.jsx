@@ -266,6 +266,11 @@ export default function LogisticsDashboardPage() {
                                                 <strong>{req.banchina_code}</strong>: {req.material_type_label} <br />
                                                 <span className="user">{req.requester_name}</span>
                                                 {req.is_urgent && <span className="urgent-tag">URGENTE</span>}
+                                                {req.status === 'processing' && req.assigned_to_name && (
+                                                    <span className="assigned-tag">
+                                                        <ArrowRight size={12} style={{ display: 'inline', verticalAlign: 'text-bottom' }} /> Preso da: {req.assigned_to_name}
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
                                     ))}
