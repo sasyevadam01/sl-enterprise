@@ -20,7 +20,12 @@ import {
     Filter,
     Search,
     Camera,
-    Maximize2
+    Maximize2,
+    ShieldCheck,
+    ShieldAlert,
+    ChevronDown as ChevronDownIcon,
+    RotateCcw,
+    Wrench
 } from 'lucide-react';
 import StylishCalendar from '../../components/ui/StylishCalendar';
 import { isValid } from 'date-fns';
@@ -37,10 +42,13 @@ export default function ChecklistHistoryPage() {
     const [loading, setLoading] = useState(true);
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [showCalendar, setShowCalendar] = useState(false);
+    const [prevDayChecklists, setPrevDayChecklists] = useState([]);
+    const [showUnchecked, setShowUnchecked] = useState(false);
 
     // Filters
     const [filterVehicle, setFilterVehicle] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
+    const [filterShift, setFilterShift] = useState('');
 
     // Detail Modal
     const [selectedChecklist, setSelectedChecklist] = useState(null);
@@ -53,12 +61,15 @@ export default function ChecklistHistoryPage() {
         setLoading(true);
         try {
             const formattedDate = format(selectedDate, 'yyyy-MM-dd');
-            const [historyData, vehiclesData] = await Promise.all([
+            const prevDate = format(subDays(selectedDate, 1), 'yyyy-MM-dd');
+            const [historyData, prevDayData, vehiclesData] = await Promise.all([
                 fleetApi.getChecklists({ date: formattedDate, limit: 1000 }),
+                fleetApi.getChecklists({ date: prevDate, limit: 1000 }),
                 fleetApi.getVehicles()
             ]);
 
             setChecklists(historyData);
+            setPrevDayChecklists(prevDayData);
             setVehicles(vehiclesData);
         } catch (err) {
             console.error(err);
@@ -78,23 +89,61 @@ export default function ChecklistHistoryPage() {
             const matchesSearch = !searchQuery ||
                 vehicle?.internal_code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 chk.operator?.full_name?.toLowerCase().includes(searchQuery.toLowerCase());
-            return matchesVehicle && matchesSearch;
+            const matchesShift = !filterShift || chk.shift === filterShift;
+            return matchesVehicle && matchesSearch && matchesShift;
         });
-    }, [checklists, filterVehicle, searchQuery, vehicles]);
+    }, [checklists, filterVehicle, searchQuery, vehicles, filterShift]);
 
     const findVehicle = (id) => vehicles.find(v => v.id === id);
+
+    // Coverage computation
+    const coverage = useMemo(() => {
+        const activeVehicles = vehicles.filter(v => v.is_active !== false);
+        const checkedIds = new Set(checklists.map(c => c.vehicle_id));
+        const prevCheckedIds = new Set(prevDayChecklists.map(c => c.vehicle_id));
+
+        // Per-shift coverage
+        const morningCheckedIds = new Set(checklists.filter(c => c.shift === 'morning').map(c => c.vehicle_id));
+        const eveningCheckedIds = new Set(checklists.filter(c => c.shift === 'evening').map(c => c.vehicle_id));
+
+        // Map vehicle_id -> operator name from yesterday
+        const prevOperatorMap = {};
+        prevDayChecklists.forEach(c => {
+            if (!prevOperatorMap[c.vehicle_id]) {
+                prevOperatorMap[c.vehicle_id] = c.operator?.full_name || c.operator?.username || null;
+            }
+        });
+
+        const unchecked = activeVehicles
+            .filter(v => !checkedIds.has(v.id))
+            .map(v => ({
+                ...v,
+                missedYesterday: !prevCheckedIds.has(v.id),
+                yesterdayOperator: prevOperatorMap[v.id] || null
+            }));
+        const total = activeVehicles.length;
+        const checked = checkedIds.size;
+        const pct = total > 0 ? Math.round((checked / total) * 100) : 0;
+
+        const morningChecked = morningCheckedIds.size;
+        const eveningChecked = eveningCheckedIds.size;
+        const morningPct = total > 0 ? Math.round((morningChecked / total) * 100) : 0;
+        const eveningPct = total > 0 ? Math.round((eveningChecked / total) * 100) : 0;
+
+        return { total, checked, unchecked, pct, morningChecked, eveningChecked, morningPct, eveningPct };
+    }, [vehicles, checklists, prevDayChecklists]);
 
     return (
         <div className="min-h-screen pb-20">
             {/* Header / Navigation */}
-            <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-gray-200 px-6 py-6 transition-all duration-300">
-                <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-gray-200 px-4 py-4 md:px-6 md:py-6 transition-all duration-300">
+                <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6">
                     <div className="flex items-center gap-4">
                         <div className="p-3 bg-green-600 rounded-2xl shadow-sm">
                             <Car size={28} className="text-white" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-black text-gray-900 tracking-widest leading-none">
+                            <h1 className="text-lg md:text-2xl font-black text-gray-900 tracking-widest leading-none">
                                 STORICO CHECK
                             </h1>
                             <p className="text-green-600 text-[10px] font-black uppercase tracking-widest mt-1">
@@ -104,7 +153,7 @@ export default function ChecklistHistoryPage() {
                     </div>
 
                     {/* Date Navigation */}
-                    <div className="flex items-center gap-2 bg-gray-50 p-2 rounded-[24px] border border-gray-200 shadow-sm">
+                    <div className="flex items-center justify-center gap-1 md:gap-2 bg-gray-50 p-1.5 md:p-2 rounded-[20px] md:rounded-[24px] border border-gray-200 shadow-sm">
                         <button
                             onClick={handlePrevDay}
                             className="p-3 hover:bg-gray-100 rounded-2xl transition-all text-gray-400 hover:text-gray-900 group active:scale-95"
@@ -115,10 +164,10 @@ export default function ChecklistHistoryPage() {
                         <div className="relative">
                             <button
                                 onClick={(e) => { e.stopPropagation(); setShowCalendar(!showCalendar); }}
-                                className="flex items-center gap-3 px-8 py-3 bg-green-50 hover:bg-green-100 rounded-[20px] transition-all border border-green-200 group overflow-hidden"
+                                className="flex items-center gap-2 md:gap-3 px-4 md:px-8 py-2.5 md:py-3 bg-green-50 hover:bg-green-100 rounded-[16px] md:rounded-[20px] transition-all border border-green-200 group overflow-hidden"
                             >
-                                <CalendarIcon size={18} className="text-green-600 group-hover:rotate-12 transition-transform" />
-                                <span className="font-black text-gray-900 min-w-[160px] text-center tracking-tight">
+                                <CalendarIcon size={16} className="text-green-600 group-hover:rotate-12 transition-transform shrink-0" />
+                                <span className="font-black text-gray-900 text-xs md:text-base text-center tracking-tight">
                                     {isDateToday(selectedDate) ? "OGGI" : format(selectedDate, 'EEEE d MMMM', { locale: it }).toUpperCase()}
                                 </span>
                             </button>
@@ -143,9 +192,9 @@ export default function ChecklistHistoryPage() {
                 </div>
             </div>
 
-            <div className="max-w-7xl mx-auto px-6 mt-12">
+            <div className="max-w-7xl mx-auto px-4 md:px-6 mt-6 md:mt-12">
                 {/* Filters Row */}
-                <div className="flex flex-col md:flex-row gap-4 mb-12">
+                <div className="flex flex-col gap-3 md:gap-4 mb-6 md:mb-12">
                     <div className="relative flex-1 group">
                         <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-green-600 transition-colors" size={20} />
                         <input
@@ -153,17 +202,17 @@ export default function ChecklistHistoryPage() {
                             placeholder="Cerca mezzo o operatore..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-white border border-gray-200 rounded-[24px] py-4 pl-14 pr-6 text-gray-900 focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-500/30 transition-all font-bold placeholder:text-gray-400 tracking-tight shadow-sm"
+                            className="w-full bg-white border border-gray-200 rounded-[18px] md:rounded-[24px] py-3 md:py-4 pl-12 md:pl-14 pr-4 md:pr-6 text-sm md:text-base text-gray-900 focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-green-500/30 transition-all font-bold placeholder:text-gray-400 tracking-tight shadow-sm"
                         />
                     </div>
 
-                    <div className="flex gap-3">
-                        <div className="relative">
-                            <Filter className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
+                    <div className="flex flex-col sm:flex-row gap-2 md:gap-3">
+                        <div className="relative flex-1 sm:flex-initial">
+                            <Filter className="absolute left-4 md:left-5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
                             <select
                                 value={filterVehicle}
                                 onChange={(e) => setFilterVehicle(e.target.value)}
-                                className="bg-white border border-gray-200 rounded-[24px] pl-14 pr-10 py-4 text-gray-700 font-bold focus:outline-none focus:ring-4 focus:ring-green-500/10 transition-all appearance-none cursor-pointer hover:bg-gray-50 tracking-tight shadow-sm"
+                                className="w-full sm:w-auto bg-white border border-gray-200 rounded-[18px] md:rounded-[24px] pl-11 md:pl-14 pr-8 md:pr-10 py-3 md:py-4 text-sm md:text-base text-gray-700 font-bold focus:outline-none focus:ring-4 focus:ring-green-500/10 transition-all appearance-none cursor-pointer hover:bg-gray-50 tracking-tight shadow-sm"
                             >
                                 <option value="">TUTTI I MEZZI</option>
                                 {vehicles.map(v => (
@@ -172,17 +221,164 @@ export default function ChecklistHistoryPage() {
                             </select>
                         </div>
                         <button
-                            onClick={() => { setSelectedDate(new Date()); setFilterVehicle(''); setSearchQuery(''); }}
-                            className="px-6 bg-white border border-gray-200 rounded-[24px] text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all font-black text-xs tracking-widest flex items-center gap-2 uppercase shadow-sm"
+                            onClick={() => { setSelectedDate(new Date()); setFilterVehicle(''); setSearchQuery(''); setFilterShift(''); }}
+                            className="px-5 py-3 md:py-0 md:px-6 bg-white border border-gray-200 rounded-[18px] md:rounded-[24px] text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all font-black text-xs tracking-widest flex items-center justify-center gap-2 uppercase shadow-sm"
                         >
                             Reset
                         </button>
                     </div>
+
+                    {/* Shift Filter Buttons */}
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setFilterShift(filterShift === 'morning' ? '' : 'morning')}
+                            className={`flex-1 py-3 rounded-[18px] md:rounded-[24px] font-black text-xs uppercase tracking-widest transition-all border cursor-pointer flex items-center justify-center gap-2 ${filterShift === 'morning'
+                                ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
+                                : 'bg-white text-amber-600 border-amber-200 hover:bg-amber-50'
+                                }`}
+                        >
+                            ☀️ Mattutino
+                        </button>
+                        <button
+                            onClick={() => setFilterShift(filterShift === 'evening' ? '' : 'evening')}
+                            className={`flex-1 py-3 rounded-[18px] md:rounded-[24px] font-black text-xs uppercase tracking-widest transition-all border cursor-pointer flex items-center justify-center gap-2 ${filterShift === 'evening'
+                                ? 'bg-indigo-500 text-white border-indigo-500 shadow-sm'
+                                : 'bg-white text-indigo-600 border-indigo-200 hover:bg-indigo-50'
+                                }`}
+                        >
+                            🌙 Serale
+                        </button>
+                    </div>
                 </div>
+
+                {/* Coverage KPI Bar */}
+                {!loading && (
+                    <div className="flex flex-col gap-3 md:gap-4 mb-6 md:mb-12">
+                        {/* Row 1: Controllati + Non Controllati + Copertura Totale */}
+                        <div className="grid grid-cols-3 gap-2 md:gap-4">
+                            <div className="bg-white border border-gray-200 rounded-[20px] md:rounded-[28px] p-3 md:p-6 flex flex-col md:flex-row items-center gap-2 md:gap-4 shadow-sm">
+                                <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-emerald-50 flex items-center justify-center shrink-0">
+                                    <ShieldCheck className="text-emerald-600" size={20} />
+                                </div>
+                                <div className="text-center md:text-left">
+                                    <p className="text-[8px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest">Controllati</p>
+                                    <p className="text-xl md:text-3xl font-black text-gray-900">{coverage.checked}</p>
+                                </div>
+                            </div>
+                            <div className="bg-white border border-gray-200 rounded-[20px] md:rounded-[28px] p-3 md:p-6 flex flex-col md:flex-row items-center gap-2 md:gap-4 shadow-sm">
+                                <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-red-50 flex items-center justify-center shrink-0">
+                                    <ShieldAlert className="text-red-500" size={20} />
+                                </div>
+                                <div className="text-center md:text-left">
+                                    <p className="text-[8px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest leading-tight">Non Contr.</p>
+                                    <p className="text-xl md:text-3xl font-black text-gray-900">{coverage.unchecked.length}</p>
+                                </div>
+                            </div>
+                            <div className="bg-white border border-gray-200 rounded-[20px] md:rounded-[28px] p-3 md:p-6 flex flex-col md:flex-row items-center gap-2 md:gap-4 shadow-sm">
+                                <div className="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-blue-50 flex items-center justify-center shrink-0">
+                                    <span className="text-blue-600 font-black text-sm md:text-lg">%</span>
+                                </div>
+                                <div className="text-center md:text-left">
+                                    <p className="text-[8px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest">Copertura</p>
+                                    <p className={`text-xl md:text-3xl font-black ${coverage.pct >= 80 ? 'text-emerald-600' : coverage.pct >= 50 ? 'text-amber-500' : 'text-red-500'}`}>{coverage.pct}%</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Row 2: Per-Shift Coverage */}
+                        <div className="grid grid-cols-2 gap-2 md:gap-4">
+                            <div className="bg-amber-50 border border-amber-200 rounded-[20px] md:rounded-[28px] p-3 md:p-5 flex items-center gap-3 shadow-sm">
+                                <span className="text-lg md:text-xl">☀️</span>
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-[8px] md:text-[10px] font-black text-amber-500 uppercase tracking-widest">Mattutino</p>
+                                    <div className="flex items-baseline gap-1.5">
+                                        <span className={`text-lg md:text-2xl font-black ${coverage.morningPct >= 80 ? 'text-emerald-600' : coverage.morningPct >= 50 ? 'text-amber-600' : 'text-red-500'}`}>{coverage.morningPct}%</span>
+                                        <span className="text-[10px] md:text-xs text-amber-400 font-bold">{coverage.morningChecked}/{coverage.total}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="bg-indigo-50 border border-indigo-200 rounded-[20px] md:rounded-[28px] p-3 md:p-5 flex items-center gap-3 shadow-sm">
+                                <span className="text-lg md:text-xl">🌙</span>
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-[8px] md:text-[10px] font-black text-indigo-500 uppercase tracking-widest">Serale</p>
+                                    <div className="flex items-baseline gap-1.5">
+                                        <span className={`text-lg md:text-2xl font-black ${coverage.eveningPct >= 80 ? 'text-emerald-600' : coverage.eveningPct >= 50 ? 'text-amber-600' : 'text-red-500'}`}>{coverage.eveningPct}%</span>
+                                        <span className="text-[10px] md:text-xs text-indigo-400 font-bold">{coverage.eveningChecked}/{coverage.total}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Unchecked vehicles expandable section */}
+                        {coverage.unchecked.length > 0 && (
+                            <div className="bg-white border border-red-100 rounded-[28px] overflow-hidden shadow-sm">
+                                <button
+                                    onClick={() => setShowUnchecked(!showUnchecked)}
+                                    className="w-full flex items-center justify-between px-8 py-5 hover:bg-red-50/50 transition-colors cursor-pointer"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <ShieldAlert className="text-red-500" size={20} />
+                                        <span className="font-black text-sm text-gray-900 uppercase tracking-widest">
+                                            Mezzi Non Controllati ({coverage.unchecked.length})
+                                        </span>
+                                    </div>
+                                    <ChevronDownIcon
+                                        size={20}
+                                        className={`text-gray-400 transition-transform duration-300 ${showUnchecked ? 'rotate-180' : ''}`}
+                                    />
+                                </button>
+
+                                <AnimatePresence>
+                                    {showUnchecked && (
+                                        <motion.div
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: 'auto', opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            transition={{ duration: 0.3 }}
+                                            className="overflow-hidden"
+                                        >
+                                            <div className="px-8 pb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                                {coverage.unchecked.map(v => (
+                                                    <div
+                                                        key={v.id}
+                                                        className={`flex items-center justify-between px-5 py-4 rounded-2xl border transition-colors ${v.missedYesterday
+                                                            ? 'bg-red-50 border-red-200'
+                                                            : 'bg-gray-50 border-gray-200'
+                                                            }`}
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            <Car size={18} className={v.missedYesterday ? 'text-red-400' : 'text-gray-400'} />
+                                                            <div>
+                                                                <p className="font-black text-gray-900 text-sm">{v.internal_code || `#${v.id}`}</p>
+                                                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                                                                    {v.brand || ''} • {v.vehicle_type}
+                                                                </p>
+                                                                {v.yesterdayOperator && (
+                                                                    <p className="text-[10px] text-blue-500 font-bold mt-0.5 flex items-center gap-1">
+                                                                        <User size={10} /> Ieri: {v.yesterdayOperator}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        {v.missedYesterday && (
+                                                            <span className="px-3 py-1 bg-red-500 text-white rounded-xl text-[9px] font-black uppercase tracking-wider whitespace-nowrap">
+                                                                ⚠ Anche ieri
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* Content Grid */}
                 {loading ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
                         {[1, 2, 3, 4, 5, 6].map(i => (
                             <div key={i} className="h-72 bg-gray-100 rounded-[40px] border border-gray-200 animate-pulse"></div>
                         ))}
@@ -191,7 +387,7 @@ export default function ChecklistHistoryPage() {
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="flex flex-col items-center justify-center py-40 bg-gray-50 rounded-[60px] border border-dashed border-gray-200"
+                        className="flex flex-col items-center justify-center py-20 md:py-40 bg-gray-50 rounded-[32px] md:rounded-[60px] border border-dashed border-gray-200"
                     >
                         <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-8 relative">
                             <CalendarIcon size={48} className="text-gray-300" />
@@ -209,7 +405,7 @@ export default function ChecklistHistoryPage() {
                 ) : (
                     <motion.div
                         layout
-                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8"
                     >
                         <AnimatePresence mode="popLayout">
                             {filteredChecklists.map((chk, index) => (
@@ -260,37 +456,48 @@ function ChecklistCard({ checklist, vehicle, index, onClick }) {
         >
             {/* Background Glow */}
             <div className={`
-                absolute inset-0 rounded-[40px] transition-all duration-700 blur-2xl opacity-0 group-hover:opacity-10
+                absolute inset-0 rounded-[24px] md:rounded-[40px] transition-all duration-700 blur-2xl opacity-0 group-hover:opacity-10
                 ${isWarning ? 'bg-red-500' : isResolved ? 'bg-amber-500' : 'bg-emerald-500'}
             `}></div>
 
-            <div className="relative h-full bg-white border border-gray-200 rounded-[40px] p-8 hover:border-gray-300 transition-all duration-500 flex flex-col justify-between group-hover:shadow-xl group-hover:-translate-y-2">
+            <div className="relative h-full bg-white border border-gray-200 rounded-[24px] md:rounded-[40px] p-5 md:p-8 hover:border-gray-300 transition-all duration-500 flex flex-col justify-between group-hover:shadow-xl group-hover:-translate-y-2">
 
                 <div>
-                    <div className="flex justify-between items-start mb-8">
-                        <div className="flex items-center gap-5">
+                    <div className="mb-5 md:mb-8">
+                        {/* Vehicle Info Row */}
+                        <div className="flex items-center gap-3 md:gap-5 mb-3">
                             <div className={`
-                                w-16 h-16 rounded-[24px] flex items-center justify-center shadow-sm relative overflow-hidden group-hover:scale-110 transition-transform duration-500
+                                w-12 h-12 md:w-16 md:h-16 rounded-[16px] md:rounded-[24px] flex items-center justify-center shadow-sm relative overflow-hidden group-hover:scale-110 transition-transform duration-500 shrink-0
                                 ${isWarning ? 'bg-red-50 text-red-500' : isResolved ? 'bg-amber-50 text-amber-500' : 'bg-emerald-50 text-emerald-500'}
                             `}>
                                 <div className="absolute inset-0 bg-gray-50 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                <Car size={36} />
+                                <Car className="w-6 h-6 md:w-9 md:h-9" />
                             </div>
-                            <div>
-                                <h3 className="text-2xl font-black text-gray-900 leading-none group-hover:text-green-600 transition-colors tracking-tight">
+                            <div className="min-w-0 flex-1">
+                                <h3 className="text-lg md:text-2xl font-black text-gray-900 leading-none group-hover:text-green-600 transition-colors tracking-tight truncate">
                                     {vehicle?.internal_code || 'N/A'}
                                 </h3>
-                                <p className="text-gray-400 text-[11px] font-black uppercase tracking-widest mt-1 opacity-70">
+                                <p className="text-gray-400 text-[10px] md:text-[11px] font-black uppercase tracking-widest mt-1 opacity-70 truncate">
                                     {vehicle?.brand || 'Generic'} • {vehicle?.vehicle_type}
                                 </p>
                             </div>
                         </div>
-
-                        <div className={`
-                            px-4 py-2 rounded-2xl font-black text-[10px] uppercase tracking-widest border
-                            ${isWarning ? 'bg-red-500 text-white border-red-500/20 shadow-sm' : isResolved ? 'bg-amber-500 text-black border-amber-500/20 shadow-sm' : 'bg-emerald-50 text-emerald-600 border-emerald-200'}
-                        `}>
-                            {isWarning ? 'DANGER' : isResolved ? 'FIXED' : 'SAFE'}
+                        {/* Badges Row - always below on mobile */}
+                        <div className="flex items-center gap-2 pl-0 md:pl-[76px]">
+                            <div className={`
+                                px-3 py-1.5 rounded-xl font-black text-[9px] md:text-[10px] uppercase tracking-widest border
+                                ${isWarning ? 'bg-red-500 text-white border-red-500/20 shadow-sm' : isResolved ? 'bg-amber-500 text-black border-amber-500/20 shadow-sm' : 'bg-emerald-50 text-emerald-600 border-emerald-200'}
+                            `}>
+                                {isWarning ? 'DANGER' : isResolved ? 'FIXED' : 'SAFE'}
+                            </div>
+                            {checklist.shift && (
+                                <div className={`px-2.5 py-1 rounded-lg font-black text-[8px] md:text-[9px] uppercase tracking-widest border text-center ${checklist.shift === 'morning'
+                                    ? 'bg-amber-50 text-amber-600 border-amber-200'
+                                    : 'bg-indigo-50 text-indigo-600 border-indigo-200'
+                                    }`}>
+                                    {checklist.shift === 'morning' ? '☀️ Mattutino' : '🌙 Serale'}
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -315,6 +522,26 @@ function ChecklistCard({ checklist, vehicle, index, onClick }) {
                                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-tighter">Check-in Time</span>
                             </div>
                         </div>
+
+                        {/* Resolver Info */}
+                        {isResolved && checklist.resolver && (
+                            <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-2xl p-3">
+                                <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+                                    <Wrench size={14} />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest">Risolto da</span>
+                                    <p className="text-amber-900 font-bold text-sm truncate leading-tight">
+                                        {checklist.resolver.full_name || checklist.resolver.username}
+                                    </p>
+                                </div>
+                                {checklist.resolved_at && (
+                                    <span className="text-[9px] font-bold text-amber-400 uppercase tracking-widest shrink-0">
+                                        {safeFormat(checklist.resolved_at, 'dd/MM HH:mm')}
+                                    </span>
+                                )}
+                            </div>
+                        )}
 
                         {/* Note Preview */}
                         {(isWarning || checklist.notes) && (
@@ -380,10 +607,37 @@ function ChecklistDetailModal({ checklist, vehicle, onClose, StandardModal, onRe
         }
     };
 
+    const handleRecurring = async () => {
+        const confirmed = await showConfirm({
+            title: "Problema Ricorrente",
+            message: `Confermi che il problema su ${vehicle?.internal_code || 'questo mezzo'} è ricorrente e già in fase di risoluzione?`,
+            confirmText: "Conferma Ricorrente",
+            type: "info"
+        });
+        if (!confirmed) return;
+
+        try {
+            await fleetApi.resolveChecklist(checklist.id, "[RICORRENTE] Problema già noto e in fase di risoluzione.");
+            toast.success("Segnalazione archiviata come RICORRENTE.");
+            onRefresh();
+            onClose();
+        } catch (err) {
+            console.error(err);
+            toast.error("Errore archiviazione.");
+        }
+    };
+
+    // Responsabili manutenzione flotta
+    const FLEET_MAINTENANCE_TEAM = [
+        { id: 168, name: "Pasquale Iasevoli" },
+        { id: 158, name: "Antonio Esposito" },
+    ];
+
     const handleCreateTask = async () => {
+        const names = FLEET_MAINTENANCE_TEAM.map(m => m.name).join(" e ");
         const confirmed = await showConfirm({
             title: "Creare Task Manutenzione?",
-            message: "Verrà generato un ticket automatico nella Task Board con tutti i dettagli delle anomalie.",
+            message: `Verrà generato un ticket per ${names} nella Task Board con tutti i dettagli delle anomalie.`,
             confirmText: "Genera Task",
             type: "info"
         });
@@ -403,18 +657,23 @@ function ChecklistDetailModal({ checklist, vehicle, onClose, StandardModal, onRe
                 `📝 Note: ${checklist.notes || 'Nessuna'}\n\n` +
                 `--- GENERATO DA SISTEMA CONTROLLO FLOTTA ---`;
 
-            const payload = {
+            const basePayload = {
                 title: `🛠️ RIPARAZIONE ${vehicle?.internal_code} (${failedItems.length} FIX)`,
                 description: description,
                 priority: 9,
-                assigned_to: user?.id,
                 checklist: failedItems,
                 category: "Manutenzione",
                 tags: ["flotta", "auto_fix"]
             };
 
-            await tasksApi.createTask(payload);
-            toast.success("Task creato correttamente!");
+            // Crea un task per ogni responsabile manutenzione
+            await Promise.all(
+                FLEET_MAINTENANCE_TEAM.map(member =>
+                    tasksApi.createTask({ ...basePayload, assigned_to: member.id })
+                )
+            );
+
+            toast.success(`Task creato per ${names}!`);
             onClose();
         } catch (err) {
             console.error(err);
@@ -448,7 +707,7 @@ function ChecklistDetailModal({ checklist, vehicle, onClose, StandardModal, onRe
                 </div>
 
                 {/* Details Sections */}
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                     <div className="bg-gray-50 p-6 rounded-[32px] border border-gray-200">
                         <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Operatore</span>
                         <p className="text-gray-900 font-black text-lg">{checklist.operator?.full_name || 'N/A'}</p>
@@ -576,18 +835,24 @@ function ChecklistDetailModal({ checklist, vehicle, onClose, StandardModal, onRe
 
                 {/* Critical Actions */}
                 {isWarning && !isResolved && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-6">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4 pt-4 md:pt-6">
                         <button
                             onClick={handleResolveClick}
-                            className="bg-emerald-600 hover:bg-emerald-500 text-white h-20 rounded-[32px] font-black uppercase tracking-widest flex items-center justify-center gap-4 transition-all shadow-sm active:scale-95 group"
+                            className="bg-emerald-600 hover:bg-emerald-500 text-white h-20 rounded-[32px] font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all shadow-sm active:scale-95 group text-xs"
                         >
-                            <CheckCircle2 size={28} className="group-hover:rotate-12 transition-transform" /> Risolvi
+                            <CheckCircle2 size={24} className="group-hover:rotate-12 transition-transform" /> Risolvi
+                        </button>
+                        <button
+                            onClick={handleRecurring}
+                            className="bg-amber-500 hover:bg-amber-400 text-white h-20 rounded-[32px] font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all shadow-sm active:scale-95 group text-[10px] leading-tight text-center"
+                        >
+                            <RotateCcw size={22} className="group-hover:-rotate-180 transition-transform duration-500 shrink-0" /> Ricorrente<br />Già in Risoluzione
                         </button>
                         <button
                             onClick={handleCreateTask}
-                            className="bg-indigo-600 hover:bg-indigo-500 text-white h-20 rounded-[32px] font-black uppercase tracking-widest flex items-center justify-center gap-4 transition-all shadow-sm active:scale-95 group"
+                            className="bg-indigo-600 hover:bg-indigo-500 text-white h-20 rounded-[32px] font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-all shadow-sm active:scale-95 group text-xs"
                         >
-                            <ExternalLink size={24} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" /> Task
+                            <ExternalLink size={22} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" /> Task
                         </button>
                     </div>
                 )}

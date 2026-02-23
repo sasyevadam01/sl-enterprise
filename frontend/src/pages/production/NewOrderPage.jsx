@@ -78,6 +78,36 @@ const StepCategory = ({ onSelect }) => (
         >
             <span className="flex items-center justify-center gap-3"><IconSponge className="w-8 h-8" /> SPUGNA</span>
         </button>
+
+        {/* Logo Siervoplast — Watermark decorativo */}
+        <div className="flex flex-col items-center justify-center pt-16 pb-8">
+            <div className="relative">
+                {/* Glow pulse */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-40 h-40 bg-blue-400/10 rounded-full blur-3xl animate-pulse"></div>
+                </div>
+                <img
+                    src="/logo-siervoplast.png"
+                    alt="Siervoplast"
+                    className="relative w-48 opacity-15 select-none pointer-events-none"
+                    style={{
+                        filter: 'grayscale(30%)',
+                        animation: 'breathe 4s ease-in-out infinite'
+                    }}
+                />
+            </div>
+            <p className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.3em] mt-4">
+                SL Enterprise • Produzione
+            </p>
+        </div>
+
+        {/* Keyframe for breathe animation */}
+        <style>{`
+            @keyframes breathe {
+                0%, 100% { opacity: 0.12; transform: scale(1); }
+                50% { opacity: 0.20; transform: scale(1.03); }
+            }
+        `}</style>
     </div>
 );
 

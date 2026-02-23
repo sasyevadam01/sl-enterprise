@@ -5,7 +5,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { hrStatsApi, chatApi, pickingApi, logisticsApi } from '../../api/client';
+import { hrStatsApi, chatApi, pickingApi, logisticsApi, ovenApi } from '../../api/client';
 import OnlineUsersWidget from '../ui/OnlineUsersWidget';
 import {
     LayoutDashboard, Users, CheckCircle, Shield, Calendar, HardHat,
@@ -17,7 +17,6 @@ import {
 
 // Icon mapping for menu items
 const iconMap = {
-    '📊': LayoutDashboard,
     '👥': Users,
     '✅': CheckCircle,
     '🛡️': Shield,
@@ -65,6 +64,7 @@ const getMenuItems = (hasPermission) => {
         hasPermission('view_operativity_suite') ||
         hasPermission('create_production_orders') ||   // Richiesta Blocchi
         hasPermission('manage_production_supply') ||   // Prelievo Blocchi
+        hasPermission('use_oven') ||                   // Il Forno
         hasPermission('perform_checklists') ||         // Checklist Carrelli
         hasPermission('manage_logistics_pool') ||      // Gestione Richieste Materiali
         hasPermission('request_logistics')             // Richiesta Materiali
@@ -132,6 +132,17 @@ const getMenuItems = (hasPermission) => {
         ],
     });
 
+    // MONITOR SPOSTAMENTI - Control Room Admin
+    items.push({
+        title: 'Monitor Spostamenti',
+        icon: '📡',
+        permission: 'admin_users',
+        titleColor: '#ef4444',
+        children: [
+            { title: 'Control Room', path: '/logistics/control-room', permission: 'admin_users', icon: '🎯' },
+        ],
+    });
+
     // LIVE PRODUCTION - Sezione per Gestione Blocchi
     items.push({
         title: 'Live Production',
@@ -141,17 +152,21 @@ const getMenuItems = (hasPermission) => {
             { type: 'divider', label: 'Logistica Taglio' },
             { title: 'Richiesta Blocchi', path: '/production/orders', permission: 'create_production_orders', icon: '📦' },
             { title: 'Lista Prelievi', path: '/production/blocks', permission: 'manage_production_supply', icon: '🚚' },
+            { title: 'Il Forno', path: '/production/oven', permission: 'use_oven', icon: '🔥' },
             { title: 'Calcolo Blocchi', path: '/production/calcolo', permission: 'access_block_calculator', icon: '📐' },
             { title: 'Config. Blocchi', path: '/admin/production/config', permission: 'manage_production_config', icon: '⚙️' },
             { title: 'Report Forniture Blocchi', path: '/admin/production/reports', permission: 'view_production_reports', icon: '📊' },
             { type: 'divider', label: 'Logistica Materiali' }, // Visual separator
             { title: 'Richiesta Materiali', path: '/logistics/request', permission: 'request_logistics', icon: '📋' },
-            { title: 'Gestione Richieste', path: '/logistics/pool', permission: 'manage_logistics_pool', icon: '🚛' },
+            { title: 'Gestione Richieste', path: '/logistics/pool', permission: 'manage_logistics_pool', icon: '🚛', titleColor: '#0ea5e9' },
             { title: 'Mappa Richieste', path: '/logistics/dashboard', permission: 'supervise_logistics', icon: '📊' },
             { title: 'Config. Logistica', path: '/admin/logistics', permission: 'manage_logistics_config', icon: '📦' },
             { type: 'divider', label: 'Check List Obbligatorie' },
             { title: 'Check List Carrelli', path: '/production/checklist', permission: 'perform_checklists', icon: '🚜' },
             { title: 'Storico Check Carrelli', path: '/production/checklist/history', permission: 'view_checklist_history', icon: '📜' },
+            { type: 'divider', label: 'Ricarica Mezzi' },
+            { title: 'Ricarica Mezzi', path: '/fleet/charge', permission: null, icon: '🔋' },
+            { title: 'Controllo Ricariche', path: '/fleet/charge/control', permission: 'view_charge_control', icon: '📊' },
         ],
     });
 
@@ -197,13 +212,15 @@ function SidebarItem({ item, isOpen, pendingCounts, onItemClick, onResetBadge })
                             {(item.title === 'HR Suite' || item.title === 'Coordinator Suite') && (pendingCounts.events + pendingCounts.leaves) > 0 && (
                                 <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-brand-orange rounded-full border-2 border-sidebar" />
                             )}
-                            {(item.title === 'Live Production') && (pendingCounts.productionSupply + (pendingCounts.logisticsPending || 0)) > 0 && (
+                            {(item.title === 'Live Production') && (pendingCounts.productionSupply + (pendingCounts.logisticsPending || 0) + (pendingCounts.ovenActive || 0)) > 0 && (
                                 <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-brand-orange rounded-full border-2 border-sidebar" />
                             )}
                         </span>
                         {isOpen && (
                             <span className={`text-sm font-medium transition-colors
-                                ${item.isAnimated ? 'text-brand-green' : 'text-slate-800 group-hover:text-brand-green'}`}>
+                                ${item.isAnimated ? 'text-brand-green' : 'text-slate-800 group-hover:text-brand-green'}`}
+                                style={item.titleColor ? { color: item.titleColor, fontWeight: 800 } : undefined}
+                            >
                                 {item.title}
                             </span>
                         )}
@@ -244,7 +261,7 @@ function SidebarItem({ item, isOpen, pendingCounts, onItemClick, onResetBadge })
                                     <span className={`${isChildActive ? 'text-brand-green' : 'text-slate-400'}`}>
                                         {getIcon(child.icon, "w-4 h-4")}
                                     </span>
-                                    <span className="flex-1">{child.title}</span>
+                                    <span className="flex-1" style={child.titleColor ? { color: child.titleColor, fontWeight: 700 } : undefined}>{child.title}</span>
                                     {child.path === '/hr/approvals' && (pendingCounts.leaves + pendingCounts.events) > 0 && (
                                         <span className="bg-brand-orange/20 text-brand-orange text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
                                             {pendingCounts.leaves + pendingCounts.events}
@@ -264,6 +281,11 @@ function SidebarItem({ item, isOpen, pendingCounts, onItemClick, onResetBadge })
                                     {child.path === '/logistics/pool' && pendingCounts.logisticsPending > 0 && (
                                         <span className="bg-brand-orange/20 text-brand-orange text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
                                             {pendingCounts.logisticsPending}
+                                        </span>
+                                    )}
+                                    {child.path === '/production/oven' && pendingCounts.ovenActive > 0 && (
+                                        <span className="bg-red-500/20 text-red-600 text-[10px] font-semibold px-1.5 py-0.5 rounded-full">
+                                            🔥 {pendingCounts.ovenActive}
                                         </span>
                                     )}
                                 </Link>
@@ -377,7 +399,7 @@ export default function Sidebar({ isOpen, onToggle, mobileOpen, setMobileOpen })
             if (hasPermission('manage_production_supply') || hasPermission('admin_users')) {
                 try {
                     // Fetch pending blocks
-                    const blocksData = await pickingApi.getRequests('pending', 100);
+                    const blocksData = await pickingApi.getRequests('pending');
                     const pending = Array.isArray(blocksData) ? blocksData.filter(b => b.status === 'pending') : [];
                     newCounts.productionSupply = pending.length;
                 } catch (err) {
@@ -395,6 +417,17 @@ export default function Sidebar({ isOpen, onToggle, mobileOpen, setMobileOpen })
                     newCounts.logisticsPending = items.length;
                 } catch (err) {
                     console.error("Failed to fetch logistics counts", err);
+                }
+            }
+
+            // Oven Active Items
+            if (hasPermission('use_oven') || hasPermission('admin_users')) {
+                try {
+                    const ovenItems = await ovenApi.getItems();
+                    const activeItems = Array.isArray(ovenItems) ? ovenItems : [];
+                    newCounts.ovenActive = activeItems.length;
+                } catch (err) {
+                    console.error("Failed to fetch oven counts", err);
                 }
             }
 

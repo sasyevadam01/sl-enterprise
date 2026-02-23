@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useUI } from '../../components/ui/CustomUI';
 import { pickingApi } from '../../api/client';
 import {
-    Download, Calendar, Clock, BarChart2, PieChart as PieIcon, RefreshCw, ChevronLeft, ChevronRight
+    Download, Calendar, Clock, BarChart2, PieChart as PieIcon, RefreshCw, ChevronLeft, ChevronRight, Target
 } from 'lucide-react';
 import {
     BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer,
@@ -32,15 +32,16 @@ export default function ProductionReportsPage() {
     const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
     const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
     const [shiftType, setShiftType] = useState('all');
+    const [sectorFilter, setSectorFilter] = useState('');
 
     useEffect(() => {
         loadData();
-    }, [startDate, endDate, shiftType]);
+    }, [startDate, endDate, shiftType, sectorFilter]);
 
     const loadData = async () => {
         setLoading(true);
         try {
-            const data = await pickingApi.getReports(startDate, endDate, shiftType);
+            const data = await pickingApi.getReports(startDate, endDate, shiftType, sectorFilter || null);
             setStats(data);
         } catch (error) {
             console.error(error);
@@ -62,7 +63,7 @@ export default function ProductionReportsPage() {
     const handleDownload = async () => {
         try {
             toast.loading("Generazione Excel...");
-            const response = await pickingApi.downloadReport(startDate, endDate, shiftType);
+            const response = await pickingApi.downloadReport(startDate, endDate, shiftType, sectorFilter || null);
             const url = window.URL.createObjectURL(new Blob([response]));
             const link = document.createElement('a');
             link.href = url;
@@ -149,6 +150,16 @@ export default function ProductionReportsPage() {
                         <option value="morning">Mattina (06-14)</option>
                         <option value="afternoon">Pomeriggio (14-22)</option>
                         <option value="night">Notte (22-06)</option>
+                    </select>
+
+                    <select
+                        value={sectorFilter}
+                        onChange={e => setSectorFilter(e.target.value)}
+                        className="bg-white border border-slate-300 rounded-lg px-3 py-2 text-slate-800 text-sm focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                    >
+                        <option value="">Tutti i Settori</option>
+                        <option value="pantografo">Pantografo</option>
+                        <option value="giostra">Giostra</option>
                     </select>
 
                     <button
@@ -307,6 +318,58 @@ export default function ProductionReportsPage() {
                         </div>
                     </div>
 
+                    {/* Settore: Pantografo vs Giostra */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {/* Pantografo */}
+                        <div className="master-card p-4 dashboard-card">
+                            <div className="flex items-center gap-3 mb-3">
+                                <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
+                                    <Target className="text-indigo-600" size={20} />
+                                </div>
+                                <div>
+                                    <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Pantografo</p>
+                                    <p className="text-2xl font-bold text-slate-800">{stats.by_sector?.pantografo?.total || 0}</p>
+                                </div>
+                            </div>
+                            <div className="flex gap-4 pl-[52px]">
+                                <div className="flex items-center gap-1.5">
+                                    <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                                    <span className="text-xs text-slate-500">Memory</span>
+                                    <span className="text-xs font-bold text-slate-700">{stats.by_sector?.pantografo?.memory || 0}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <span className="w-2 h-2 rounded-full bg-cyan-500"></span>
+                                    <span className="text-xs text-slate-500">Spugna</span>
+                                    <span className="text-xs font-bold text-slate-700">{stats.by_sector?.pantografo?.sponge || 0}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {/* Giostra */}
+                        <div className="master-card p-4 dashboard-card">
+                            <div className="flex items-center gap-3 mb-3">
+                                <div className="w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center">
+                                    <Target className="text-teal-600" size={20} />
+                                </div>
+                                <div>
+                                    <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Giostra</p>
+                                    <p className="text-2xl font-bold text-slate-800">{stats.by_sector?.giostra?.total || 0}</p>
+                                </div>
+                            </div>
+                            <div className="flex gap-4 pl-[52px]">
+                                <div className="flex items-center gap-1.5">
+                                    <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                                    <span className="text-xs text-slate-500">Memory</span>
+                                    <span className="text-xs font-bold text-slate-700">{stats.by_sector?.giostra?.memory || 0}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <span className="w-2 h-2 rounded-full bg-cyan-500"></span>
+                                    <span className="text-xs text-slate-500">Spugna</span>
+                                    <span className="text-xs font-bold text-slate-700">{stats.by_sector?.giostra?.sponge || 0}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Charts Row 1: Material Distribution + Top Richiedenti */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div className="master-card p-5">
@@ -450,7 +513,8 @@ export default function ProductionReportsPage() {
                         </div>
                     </div>
                 </>
-            )}
-        </div>
+            )
+            }
+        </div >
     );
 }

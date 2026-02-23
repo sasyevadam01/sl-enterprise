@@ -6,6 +6,9 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+
+IT_TZ = ZoneInfo("Europe/Rome")
 from typing import List, Optional
 from pydantic import BaseModel
 import os
@@ -16,6 +19,11 @@ import json
 from datetime import datetime
 from io import BytesIO
 from PIL import Image
+try:
+    from pillow_heif import register_heif_opener
+    register_heif_opener()
+except ImportError:
+    print("[WARN] pillow-heif non installato — HEIC non supportato")
 from fastapi import Form, Request
 
 class VehicleUpdate(BaseModel):
@@ -171,6 +179,76 @@ async def delete_vehicle(
     vehicle.is_active = False
     db.commit()
     return {"message": "Mezzo eliminato correttamente"}
+
+
+# ============================================================
+# BLOCCO VEICOLI PER SICUREZZA
+# ============================================================
+
+class BlockVehicleRequest(BaseModel):
+    reason: str  # Motivazione obbligatoria
+
+
+@router.patch("/vehicles/{vehicle_id}/block", summary="Blocca Veicolo per Sicurezza")
+async def block_vehicle(
+    vehicle_id: int,
+    body: BlockVehicleRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Blocca un veicolo impedendone l'utilizzo."""
+    vehicle = db.query(FleetVehicle).filter(FleetVehicle.id == vehicle_id).first()
+    if not vehicle:
+        raise HTTPException(404, "Mezzo non trovato")
+    if vehicle.is_blocked:
+        raise HTTPException(400, "Mezzo già bloccato")
+
+    now = datetime.now(IT_TZ)
+    vehicle.is_blocked = True
+    vehicle.block_info = {
+        "by": current_user.full_name or current_user.username,
+        "by_id": current_user.id,
+        "reason": body.reason.strip(),
+        "at": now.isoformat(),
+        "previous_status": vehicle.status or "operational"
+    }
+    
+    # Manteniamo anche il vecchio meccanismo status=blocked per retrocompatibilità
+    vehicle.status = "blocked"
+
+    db.commit()
+    db.refresh(vehicle)
+    return {
+        "message": f"Veicolo {vehicle.internal_code} bloccato per sicurezza",
+        "block_info": vehicle.block_info
+    }
+
+
+@router.patch("/vehicles/{vehicle_id}/unblock", summary="Sblocca Veicolo")
+async def unblock_vehicle(
+    vehicle_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Sblocca un veicolo precedentemente bloccato."""
+    vehicle = db.query(FleetVehicle).filter(FleetVehicle.id == vehicle_id).first()
+    if not vehicle:
+        raise HTTPException(404, "Mezzo non trovato")
+    if not vehicle.is_blocked and vehicle.status != 'blocked':
+        raise HTTPException(400, "Mezzo non è bloccato")
+
+    # Recupera stato precedente se presente
+    previous_status = "operational"
+    if vehicle.block_info and isinstance(vehicle.block_info, dict):
+        previous_status = vehicle.block_info.get("previous_status", "operational")
+
+    vehicle.is_blocked = False
+    vehicle.block_info = None
+    vehicle.status = previous_status
+
+    db.commit()
+    db.refresh(vehicle)
+    return {"message": f"Veicolo {vehicle.internal_code} sbloccato", "restored_status": previous_status}
 
 
 # ============================================================
@@ -416,6 +494,32 @@ REQUIRED_CHECKS = [
     "batteria_fissaggio", "batteria_carica", "pulizia_carro", "pulizia_ruote"
 ]
 
+def get_current_shift():
+    """Determina il turno corrente in base all'ora.
+    Returns: 'morning', 'evening', or None (fuori finestra).
+    """
+    now = datetime.now(IT_TZ)
+    hour = now.hour
+    minute = now.minute
+    time_val = hour * 60 + minute  # minuti dalla mezzanotte
+    
+    # Mattutino: 06:00 (360) - 13:50 (830)
+    if 360 <= time_val <= 830:
+        return 'morning'
+    # Serale: 14:00 (840) - 21:50 (1310)
+    elif 840 <= time_val <= 1310:
+        return 'evening'
+    else:
+        return None
+
+def get_shift_label(shift):
+    """Restituisce il nome leggibile del turno."""
+    if shift == 'morning':
+        return 'Check Mattutino (06:00 – 13:50)'
+    elif shift == 'evening':
+        return 'Check Serale (14:00 – 21:50)'
+    return 'Fuori Turno'
+
 class ChecklistSubmission(BaseModel):
     vehicle_id: int
     checklist_data: dict
@@ -436,10 +540,12 @@ class ChecklistResponse(BaseModel):
     timestamp: datetime
     checklist_data: dict
     status: str
+    shift: Optional[str] = None
     notes: Optional[str] = None
     resolution_notes: Optional[str] = None
     resolved_at: Optional[datetime] = None
     operator: Optional[OperatorInfo] = None
+    resolver: Optional[OperatorInfo] = None
     tablet_status: Optional[str] = "ok"
     tablet_photo_url: Optional[str] = None
     
@@ -503,6 +609,7 @@ async def create_checklist(
         notes = form.get("notes")
         tablet_status = form.get("tablet_status", "ok")
         tablet_photo = form.get("photo")
+        vehicle_photo = form.get("vehicle_photo")
 
         # Parse JSON
         try:
@@ -523,6 +630,17 @@ async def create_checklist(
         vehicle = db.query(FleetVehicle).filter(FleetVehicle.id == vehicle_id).first()
         if not vehicle:
             raise HTTPException(404, "Veicolo non trovato")
+
+        # 1b. Blocco Sicurezza — impedisce check su veicoli bloccati
+        if vehicle.status == 'blocked':
+            block_info = _parse_block_info(vehicle.notes)
+            reason = block_info.get('reason', 'Motivo non specificato') if block_info else 'Motivo non specificato'
+            blocker = block_info.get('by', 'Sconosciuto') if block_info else 'Sconosciuto'
+            raise HTTPException(
+                403,
+                f"⛔ VEICOLO BLOCCATO PER SICUREZZA — Non è consentito effettuare il check. "
+                f"Motivo: {reason}. Bloccato da: {blocker}"
+            )
 
         # 2. setup directories
         BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -548,15 +666,34 @@ async def create_checklist(
             
             ext = ".jpg"
             save_format = "JPEG"
-            if upload_file.content_type == "image/png" or upload_file.filename.lower().endswith(".png"):
+            ct = (upload_file.content_type or "").lower()
+            fn = (upload_file.filename or "").lower()
+            if ct == "image/png" or fn.endswith(".png"):
                 ext = ".png"
                 save_format = "PNG"
+            # HEIC/HEIF → always convert to JPEG
+            elif ct in ("image/heic", "image/heif") or fn.endswith((".heic", ".heif")):
+                ext = ".jpg"
+                save_format = "JPEG"
             
             filename = f"{prefix}{uuid.uuid4()}{ext}"
             file_path = os.path.join(dest_dir, filename)
             
             contents = await upload_file.read()
-            img = Image.open(BytesIO(contents))
+            
+            # Guard: empty file
+            if not contents or len(contents) < 100:
+                print(f"DEBUG: File vuoto o troppo piccolo ({len(contents) if contents else 0} bytes)")
+                return None
+            
+            try:
+                img = Image.open(BytesIO(contents))
+                img.verify()  # Verifica integrità
+                # Re-open dopo verify (verify chiude il file)
+                img = Image.open(BytesIO(contents))
+            except Exception as img_err:
+                print(f"DEBUG: Impossibile leggere immagine: {img_err}, content_type={upload_file.content_type}, filename={upload_file.filename}, size={len(contents)}")
+                return None
             
             # Max dimensions
             max_width = 1280
@@ -583,6 +720,14 @@ async def create_checklist(
         # OR it was an invalid string (handled by process_and_save_image returning None)
         if not tablet_filename:
              raise HTTPException(400, "Foto Tablet obbligatoria (Mancante o file non valido)")
+
+        # 3b. Save Vehicle Photo (Mandatory)
+        vehicle_photo_filename = None
+        if vehicle_photo:
+            vehicle_photo_filename = await process_and_save_image(vehicle_photo, CHECKLIST_DIR, prefix="vehicle_")
+        
+        if not vehicle_photo_filename:
+            raise HTTPException(400, "Foto Mezzo obbligatoria (Mancante o file non valido)")
         
         # 4. Process Specific Issue Photos
         # Iterate over cheks to find issues that expect a photo
@@ -628,16 +773,42 @@ async def create_checklist(
            status = 'warning' 
         
         tablet_photo_url = f"/uploads/checklists/{tablet_filename}" if tablet_filename else None
+        vehicle_photo_url = f"/uploads/checklists/{vehicle_photo_filename}" if vehicle_photo_filename else None
 
-        # 6. Save
+        # 6. Determine Shift
+        current_shift = get_current_shift()
+        if not current_shift:
+            now = datetime.now(IT_TZ)
+            h, m = now.hour, now.minute
+            if h * 60 + m < 360:  # Before 06:00
+                raise HTTPException(400, "Checklist non disponibile. Il prossimo turno inizia alle 06:00.")
+            elif 750 < h * 60 + m < 840:  # 12:30-14:00
+                raise HTTPException(400, "Pausa pranzo — il prossimo check sarà disponibile alle 14:00.")
+            else:  # After 21:30
+                raise HTTPException(400, "Turno terminato. Il prossimo check sarà disponibile domani alle 06:00.")
+
+        # 7. Check if this vehicle was already checked THIS shift TODAY
+        today_start = datetime.now(IT_TZ).replace(hour=0, minute=0, second=0, microsecond=0)
+        already_done = db.query(FleetChecklist).filter(
+            FleetChecklist.vehicle_id == vehicle_id,
+            FleetChecklist.shift == current_shift,
+            FleetChecklist.timestamp >= today_start
+        ).first()
+        if already_done:
+            shift_label = get_shift_label(current_shift)
+            raise HTTPException(400, f"Questo mezzo è già stato controllato per il {shift_label}.")
+
+        # 8. Save
         checklist = FleetChecklist(
             vehicle_id=vehicle_id,
             operator_id=current_user.id,
             checklist_data=new_checks_data,
             status=status,
+            shift=current_shift,
             notes=notes,
             tablet_status=tablet_status,
-            tablet_photo_url=tablet_photo_url
+            tablet_photo_url=tablet_photo_url,
+            vehicle_photo_url=vehicle_photo_url
         )
         db.add(checklist)
         db.commit()
@@ -658,7 +829,7 @@ async def create_checklist(
         raise HTTPException(500, f"Critical Error: {str(e)}")
 
 
-@router.get("/checklists", summary="Storico Checklist", response_model=List[ChecklistResponse])
+@router.get("/checklists", summary="Storico Checklist")
 async def list_checklists(
     vehicle_id: int = None,
     operator_id: int = None,
@@ -668,15 +839,47 @@ async def list_checklists(
     current_user: User = Depends(get_current_user)
 ):
     """Storico checklist."""
-    query = db.query(FleetChecklist).options(joinedload(FleetChecklist.operator))
-    if vehicle_id:
-        query = query.filter(FleetChecklist.vehicle_id == vehicle_id)
-    if operator_id:
-        query = query.filter(FleetChecklist.operator_id == operator_id)
-    if date:
-        query = query.filter(func.date(FleetChecklist.timestamp) == date)
-    
-    return query.order_by(FleetChecklist.timestamp.desc()).limit(limit).all()
+    import traceback as tb
+    try:
+        query = db.query(FleetChecklist).options(joinedload(FleetChecklist.operator), joinedload(FleetChecklist.resolver))
+        if vehicle_id:
+            query = query.filter(FleetChecklist.vehicle_id == vehicle_id)
+        if operator_id:
+            query = query.filter(FleetChecklist.operator_id == operator_id)
+        if date:
+            query = query.filter(func.date(FleetChecklist.timestamp) == date)
+        
+        results = query.order_by(FleetChecklist.timestamp.desc()).limit(limit).all()
+        
+        out = []
+        for c in results:
+            op_info = None
+            if c.operator:
+                op_info = {"id": c.operator.id, "username": c.operator.username, "full_name": getattr(c.operator, 'full_name', None)}
+            res_info = None
+            if c.resolver:
+                res_info = {"id": c.resolver.id, "username": c.resolver.username, "full_name": getattr(c.resolver, 'full_name', None)}
+            out.append({
+                "id": c.id,
+                "vehicle_id": c.vehicle_id,
+                "operator_id": c.operator_id,
+                "timestamp": c.timestamp.isoformat() if c.timestamp else None,
+                "checklist_data": c.checklist_data or {},
+                "status": c.status,
+                "shift": c.shift,
+                "notes": c.notes,
+                "resolution_notes": c.resolution_notes,
+                "resolved_at": c.resolved_at.isoformat() if c.resolved_at else None,
+                "operator": op_info,
+                "resolver": res_info,
+                "tablet_status": c.tablet_status or "ok",
+                "tablet_photo_url": c.tablet_photo_url,
+            })
+        return out
+    except Exception as e:
+        print(f"[CHECKLISTS ERROR] {e}")
+        tb.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/vehicles/{vehicle_id}/checklist/latest", summary="Ultima Checklist")
@@ -690,3 +893,66 @@ async def get_latest_checklist(
         .filter(FleetChecklist.vehicle_id == vehicle_id)\
         .order_by(FleetChecklist.timestamp.desc())\
         .first()
+
+
+@router.get("/shift-info", summary="Info Turno Corrente")
+async def get_shift_info(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Restituisce il turno corrente e i mezzi già controllati per questo turno."""
+    import traceback as tb
+    try:
+        current_shift = get_current_shift()
+        now = datetime.now(IT_TZ)
+        # Use naive datetime for SQLite comparison
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
+        
+        # Determine next shift info for display
+        h, m = now.hour, now.minute
+        time_val = h * 60 + m
+        
+        if current_shift:
+            label = get_shift_label(current_shift)
+            # Get vehicles already checked for this shift today
+            checked = db.query(FleetChecklist).filter(
+                FleetChecklist.shift == current_shift,
+                FleetChecklist.timestamp >= today_start
+            ).all()
+            
+            checked_map = {}
+            for c in checked:
+                op = db.query(User).filter(User.id == c.operator_id).first()
+                checked_map[str(c.vehicle_id)] = {
+                    "operator": op.full_name or op.username if op else "?",
+                    "tabletStatus": c.tablet_status or "ok",
+                    "time": c.timestamp.strftime("%H:%M") if c.timestamp else None
+                }
+            
+            return {
+                "shift": current_shift,
+                "label": label,
+                "available": True,
+                "checked_vehicles": checked_map,
+                "message": None
+            }
+        else:
+            # Outside any shift window
+            if time_val < 360:
+                msg = "Nessun check disponibile. Il turno mattutino inizia alle 06:00."
+            elif 830 < time_val < 840:
+                msg = "Pausa — il prossimo check sarà disponibile alle 14:00."
+            else:
+                msg = "Turno terminato. Il prossimo check sarà disponibile domani alle 06:00."
+            
+            return {
+                "shift": None,
+                "label": "Fuori Turno",
+                "available": False,
+                "checked_vehicles": {},
+                "message": msg
+            }
+    except Exception as e:
+        print(f"[SHIFT-INFO ERROR] {e}")
+        tb.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))

@@ -37,8 +37,22 @@ export default function LeavesPage() {
         leave_type: 'vacation',
         start_date: '',
         end_date: '',
+        start_time: '08:00',
+        end_time: '17:00',
         reason: ''
     });
+
+    const isPermitType = ['permit', 'sudden_permit'].includes(formData.leave_type);
+
+    const calculateHours = (startTime, endTime) => {
+        if (!startTime || !endTime) return 0;
+        const [sh, sm] = startTime.split(':').map(Number);
+        const [eh, em] = endTime.split(':').map(Number);
+        const diffMinutes = (eh * 60 + em) - (sh * 60 + sm);
+        return Math.max(0, Math.round(diffMinutes / 60));
+    };
+
+    const permitHours = calculateHours(formData.start_time, formData.end_time);
 
     const isHR = user?.role === 'hr_manager' || user?.role === 'super_admin';
 
@@ -63,354 +77,423 @@ export default function LeavesPage() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.employee_id || !formData.start_date || !formData.end_date) {
+        if (!formData.employee_id || !formData.start_date) {
             toast.warning('Compila tutti i campi obbligatori');
+            return;
+        }
+        if (!isPermitType && !formData.end_date) {
+            toast.warning('Compila tutti i campi obbligatori');
+            return;
+        }
+        if (isPermitType && permitHours <= 0) {
+            toast.warning('L\'ora di fine deve essere dopo l\'ora di inizio');
             return;
         }
 
         try {
-            await leavesApi.createLeave(formData.employee_id, {
+            let payload = {
                 leave_type: formData.leave_type,
-                start_date: formData.start_date,
-                end_date: formData.end_date,
                 reason: formData.reason || null
-            });
+            };
+
+            if (isPermitType) {
+                payload.start_date = `${formData.start_date}T${formData.start_time}:00`;
+                payload.end_date = `${formData.start_date}T${formData.end_time}:00`;
+                payload.hours = permitHours;
+            } else {
+                payload.start_date = formData.start_date;
+                payload.end_date = formData.end_date;
+            }
+
+            await leavesApi.createLeave(formData.employee_id, payload);
             setShowModal(false);
             setFormData({
                 employee_id: '',
                 leave_type: 'vacation',
                 start_date: '',
                 end_date: '',
+                start_time: '08:00',
+                end_time: '17:00',
                 reason: ''
             });
+            await fetchData();
+            toast.success('Richiesta creata con successo');
+        } catch (error) {
+            console.error('Error creating leave:', error);
+            toast.error('Errore nella creazione della richiesta');
+        }
+    };
+
+    const handleReview = async (id, status) => {
+        const action = status === 'approved' ? 'approvare' : 'rifiutare';
+        const confirmed = await showConfirm({
+            title: status === 'approved' ? 'Approva Richiesta' : 'Rifiuta Richiesta',
+            message: `Vuoi ${action} questa richiesta?`,
+            type: status === 'approved' ? 'info' : 'danger',
+            confirmText: status === 'approved' ? 'Approva' : 'Rifiuta'
         });
-        await fetchData();
-        toast.success('Richiesta creata con successo');
-    } catch (error) {
-        console.error('Error creating leave:', error);
-        toast.error('Errore nella creazione della richiesta');
-    }
-};
+        if (!confirmed) return;
 
-const handleReview = async (id, status) => {
-    const action = status === 'approved' ? 'approvare' : 'rifiutare';
-    const confirmed = await showConfirm({
-        title: status === 'approved' ? 'Approva Richiesta' : 'Rifiuta Richiesta',
-        message: `Vuoi ${action} questa richiesta?`,
-        type: status === 'approved' ? 'info' : 'danger',
-        confirmText: status === 'approved' ? 'Approva' : 'Rifiuta'
+        setProcessing(id);
+        try {
+            await leavesApi.reviewLeave(id, { status });
+            toast.success(`Richiesta ${status === 'approved' ? 'approvata' : 'rifiutata'}`);
+            await fetchData();
+        } catch (error) {
+            console.error('Error reviewing leave:', error);
+            toast.error('Errore nel processare la richiesta');
+        } finally {
+            setProcessing(null);
+        }
+    };
+
+    const getEmployeeName = (empId) => {
+        const emp = employees.find(e => e.id === empId);
+        return emp ? `${emp.first_name} ${emp.last_name}` : `ID: ${empId}`;
+    };
+
+    const getLeaveType = (type) => LEAVE_TYPES.find(t => t.value === type) || LEAVE_TYPES[0];
+
+    const formatDate = (dateStr) => {
+        if (!dateStr) return '-';
+        return new Date(dateStr).toLocaleDateString('it-IT', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+        });
+    };
+
+    const filteredLeaves = leaves.filter(l => {
+        if (filter === 'all') return true;
+        return l.status === filter;
     });
-    if (!confirmed) return;
 
-    setProcessing(id);
-    try {
-        await leavesApi.reviewLeave(id, { status });
-        toast.success(`Richiesta ${status === 'approved' ? 'approvata' : 'rifiutata'}`);
-        await fetchData();
-    } catch (error) {
-        console.error('Error reviewing leave:', error);
-        toast.error('Errore nel processare la richiesta');
-    } finally {
-        setProcessing(null);
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-400"></div>
+            </div>
+        );
     }
-};
 
-const getEmployeeName = (empId) => {
-    const emp = employees.find(e => e.id === empId);
-    return emp ? `${emp.first_name} ${emp.last_name}` : `ID: ${empId}`;
-};
+    const pendingCount = leaves.filter(l => l.status === 'pending').length;
 
-const getLeaveType = (type) => LEAVE_TYPES.find(t => t.value === type) || LEAVE_TYPES[0];
-
-const formatDate = (dateStr) => {
-    if (!dateStr) return '-';
-    return new Date(dateStr).toLocaleDateString('it-IT', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric'
-    });
-};
-
-const filteredLeaves = leaves.filter(l => {
-    if (filter === 'all') return true;
-    return l.status === filter;
-});
-
-if (loading) {
     return (
-        <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-400"></div>
-        </div>
-    );
-}
-
-const pendingCount = leaves.filter(l => l.status === 'pending').length;
-
-return (
-    <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-            <div>
-                <h1 className="text-2xl font-bold text-white">🗓️ Ferie & Permessi</h1>
-                <p className="text-gray-400 mt-1">Gestisci richieste ferie, permessi e assenze</p>
-            </div>
-            <div className="flex items-center gap-4">
-                {pendingCount > 0 && isHR && (
-                    <div className="px-4 py-2 bg-orange-500/10 border border-orange-500/30 rounded-xl">
-                        <span className="neon-orange font-bold">{pendingCount}</span>
-                        <span className="text-orange-300/70 ml-2">in attesa</span>
-                    </div>
-                )}
-                <button
-                    onClick={() => setShowModal(true)}
-                    className="action-btn action-btn-primary"
-                >
-                    <span>+</span> Nuova Richiesta
-                </button>
-            </div>
-        </div>
-
-        {/* Filters */}
-        <div className="flex gap-2">
-            {[
-                { id: 'pending', label: '⏳ In Attesa' },
-                { id: 'approved', label: '✅ Approvate' },
-                { id: 'rejected', label: '❌ Rifiutate' },
-                { id: 'all', label: 'Tutte' },
-            ].map(f => (
-                <button
-                    key={f.id}
-                    onClick={() => setFilter(f.id)}
-                    className={`px-4 py-2 rounded-xl transition ${filter === f.id
-                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                        : 'text-zinc-500 hover:bg-white/5 border border-white/5 hover:border-white/10'
-                        }`}
-                >
-                    {f.label}
-                </button>
-            ))}
-        </div>
-
-        {/* Table */}
-        <div className="master-card overflow-hidden">
-            <table className="data-table">
-                <thead className="bg-slate-800">
-                    <tr>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">Dipendente</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">Tipo</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">Dal</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">Al</th>
-                        <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">Stato</th>
-                        {isHR && <th className="px-4 py-3 text-right text-sm font-medium text-gray-400">Azioni</th>}
-                    </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                    {filteredLeaves.length === 0 ? (
-                        <tr>
-                            <td colSpan={isHR ? 6 : 5} className="px-4 py-12 text-center text-gray-400">
-                                Nessuna richiesta trovata
-                            </td>
-                        </tr>
-                    ) : (
-                        filteredLeaves.map(leave => {
-                            const type = getLeaveType(leave.leave_type);
-                            const status = STATUS_MAP[leave.status] || STATUS_MAP.pending;
-
-                            return (
-                                <tr key={leave.id} className="hover:bg-white/5 transition">
-                                    <td className="px-4 py-3">
-                                        <Link
-                                            to={`/hr/employees/${leave.employee_id}`}
-                                            className="text-blue-400 hover:text-blue-300"
-                                        >
-                                            {getEmployeeName(leave.employee_id)}
-                                        </Link>
-                                    </td>
-                                    <td className="px-4 py-3">
-                                        <span className="flex items-center gap-2 text-gray-300">
-                                            <span>{type.icon}</span>
-                                            {type.label}
-                                        </span>
-                                    </td>
-                                    <td className="px-4 py-3 text-gray-400">{formatDate(leave.start_date)}</td>
-                                    <td className="px-4 py-3 text-gray-400">{formatDate(leave.end_date)}</td>
-                                    <td className="px-4 py-3">
-                                        <span className={`px-2 py-1 rounded-full text-xs ${status.color}`}>
-                                            {status.icon} {status.label}
-                                        </span>
-                                    </td>
-                                    {isHR && (
-                                        <td className="px-4 py-3 text-right">
-                                            {leave.status === 'pending' && (
-                                                <div className="flex items-center justify-end gap-2">
-                                                    <button
-                                                        onClick={() => handleReview(leave.id, 'approved')}
-                                                        disabled={processing === leave.id}
-                                                        className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition disabled:opacity-50"
-                                                    >
-                                                        ✓ Approva
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleReview(leave.id, 'rejected')}
-                                                        disabled={processing === leave.id}
-                                                        className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition disabled:opacity-50"
-                                                    >
-                                                        ✕ Rifiuta
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </td>
-                                    )}
-                                </tr>
-                            );
-                        })
+        <div className="space-y-6">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-2xl font-bold text-white">🗓️ Ferie & Permessi</h1>
+                    <p className="text-gray-400 mt-1">Gestisci richieste ferie, permessi e assenze</p>
+                </div>
+                <div className="flex items-center gap-4">
+                    {pendingCount > 0 && isHR && (
+                        <div className="px-4 py-2 bg-orange-500/10 border border-orange-500/30 rounded-xl">
+                            <span className="neon-orange font-bold">{pendingCount}</span>
+                            <span className="text-orange-300/70 ml-2">in attesa</span>
+                        </div>
                     )}
-                </tbody>
-            </table>
-        </div>
-
-        {/* New Request Modal */}
-        {showModal && (
-            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-                <div className="master-card p-6 w-full max-w-md">
-                    <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-xl font-bold text-white">Nuova Richiesta</h2>
-                        <button
-                            onClick={() => setShowModal(false)}
-                            className="text-gray-400 hover:text-white text-2xl"
-                        >
-                            ×
-                        </button>
-                    </div>
-
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        {/* Employee */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-400 mb-1">
-                                Dipendente *
-                            </label>
-                            <select
-                                value={formData.employee_id}
-                                onChange={(e) => setFormData(prev => ({ ...prev, employee_id: e.target.value }))}
-                                className="w-full px-4 py-3 bg-slate-700 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                                required
-                            >
-                                <option value="">-- Seleziona --</option>
-                                {employees.map(emp => (
-                                    <option key={emp.id} value={emp.id}>
-                                        {emp.last_name} {emp.first_name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-
-                        {/* Leave Type - CLICKABLE BUTTONS */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-400 mb-2">
-                                Tipo Assenza
-                            </label>
-                            <div className="grid grid-cols-2 gap-2">
-                                {LEAVE_TYPES.map(t => {
-                                    const isSelected = formData.leave_type === t.value;
-                                    const colorMap = {
-                                        blue: 'border-blue-500 bg-blue-500/20 text-blue-400',
-                                        red: 'border-red-500 bg-red-500/20 text-red-400',
-                                        purple: 'border-purple-500 bg-purple-500/20 text-purple-400',
-                                        yellow: 'border-yellow-500 bg-yellow-500/20 text-yellow-400',
-                                    };
-                                    return (
-                                        <button
-                                            key={t.value}
-                                            type="button"
-                                            onClick={() => setFormData(prev => ({ ...prev, leave_type: t.value }))}
-                                            className={`p-3 rounded-xl border-2 text-left transition-all flex items-center gap-2 ${isSelected
-                                                ? colorMap[t.color]
-                                                : 'border-white/10 bg-slate-700/50 hover:border-white/30 text-white'
-                                                }`}
-                                        >
-                                            <span className="text-xl">{t.icon}</span>
-                                            <span className="font-medium text-sm">{t.label}</span>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-
-                        {/* Dates */}
-                        <div className="flex justify-between items-center">
-                            <label className="block text-sm font-medium text-gray-400">Date</label>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    const today = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
-                                    setFormData(prev => ({ ...prev, start_date: today, end_date: today }));
-                                }}
-                                className="text-xs bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30 px-2 py-1 rounded transition flex items-center gap-1"
-                            >
-                                📅 Solo Oggi
-                            </button>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-400 mb-1">
-                                    Dal *
-                                </label>
-                                <input
-                                    type="date"
-                                    value={formData.start_date}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
-                                    className="w-full px-4 py-3 bg-slate-700 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-400 mb-1">
-                                    Al *
-                                </label>
-                                <input
-                                    type="date"
-                                    value={formData.end_date}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, end_date: e.target.value }))}
-                                    className="w-full px-4 py-3 bg-slate-700 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                                    required
-                                />
-                            </div>
-                        </div>
-
-                        {/* Reason */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-400 mb-1">
-                                Motivazione (opzionale)
-                            </label>
-                            <textarea
-                                value={formData.reason}
-                                onChange={(e) => setFormData(prev => ({ ...prev, reason: e.target.value }))}
-                                className="w-full px-4 py-3 bg-slate-700 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"
-                                rows={3}
-                                placeholder="Note aggiuntive..."
-                            />
-                        </div>
-
-                        {/* Buttons */}
-                        <div className="flex justify-end gap-3 pt-4">
-                            <button
-                                type="button"
-                                onClick={() => setShowModal(false)}
-                                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition"
-                            >
-                                Annulla
-                            </button>
-                            <button
-                                type="submit"
-                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
-                            >
-                                Invia Richiesta
-                            </button>
-                        </div>
-                    </form>
+                    <button
+                        onClick={() => setShowModal(true)}
+                        className="action-btn action-btn-primary"
+                    >
+                        <span>+</span> Nuova Richiesta
+                    </button>
                 </div>
             </div>
-        )}
-    </div>
-);
+
+            {/* Filters */}
+            <div className="flex gap-2">
+                {[
+                    { id: 'pending', label: '⏳ In Attesa' },
+                    { id: 'approved', label: '✅ Approvate' },
+                    { id: 'rejected', label: '❌ Rifiutate' },
+                    { id: 'all', label: 'Tutte' },
+                ].map(f => (
+                    <button
+                        key={f.id}
+                        onClick={() => setFilter(f.id)}
+                        className={`px-4 py-2 rounded-xl transition ${filter === f.id
+                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                            : 'text-zinc-500 hover:bg-white/5 border border-white/5 hover:border-white/10'
+                            }`}
+                    >
+                        {f.label}
+                    </button>
+                ))}
+            </div>
+
+            {/* Table */}
+            <div className="master-card overflow-hidden">
+                <table className="data-table">
+                    <thead className="bg-slate-800">
+                        <tr>
+                            <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">Dipendente</th>
+                            <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">Tipo</th>
+                            <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">Dal</th>
+                            <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">Al</th>
+                            <th className="px-4 py-3 text-left text-sm font-medium text-gray-400">Stato</th>
+                            {isHR && <th className="px-4 py-3 text-right text-sm font-medium text-gray-400">Azioni</th>}
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                        {filteredLeaves.length === 0 ? (
+                            <tr>
+                                <td colSpan={isHR ? 6 : 5} className="px-4 py-12 text-center text-gray-400">
+                                    Nessuna richiesta trovata
+                                </td>
+                            </tr>
+                        ) : (
+                            filteredLeaves.map(leave => {
+                                const type = getLeaveType(leave.leave_type);
+                                const status = STATUS_MAP[leave.status] || STATUS_MAP.pending;
+
+                                return (
+                                    <tr key={leave.id} className="hover:bg-white/5 transition">
+                                        <td className="px-4 py-3">
+                                            <Link
+                                                to={`/hr/employees/${leave.employee_id}`}
+                                                className="text-blue-400 hover:text-blue-300"
+                                            >
+                                                {getEmployeeName(leave.employee_id)}
+                                            </Link>
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <span className="flex items-center gap-2 text-gray-300">
+                                                <span>{type.icon}</span>
+                                                {type.label}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3 text-gray-400">{formatDate(leave.start_date)}</td>
+                                        <td className="px-4 py-3 text-gray-400">{formatDate(leave.end_date)}</td>
+                                        <td className="px-4 py-3">
+                                            <span className={`px-2 py-1 rounded-full text-xs ${status.color}`}>
+                                                {status.icon} {status.label}
+                                            </span>
+                                        </td>
+                                        {isHR && (
+                                            <td className="px-4 py-3 text-right">
+                                                {leave.status === 'pending' && (
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        <button
+                                                            onClick={() => handleReview(leave.id, 'approved')}
+                                                            disabled={processing === leave.id}
+                                                            className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition disabled:opacity-50"
+                                                        >
+                                                            ✓ Approva
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleReview(leave.id, 'rejected')}
+                                                            disabled={processing === leave.id}
+                                                            className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition disabled:opacity-50"
+                                                        >
+                                                            ✕ Rifiuta
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </td>
+                                        )}
+                                    </tr>
+                                );
+                            })
+                        )}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* New Request Modal */}
+            {showModal && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+                    <div className="master-card p-6 w-full max-w-md">
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-xl font-bold text-white">Nuova Richiesta</h2>
+                            <button
+                                onClick={() => setShowModal(false)}
+                                className="text-gray-400 hover:text-white text-2xl"
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            {/* Employee */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-400 mb-1">
+                                    Dipendente *
+                                </label>
+                                <select
+                                    value={formData.employee_id}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, employee_id: e.target.value }))}
+                                    className="w-full px-4 py-3 bg-slate-700 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                    required
+                                >
+                                    <option value="">-- Seleziona --</option>
+                                    {employees.map(emp => (
+                                        <option key={emp.id} value={emp.id}>
+                                            {emp.last_name} {emp.first_name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Leave Type - CLICKABLE BUTTONS */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-400 mb-2">
+                                    Tipo Assenza
+                                </label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {LEAVE_TYPES.map(t => {
+                                        const isSelected = formData.leave_type === t.value;
+                                        const colorMap = {
+                                            blue: 'border-blue-500 bg-blue-500/20 text-blue-400',
+                                            red: 'border-red-500 bg-red-500/20 text-red-400',
+                                            purple: 'border-purple-500 bg-purple-500/20 text-purple-400',
+                                            yellow: 'border-yellow-500 bg-yellow-500/20 text-yellow-400',
+                                        };
+                                        return (
+                                            <button
+                                                key={t.value}
+                                                type="button"
+                                                onClick={() => setFormData(prev => ({ ...prev, leave_type: t.value }))}
+                                                className={`p-3 rounded-xl border-2 text-left transition-all flex items-center gap-2 ${isSelected
+                                                    ? colorMap[t.color]
+                                                    : 'border-white/10 bg-slate-700/50 hover:border-white/30 text-white'
+                                                    }`}
+                                            >
+                                                <span className="text-xl">{t.icon}</span>
+                                                <span className="font-medium text-sm">{t.label}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Dates */}
+                            <div className="flex justify-between items-center">
+                                <label className="block text-sm font-medium text-gray-400">
+                                    {isPermitType ? 'Data Permesso' : 'Date'}
+                                </label>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const today = new Date().toLocaleDateString('en-CA');
+                                        setFormData(prev => ({ ...prev, start_date: today, end_date: today }));
+                                    }}
+                                    className="text-xs bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30 px-2 py-1 rounded transition flex items-center gap-1"
+                                >
+                                    📅 Solo Oggi
+                                </button>
+                            </div>
+
+                            {isPermitType ? (
+                                <>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-400 mb-1">Giorno *</label>
+                                        <input
+                                            type="date"
+                                            value={formData.start_date}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value, end_date: e.target.value }))}
+                                            className="w-full px-4 py-3 bg-slate-700 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-400 mb-1">Da Ora *</label>
+                                            <input
+                                                type="time"
+                                                value={formData.start_time}
+                                                onChange={(e) => setFormData(prev => ({ ...prev, start_time: e.target.value }))}
+                                                className="w-full px-4 py-3 bg-slate-700 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                                required
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-400 mb-1">A Ora *</label>
+                                            <input
+                                                type="time"
+                                                value={formData.end_time}
+                                                onChange={(e) => setFormData(prev => ({ ...prev, end_time: e.target.value }))}
+                                                className="w-full px-4 py-3 bg-slate-700 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                    {formData.start_date && permitHours > 0 && (
+                                        <div className="px-4 py-3 bg-purple-500/10 border border-purple-500/30 rounded-xl flex items-center gap-3">
+                                            <div className="w-8 h-8 bg-purple-500/20 rounded-lg flex items-center justify-center text-purple-400 font-bold text-sm">
+                                                {permitHours}h
+                                            </div>
+                                            <span className="text-purple-300 font-medium text-sm">
+                                                Permesso di <strong>{permitHours} {permitHours === 1 ? 'ora' : 'ore'}</strong> — dalle {formData.start_time} alle {formData.end_time}
+                                            </span>
+                                        </div>
+                                    )}
+                                    {formData.start_time && formData.end_time && permitHours <= 0 && (
+                                        <div className="px-4 py-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm font-medium">
+                                            ⚠️ L'ora di fine deve essere successiva all'ora di inizio
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-400 mb-1">Dal *</label>
+                                        <input
+                                            type="date"
+                                            value={formData.start_date}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, start_date: e.target.value }))}
+                                            className="w-full px-4 py-3 bg-slate-700 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-400 mb-1">Al *</label>
+                                        <input
+                                            type="date"
+                                            value={formData.end_date}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, end_date: e.target.value }))}
+                                            className="w-full px-4 py-3 bg-slate-700 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Reason */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-400 mb-1">
+                                    Motivazione (opzionale)
+                                </label>
+                                <textarea
+                                    value={formData.reason}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, reason: e.target.value }))}
+                                    className="w-full px-4 py-3 bg-slate-700 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:outline-none resize-none"
+                                    rows={3}
+                                    placeholder="Note aggiuntive..."
+                                />
+                            </div>
+
+                            {/* Buttons */}
+                            <div className="flex justify-end gap-3 pt-4">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowModal(false)}
+                                    className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition"
+                                >
+                                    Annulla
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition"
+                                >
+                                    Invia Richiesta
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
 }

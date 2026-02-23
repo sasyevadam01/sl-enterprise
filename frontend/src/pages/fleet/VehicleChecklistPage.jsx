@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { fleetApi } from '../../api/client';
 import { useUI, StandardModal } from '../../components/ui/CustomUI';
 import { useAuth } from '../../context/AuthContext';
+import { useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { format } from 'date-fns';
+// date-fns removed: shift-info endpoint handles date logic server-side
 import {
     Car,
     CheckCircle2,
@@ -23,7 +24,11 @@ import {
     Truck,
     Tablet,
     Camera,
-    Upload
+    Upload,
+    Lock,
+    Unlock,
+    ShieldAlert,
+    X
 } from 'lucide-react';
 
 const ForkliftIcon = ({ className = "w-6 h-6", color = "currentColor" }) => (
@@ -60,7 +65,7 @@ const CHECKS = [
 export default function VehicleChecklistPage() {
     const { toast } = useUI();
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const { user, hasPermission } = useAuth();
     const [step, setStep] = useState(1); // 1: Select, 2: Check, 3: Success
     const [vehicles, setVehicles] = useState([]);
     const [selectedVehicle, setSelectedVehicle] = useState(null);
@@ -81,12 +86,26 @@ export default function VehicleChecklistPage() {
     const [photoPreview, setPhotoPreview] = useState(null);
     const [tabletNote, setTabletNote] = useState("");
 
+    // Vehicle Photo State
+    const [vehiclePhoto, setVehiclePhoto] = useState(null);
+    const [vehiclePhotoPreview, setVehiclePhotoPreview] = useState(null);
+
     // Feature: Disable checked vehicles
-    const [checkedVehicles, setCheckedVehicles] = useState({}); // { vehicle_id: operator_name }
+    const [checkedVehicles, setCheckedVehicles] = useState({}); // { vehicle_id: { operator, tabletStatus, time } }
+
+    // Shift State
+    const [shiftInfo, setShiftInfo] = useState({ shift: null, label: '', available: false, message: null });
 
     // TAB STATE
     const [activeView, setActiveView] = useState('checklist'); // checklist, management
     const canManageFleet = user?.permissions?.includes('manage_fleet') || user?.permissions?.includes('*');
+
+    // Vehicle Block State
+    const [blockModal, setBlockModal] = useState(null); // vehicle object to block
+    const [blockReason, setBlockReason] = useState('');
+    const [blockingInProgress, setBlockingInProgress] = useState(false);
+    const [blockedAlert, setBlockedAlert] = useState(null); // vehicle object for alert
+    const canBlockVehicles = hasPermission('block_vehicles') || hasPermission('PANNELLO_ADMIN');
 
     // Management State
     const [showVehicleModal, setShowVehicleModal] = useState(false);
@@ -108,23 +127,14 @@ export default function VehicleChecklistPage() {
 
     const loadData = async () => {
         try {
-            const today = format(new Date(), 'yyyy-MM-dd');
-            const [vData, chkData] = await Promise.all([
-                fleetApi.getVehicles({ status: 'operational' }),
-                fleetApi.getChecklists({ date: today })
+            const [vData, shiftData] = await Promise.all([
+                fleetApi.getVehicles(),  // Load ALL vehicles (operational + blocked)
+                fleetApi.getShiftInfo()
             ]);
 
             setVehicles(vData);
-
-            const checkedMap = {};
-            chkData.forEach(chk => {
-                const opName = chk.operator ? (chk.operator.full_name || chk.operator.username) : `Operatore #${chk.operator_id}`;
-                checkedMap[chk.vehicle_id] = {
-                    operator: opName,
-                    tabletStatus: chk.tablet_status || 'ok' // Default to ok if missing (legacy)
-                };
-            });
-            setCheckedVehicles(checkedMap);
+            setShiftInfo(shiftData);
+            setCheckedVehicles(shiftData.checked_vehicles || {});
 
         } catch (err) {
             console.error(err);
@@ -202,9 +212,56 @@ export default function VehicleChecklistPage() {
     const [confirmVehicle, setConfirmVehicle] = useState(null);
 
     const handleSelectVehicle = (v) => {
+        if (v.status === 'blocked') {
+            setBlockedAlert(v);
+            return;
+        }
         if (checkedVehicles[v.id]) return;
         setConfirmVehicle(v);
     };
+
+    const handleBlockVehicle = async () => {
+        if (!blockModal || !blockReason.trim()) {
+            toast.error('Inserisci un motivo per il blocco');
+            return;
+        }
+        setBlockingInProgress(true);
+        try {
+            await fleetApi.blockVehicle(blockModal.id, blockReason.trim());
+            toast.success(`Veicolo ${blockModal.internal_code} bloccato`);
+            setBlockModal(null);
+            setBlockReason('');
+            loadData();
+        } catch (err) {
+            toast.error(err.response?.data?.detail || 'Errore blocco veicolo');
+        } finally {
+            setBlockingInProgress(false);
+        }
+    };
+
+    const handleUnblockVehicle = async (v) => {
+        if (!window.confirm(`Sbloccare il veicolo ${v.internal_code}?`)) return;
+        try {
+            await fleetApi.unblockVehicle(v.id);
+            toast.success(`Veicolo ${v.internal_code} sbloccato`);
+            loadData();
+        } catch (err) {
+            toast.error(err.response?.data?.detail || 'Errore sblocco veicolo');
+        }
+    };
+
+    // Parse block info from notes
+    const getBlockInfo = useCallback((v) => {
+        if (v.status !== 'blocked' || !v.notes) return null;
+        try {
+            const prefix = '[BLOCK_INFO]';
+            const suffix = '[/BLOCK_INFO]';
+            const start = v.notes.indexOf(prefix) + prefix.length;
+            const end = v.notes.indexOf(suffix);
+            if (start < prefix.length || end < 0) return null;
+            return JSON.parse(v.notes.substring(start, end));
+        } catch { return null; }
+    }, []);
 
     const confirmSelection = () => {
         if (confirmVehicle) {
@@ -217,21 +274,70 @@ export default function VehicleChecklistPage() {
             setTabletPhoto(null);
             setPhotoPreview(null);
             setTabletNote("");
+            // Reset Vehicle Photo State
+            setVehiclePhoto(null);
+            setVehiclePhotoPreview(null);
 
             setConfirmVehicle(null);
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     };
 
-    const handlePhotoCapture = (e) => {
+    // Compress image using canvas to prevent memory crash on Android
+    const compressImage = (file, maxDimension = 1280, quality = 0.7) => {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            const objectUrl = URL.createObjectURL(file);
+            img.onload = () => {
+                URL.revokeObjectURL(objectUrl);
+                let { width, height } = img;
+                if (width > maxDimension || height > maxDimension) {
+                    const ratio = Math.min(maxDimension / width, maxDimension / height);
+                    width = Math.round(width * ratio);
+                    height = Math.round(height * ratio);
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                const dataUrl = canvas.toDataURL('image/jpeg', quality);
+                canvas.toBlob((blob) => {
+                    if (!blob) { reject(new Error('Compression failed')); return; }
+                    const compressedFile = new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' });
+                    resolve({ file: compressedFile, preview: dataUrl });
+                }, 'image/jpeg', quality);
+            };
+            img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error('Failed to load image')); };
+            img.src = objectUrl;
+        });
+    };
+
+    const handlePhotoCapture = async (e) => {
         const file = e.target.files[0];
         if (file) {
-            setTabletPhoto(file);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setPhotoPreview(reader.result);
-            };
-            reader.readAsDataURL(file);
+            try {
+                const { file: compressed, preview } = await compressImage(file);
+                setTabletPhoto(compressed);
+                setPhotoPreview(preview);
+            } catch (err) {
+                console.error('Photo compression failed:', err);
+                toast.error("Errore elaborazione foto. Riprova.");
+            }
+        }
+    };
+
+    const handleVehiclePhotoCapture = async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            try {
+                const { file: compressed, preview } = await compressImage(file);
+                setVehiclePhoto(compressed);
+                setVehiclePhotoPreview(preview);
+            } catch (err) {
+                console.error('Photo compression failed:', err);
+                toast.error("Errore elaborazione foto. Riprova.");
+            }
         }
     };
 
@@ -289,6 +395,10 @@ export default function VehicleChecklistPage() {
 
         if (!tabletPhoto) {
             return { valid: false, msg: "FOTO TABLET OBBLIGATORIA! Devi scattare una foto al tablet di bordo." };
+        }
+
+        if (!vehiclePhoto) {
+            return { valid: false, msg: "FOTO MEZZO OBBLIGATORIA! Devi scattare una foto completa del mezzo." };
         }
 
         if (tabletStatus === 'broken' && (!tabletNote || tabletNote.length < 5)) {
@@ -355,7 +465,8 @@ export default function VehicleChecklistPage() {
                 notes: subNotes,
                 tabletPhoto,
                 tabletStatus,
-                issuePhotos
+                issuePhotos,
+                vehiclePhoto
             });
 
             // FIX: Show success immediately, then refresh data in background
@@ -372,9 +483,12 @@ export default function VehicleChecklistPage() {
 
             // Check for Photo Error to show Modal
             if (err.response?.status === 400 && errorMsg.includes("Foto")) {
+                const isMezzoError = errorMsg.includes("Mezzo");
                 setValidationError({
-                    title: "Manca la Foto del Tablet!",
-                    message: "Non puoi completare il check senza aver scattato la foto del tablet.\n\nAssicurati che il tablet sia visibile e funzionante."
+                    title: isMezzoError ? "Manca la Foto del Mezzo!" : "Manca la Foto del Tablet!",
+                    message: isMezzoError
+                        ? "Non puoi completare il check senza aver scattato la foto del mezzo.\n\nAssicurati che il mezzo sia visibile per intero."
+                        : "Non puoi completare il check senza aver scattato la foto del tablet.\n\nAssicurati che il tablet sia visibile e funzionante."
                 });
             } else {
                 toast.error(errorMsg);
@@ -457,27 +571,53 @@ export default function VehicleChecklistPage() {
                                     className="space-y-12"
                                 >
                                     <div className="flex flex-col gap-6 mb-8">
-                                        {/* Progress Counter */}
-                                        <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-200">
-                                                    <ClipboardCheck size={20} />
-                                                </div>
-                                                <div>
-                                                    <h4 className="text-slate-900 font-black uppercase text-sm tracking-widest">Avanzamento Turno</h4>
-                                                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Mezzi Controllati</p>
-                                                </div>
+                                        {/* Shift Banner */}
+                                        <div className={`flex items-center gap-4 p-4 rounded-2xl border shadow-sm ${shiftInfo.available
+                                            ? shiftInfo.shift === 'morning'
+                                                ? 'bg-amber-50 border-amber-200'
+                                                : 'bg-indigo-50 border-indigo-200'
+                                            : 'bg-slate-100 border-slate-200'
+                                            }`}>
+                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${shiftInfo.available
+                                                ? shiftInfo.shift === 'morning'
+                                                    ? 'bg-amber-100 text-amber-600'
+                                                    : 'bg-indigo-100 text-indigo-600'
+                                                : 'bg-slate-200 text-slate-500'
+                                                }`}>
+                                                {shiftInfo.shift === 'morning' ? '☀️' : shiftInfo.shift === 'evening' ? '🌙' : '⏸️'}
                                             </div>
-                                            <div className="flex items-end flex-col">
-                                                <span className="text-2xl font-black text-slate-900 tracking-tighter">
-                                                    {Object.keys(checkedVehicles).length} <span className="text-slate-400 text-sm">/ {vehicles.length}</span>
-                                                </span>
-                                                <div className="w-32 h-1.5 bg-slate-200 rounded-full overflow-hidden mt-1">
-                                                    <div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${(Object.keys(checkedVehicles).length / vehicles.length) * 100}%` }}></div>
-                                                </div>
+                                            <div className="flex-grow">
+                                                <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest">
+                                                    {shiftInfo.available ? shiftInfo.label : 'Fuori Turno'}
+                                                </h4>
+                                                {shiftInfo.message && (
+                                                    <p className="text-xs text-slate-500 mt-0.5">{shiftInfo.message}</p>
+                                                )}
                                             </div>
                                         </div>
 
+                                        {/* Progress Counter */}
+                                        {shiftInfo.available && (
+                                            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                                                <div className="flex items-center gap-3 mb-3">
+                                                    <div className="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-200 shrink-0">
+                                                        <ClipboardCheck size={18} />
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <h4 className="text-slate-900 font-black uppercase text-xs tracking-widest leading-tight">Avanzamento Turno</h4>
+                                                        <p className="text-slate-400 text-[9px] font-bold uppercase tracking-widest">Mezzi Controllati</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-2xl font-black text-slate-900 tracking-tighter">
+                                                        {Object.keys(checkedVehicles).length} <span className="text-slate-400 text-sm">/ {vehicles.length}</span>
+                                                    </span>
+                                                    <div className="w-24 sm:w-32 h-2 bg-slate-200 rounded-full overflow-hidden">
+                                                        <div className="h-full bg-blue-500 rounded-full transition-all duration-500" style={{ width: `${(Object.keys(checkedVehicles).length / vehicles.length) * 100}%` }}></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div className="flex flex-wrap gap-4 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm">
@@ -505,116 +645,133 @@ export default function VehicleChecklistPage() {
                                         ))}
                                     </div>
 
-                                    {Object.entries(grouped).length === 0 ? (
-                                        <div className="text-center py-20 bg-white rounded-[40px] border border-dashed border-slate-200">
+                                    {!shiftInfo.available ? (
+                                        /* ── Blocked State ── */
+                                        <div className="text-center py-20 bg-white rounded-[32px] border border-dashed border-slate-200">
+                                            <Clock size={48} className="mx-auto text-slate-300 mb-4" />
+                                            <p className="text-slate-500 font-bold text-sm">{shiftInfo.message || 'Nessun check disponibile'}</p>
+                                            <p className="text-slate-400 text-xs mt-2">I check sono attivi dalle 06:00 alle 12:30 e dalle 14:00 alle 21:30</p>
+                                        </div>
+                                    ) : Object.entries(grouped).length === 0 ? (
+                                        <div className="text-center py-20 bg-white rounded-[32px] border border-dashed border-slate-200">
                                             <Truck size={48} className="mx-auto text-slate-300 mb-4" />
                                             <p className="text-slate-500 font-medium">Nessun mezzo disponibile al momento.</p>
                                         </div>
                                     ) : (
                                         Object.entries(grouped).map(([type, list]) => (
-                                            <section key={type}>
-                                                <div className="flex items-center gap-4 mb-6">
-                                                    <h3 className="text-sm font-black text-blue-600 uppercase tracking-[0.2em] whitespace-nowrap">
+                                            <section key={type} className="mb-6">
+                                                <div className="flex items-center gap-4 mb-3">
+                                                    <h3 className="text-xs font-black text-blue-600 uppercase tracking-[0.2em] whitespace-nowrap">
                                                         {type}
                                                     </h3>
                                                     <div className="h-px w-full bg-blue-100"></div>
                                                 </div>
 
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                                {/* ── Compact Mobile List ── */}
+                                                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden divide-y divide-slate-100">
                                                     {list.map(v => {
-                                                        const checkInfo = checkedVehicles[v.id];
+                                                        const checkInfo = checkedVehicles[v.id] || checkedVehicles[String(v.id)];
                                                         const isChecked = !!checkInfo;
                                                         const operatorName = checkInfo?.operator;
-                                                        const tabletStatus = checkInfo?.tabletStatus;
+                                                        const checkTime = checkInfo?.time;
+                                                        const vTabletStatus = checkInfo?.tabletStatus;
+                                                        const isBlocked = v.status === 'blocked';
+                                                        const blockInfo = isBlocked ? getBlockInfo(v) : null;
 
                                                         const isMitsubishi = v.brand?.toLowerCase().includes('mitsubishi');
+                                                        const accentColor = isMitsubishi ? 'emerald' : 'amber';
 
                                                         return (
-                                                            <button
-                                                                key={v.id}
-                                                                onClick={() => handleSelectVehicle(v)}
-                                                                disabled={isChecked}
-                                                                className={`group relative h-48 rounded-[32px] text-left transition-all duration-300 border overflow-hidden p-6 flex flex-col justify-between cursor-pointer
-                                                                    ${isChecked
-                                                                        ? 'bg-slate-50 border-slate-200 opacity-50 cursor-not-allowed'
-                                                                        : isMitsubishi
-                                                                            ? 'bg-white border-emerald-200 hover:border-emerald-400 hover:shadow-md active:scale-95'
-                                                                            : 'bg-white border-amber-200 hover:border-amber-400 hover:shadow-md active:scale-95'
-                                                                    }`}
-                                                            >
-                                                                {/* Realistic Technical Drawing Background */}
-                                                                <div className={`absolute -right-4 bottom-0 w-48 h-48 opacity-5 transition-all duration-500 group-hover:scale-110 group-hover:opacity-10 pointer-events-none
-                                                                    ${isMitsubishi ? 'text-emerald-600' : 'text-amber-600'}`}>
-                                                                    <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-                                                                        <path d="M60 160V170H40V160H60ZM60 160H80V120H40V160H60Z" fill="currentColor" />
-                                                                        <path d="M120 50V170H100V50H120ZM140 170H180C191 170 200 161 200 150V90L150 60H140V170ZM150 80L185 100V160H140V80H150Z" fill="currentColor" />
-                                                                        <path d="M80 170H100V50H80V170Z" fill="currentColor" />
-                                                                        <path d="M220 170H200V150H220V170Z" fill="currentColor" />
-                                                                        <circle cx="90" cy="180" r="15" fill="currentColor" />
-                                                                        <circle cx="170" cy="180" r="15" fill="currentColor" />
-                                                                        {/* Mast details */}
-                                                                        <rect x="85" y="60" width="5" height="100" fill="currentColor" opacity="0.5" />
-                                                                        <rect x="115" y="60" width="5" height="100" fill="currentColor" opacity="0.5" />
-                                                                        <path d="M80 60H120V65H80V60Z" fill="currentColor" />
-                                                                        <path d="M80 160H120V165H80V160Z" fill="currentColor" />
-                                                                        {/* Forks */}
-                                                                        <path d="M10 165H80V170H10V165Z" fill="currentColor" />
-                                                                        <path d="M10 165V155L20 155V165H10Z" fill="currentColor" />
-                                                                    </svg>
-                                                                </div>
+                                                            <div key={v.id} className="flex items-stretch">
+                                                                {/* Main clickable area */}
+                                                                <button
+                                                                    onClick={() => handleSelectVehicle(v)}
+                                                                    disabled={isChecked && !isBlocked}
+                                                                    className={`flex-1 flex items-center gap-3 md:gap-4 px-3 md:px-4 py-3 md:py-3.5 text-left transition-all min-w-0
+                                                                        ${isBlocked
+                                                                            ? 'bg-red-50 cursor-pointer'
+                                                                            : isChecked
+                                                                                ? 'bg-slate-50 opacity-60 cursor-not-allowed'
+                                                                                : `hover:bg-${accentColor}-50 active:bg-${accentColor}-100 cursor-pointer`
+                                                                        }`}
+                                                                >
+                                                                    {/* Vehicle Number */}
+                                                                    <div className={`flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center font-black text-sm md:text-lg border
+                                                                        ${isBlocked
+                                                                            ? 'bg-red-100 text-red-600 border-red-300'
+                                                                            : isChecked
+                                                                                ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                                                                                : `bg-${accentColor}-50 text-${accentColor}-700 border-${accentColor}-200`
+                                                                        }`}>
+                                                                        {isBlocked ? <Lock size={18} /> : isChecked ? <CheckCircle2 size={20} /> : v.internal_code}
+                                                                    </div>
 
-                                                                {/* Decorator Light Blur */}
-                                                                <div className={`absolute -top-10 -right-10 w-40 h-40 blur-3xl rounded-full transition-colors pointer-events-none
-                                                                    ${isMitsubishi ? 'bg-emerald-500/5 group-hover:bg-emerald-500/10' : 'bg-amber-500/5 group-hover:bg-amber-500/10'}`}>
-                                                                </div>
-
-                                                                <div className="relative z-10 w-full">
-                                                                    <div className="flex justify-between items-start">
-                                                                        <div>
-                                                                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 opacity-70">{v.brand}</div>
-                                                                            <div className={`text-4xl font-black text-slate-900 transition-colors tracking-tighter ${isMitsubishi ? 'group-hover:text-emerald-600' : 'group-hover:text-amber-600'}`}>
-                                                                                {v.internal_code}
-                                                                            </div>
+                                                                    {/* Info */}
+                                                                    <div className="flex-grow min-w-0">
+                                                                        <div className="flex items-center gap-2 flex-wrap">
+                                                                            <span className={`font-bold text-sm ${isBlocked ? 'text-red-700' : isChecked ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
+                                                                                {v.brand || 'N/D'} {v.internal_code}
+                                                                            </span>
+                                                                            {isBlocked && (
+                                                                                <span className="text-[9px] bg-red-500 text-white px-2 py-0.5 rounded-full font-black uppercase tracking-wider animate-pulse">
+                                                                                    ⛔ BLOCCATO
+                                                                                </span>
+                                                                            )}
+                                                                            {isChecked && vTabletStatus === 'broken' && (
+                                                                                <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-bold">TABLET KO</span>
+                                                                            )}
                                                                         </div>
-                                                                        <div className="flex flex-col gap-2">
-                                                                            <div className={`p-2 rounded-xl bg-slate-50 border border-slate-200 self-end ${isMitsubishi ? 'text-emerald-600' : 'text-amber-600'}`}>
-                                                                                <ForkliftIcon className="w-6 h-6" />
-                                                                            </div>
-                                                                            {/* Tablet Status Icon */}
-                                                                            <div className={`p-1.5 rounded-lg border self-end flex items-center justify-center transition-colors
-                                                                                ${isChecked
-                                                                                    ? (tabletStatus === 'broken' ? 'bg-red-50 text-red-500 border-red-200' : 'bg-emerald-50 text-emerald-500 border-emerald-200')
-                                                                                    : 'bg-slate-50 text-slate-400 border-slate-200'}`}
-                                                                                title={`Tablet: ${isChecked ? (tabletStatus === 'broken' ? 'Problema Segnalato' : 'OK') : 'Da Verificare'}`}
-                                                                            >
-                                                                                {isChecked && tabletStatus === 'broken' ? <AlertTriangle size={14} /> : <Tablet size={14} />}
-                                                                            </div>
+                                                                        <div className={`text-xs truncate ${isBlocked ? 'text-red-400 font-semibold' : 'text-slate-400'}`}>
+                                                                            {isBlocked
+                                                                                ? (blockInfo?.reason || 'Bloccato per sicurezza')
+                                                                                : isChecked
+                                                                                    ? `${operatorName} • ${checkTime || ''}`
+                                                                                    : v.assigned_operator || v.model || type
+                                                                            }
                                                                         </div>
                                                                     </div>
 
-                                                                    {isChecked ? (
-                                                                        <div className="mt-8 pt-4 border-t border-slate-100 flex flex-col gap-1">
-                                                                            <div className="flex items-center gap-2 text-emerald-600 font-black text-[10px] uppercase tracking-widest">
-                                                                                <CheckCircle2 size={12} /> COMPLETATO
-                                                                            </div>
-                                                                            <div className="text-[10px] text-slate-400 font-bold truncate">
-                                                                                Operatore: {operatorName}
-                                                                            </div>
-                                                                        </div>
-                                                                    ) : (
-                                                                        <div className={`mt-8 flex items-center gap-2 transition-transform group-hover:translate-x-1 ${isMitsubishi ? 'text-emerald-600' : 'text-amber-600'}`}>
-                                                                            <span className="text-[10px] font-black uppercase tracking-widest">Seleziona</span>
-                                                                            <ArrowRight size={14} />
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            </button>
+                                                                    {/* Action Indicator */}
+                                                                    <div className="flex-shrink-0">
+                                                                        {isBlocked ? (
+                                                                            <ShieldAlert size={18} className="text-red-500" />
+                                                                        ) : isChecked ? (
+                                                                            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">FATTO</span>
+                                                                        ) : (
+                                                                            <ArrowRight size={16} className={`text-${accentColor}-400`} />
+                                                                        )}
+                                                                    </div>
+                                                                </button>
+
+                                                                {/* Block/Unblock Toggle - separate inline button, always visible */}
+                                                                {canBlockVehicles && !isChecked && (
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            if (isBlocked) {
+                                                                                handleUnblockVehicle(v);
+                                                                            } else {
+                                                                                setBlockModal(v);
+                                                                                setBlockReason('');
+                                                                            }
+                                                                        }}
+                                                                        title={isBlocked ? 'Sblocca veicolo' : 'Blocca veicolo'}
+                                                                        className={`flex-shrink-0 w-12 flex items-center justify-center border-l transition-all
+                                                                            ${isBlocked
+                                                                                ? 'bg-green-50 text-green-600 hover:bg-green-100 border-green-200'
+                                                                                : 'bg-slate-50 text-slate-300 hover:bg-red-50 hover:text-red-500 border-slate-100'
+                                                                            } cursor-pointer`}
+                                                                    >
+                                                                        {isBlocked ? <Unlock size={16} /> : <Lock size={16} />}
+                                                                    </button>
+                                                                )}
+                                                            </div>
                                                         );
                                                     })}
                                                 </div>
                                             </section>
-                                        )
-                                        ))}
+                                        ))
+                                    )}
                                 </motion.div>
                             )}
 
@@ -770,6 +927,67 @@ export default function VehicleChecklistPage() {
                                         </div>
                                     </div>
 
+                                    {/* Vehicle Photo Section */}
+                                    <div id="vehicle-photo-section" className="bg-white border border-slate-200 rounded-[32px] p-6 mb-8 group hover:border-emerald-300 transition-all shadow-sm">
+                                        <div className="flex items-center gap-4 mb-6">
+                                            <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-200">
+                                                <Car size={24} />
+                                            </div>
+                                            <div>
+                                                <h4 className="text-lg font-black text-slate-900 uppercase tracking-wider">Foto Mezzo Completa</h4>
+                                                <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Scatta una foto del mezzo per intero (obbligatoria)</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 flex justify-between">
+                                                <span>Foto Mezzo (Obbligatoria)</span>
+                                                {vehiclePhoto && <span className="text-emerald-400 flex items-center gap-1"><CheckCircle2 size={10} /> Caricata</span>}
+                                            </label>
+
+                                            <div className="relative group/vphoto">
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    capture="environment"
+                                                    onChange={handleVehiclePhotoCapture}
+                                                    className="hidden"
+                                                    id="vehicle-photo-input"
+                                                />
+
+                                                {vehiclePhotoPreview ? (
+                                                    <div className="relative w-full h-48 rounded-2xl overflow-hidden border border-slate-200 bg-slate-50">
+                                                        <img src={vehiclePhotoPreview} alt="Vehicle Preview" className="w-full h-full object-cover opacity-80" />
+                                                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover/vphoto:opacity-100 transition-opacity">
+                                                            <button
+                                                                onClick={() => {
+                                                                    setVehiclePhoto(null);
+                                                                    setVehiclePhotoPreview(null);
+                                                                }}
+                                                                className="p-3 bg-red-500 rounded-full text-white shadow-lg hover:scale-110 transition-transform"
+                                                            >
+                                                                <Trash2 size={20} />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <label
+                                                        htmlFor="vehicle-photo-input"
+                                                        className="w-full h-48 rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-4 cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/50 transition-all text-slate-400 hover:text-emerald-500"
+                                                    >
+                                                        <div className="p-4 rounded-full bg-slate-100 group-hover:bg-emerald-100 transition-colors">
+                                                            <Camera size={32} />
+                                                        </div>
+                                                        <div className="text-center">
+                                                            <span className="block text-xs font-black uppercase tracking-widest">Scatta Foto Mezzo</span>
+                                                            <span className="text-[10px] opacity-60">Inquadra il mezzo per intero</span>
+                                                        </div>
+                                                    </label>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div className="space-y-4">
                                         {CHECKS.map((item, idx) => {
                                             const val = checks[item.key];
@@ -783,16 +1001,16 @@ export default function VehicleChecklistPage() {
                                                     animate={{ opacity: 1, y: 0 }}
                                                     transition={{ delay: idx * 0.03 }}
                                                     key={item.key}
-                                                    className={`group flex items-center justify-between p-6 rounded-[28px] border transition-all duration-300 
+                                                    className={`group flex items-center justify-between p-3 md:p-6 rounded-[20px] md:rounded-[28px] border transition-all duration-300 
                                                         ${isOK ? 'bg-emerald-50 border-emerald-200' :
                                                             isKO ? 'bg-red-50 border-red-200' :
                                                                 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm'
                                                         }`}
                                                 >
-                                                    <div className="flex items-center gap-6">
-                                                        <span className="text-slate-300 font-black text-sm italic w-4">{idx + 1}</span>
-                                                        <div className="flex flex-col">
-                                                            <span className="text-slate-900 font-bold tracking-tight text-lg">{item.label}</span>
+                                                    <div className="flex items-center gap-2 md:gap-6 min-w-0 flex-1 mr-2 md:mr-4">
+                                                        <span className="text-slate-300 font-black text-xs md:text-sm italic w-4 shrink-0">{idx + 1}</span>
+                                                        <div className="flex flex-col min-w-0">
+                                                            <span className="text-slate-900 font-bold tracking-tight text-sm md:text-lg leading-tight">{item.label}</span>
                                                             {isKO && (
                                                                 <div className="flex items-center gap-2 mt-2 text-red-400">
                                                                     <AlertTriangle size={12} />
@@ -809,10 +1027,10 @@ export default function VehicleChecklistPage() {
                                                         </div>
                                                     </div>
 
-                                                    <div className="flex gap-3">
+                                                    <div className="flex gap-2 md:gap-3 shrink-0">
                                                         <button
                                                             onClick={() => handleCheck(item.key, true)}
-                                                            className={`px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all cursor-pointer
+                                                            className={`px-3 md:px-6 py-2 md:py-3 rounded-xl md:rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-widest transition-all cursor-pointer
                                                                 ${isOK
                                                                     ? 'bg-emerald-500 text-white shadow-sm'
                                                                     : 'bg-slate-100 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 border border-slate-200'}`}
@@ -821,7 +1039,7 @@ export default function VehicleChecklistPage() {
                                                         </button>
                                                         <button
                                                             onClick={() => handleCheck(item.key, false)}
-                                                            className={`px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all cursor-pointer
+                                                            className={`px-3 md:px-6 py-2 md:py-3 rounded-xl md:rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-widest transition-all cursor-pointer
                                                                 ${isKO
                                                                     ? 'bg-red-500 text-white shadow-sm'
                                                                     : 'bg-slate-100 text-slate-400 hover:bg-red-50 hover:text-red-500 border border-slate-200'}`}
@@ -1170,6 +1388,118 @@ export default function VehicleChecklistPage() {
                     >
                         Ho capito, vado a farla
                     </button>
+                </div>
+            </StandardModal>
+
+            {/* ═══════════════════════════════════════════════ */}
+            {/* BLOCKED VEHICLE ALERT (Full-screen safety warning) */}
+            {/* ═══════════════════════════════════════════════ */}
+            <AnimatePresence>
+                {blockedAlert && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[9999] bg-red-600 flex flex-col items-center justify-center p-6 text-white"
+                        onClick={() => setBlockedAlert(null)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.5, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.8 }}
+                            className="text-center max-w-md"
+                        >
+                            <div className="w-28 h-28 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-8 animate-pulse">
+                                <ShieldAlert size={64} className="text-white" />
+                            </div>
+
+                            <h1 className="text-3xl md:text-5xl font-black uppercase tracking-tight mb-4 leading-tight">
+                                ⛔ Veicolo Bloccato
+                            </h1>
+
+                            <div className="bg-white/10 rounded-3xl p-6 mb-6 backdrop-blur-sm border border-white/20">
+                                <p className="text-xl font-black mb-2">
+                                    {blockedAlert.brand} — {blockedAlert.internal_code}
+                                </p>
+                                <p className="text-white/80 text-lg font-bold uppercase tracking-widest">
+                                    NON UTILIZZARE QUESTO MEZZO
+                                </p>
+                            </div>
+
+                            {(() => {
+                                const info = getBlockInfo(blockedAlert);
+                                return info ? (
+                                    <div className="space-y-2 mb-8 text-sm">
+                                        <p className="text-white/90">
+                                            <span className="font-black uppercase tracking-widest text-[10px] text-white/50 block mb-1">Motivo</span>
+                                            {info.reason}
+                                        </p>
+                                        <p className="text-white/70">
+                                            <span className="font-black uppercase tracking-widest text-[10px] text-white/50 block mb-1">Bloccato da</span>
+                                            {info.by} — {new Date(info.at).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                        </p>
+                                    </div>
+                                ) : null;
+                            })()}
+
+                            <button
+                                onClick={() => setBlockedAlert(null)}
+                                className="w-full py-5 bg-white text-red-600 rounded-2xl font-black uppercase tracking-widest text-sm shadow-lg hover:bg-red-50 transition-all active:scale-95 cursor-pointer"
+                            >
+                                Ho capito — Chiudi
+                            </button>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* ═══════════════════════════════════════════════ */}
+            {/* BLOCK REASON MODAL (for coordinators/security) */}
+            {/* ═══════════════════════════════════════════════ */}
+            <StandardModal
+                isOpen={!!blockModal}
+                onClose={() => { setBlockModal(null); setBlockReason(''); }}
+                title={`Blocca Veicolo ${blockModal?.internal_code || ''}`}
+            >
+                <div className="p-6 space-y-6">
+                    <div className="flex items-center gap-4 bg-red-50 border border-red-200 rounded-2xl p-4">
+                        <div className="w-14 h-14 bg-red-100 rounded-2xl flex items-center justify-center text-red-500 shrink-0">
+                            <Lock size={28} />
+                        </div>
+                        <div>
+                            <p className="font-black text-red-700 text-sm uppercase tracking-wider">Blocco per Sicurezza</p>
+                            <p className="text-red-400 text-xs mt-1">Il veicolo sarà inutilizzabile fino allo sblocco. Tutti vedranno l'avviso.</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">
+                            Motivo del blocco *
+                        </label>
+                        <textarea
+                            value={blockReason}
+                            onChange={(e) => setBlockReason(e.target.value)}
+                            placeholder="Es: Freni non funzionanti, perdita olio, guasto forche..."
+                            rows={3}
+                            className="w-full border border-slate-200 rounded-xl p-4 text-sm focus:border-red-400 focus:ring-1 focus:ring-red-400 outline-none resize-none"
+                        />
+                    </div>
+
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => { setBlockModal(null); setBlockReason(''); }}
+                            className="flex-1 py-4 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all cursor-pointer"
+                        >
+                            Annulla
+                        </button>
+                        <button
+                            onClick={handleBlockVehicle}
+                            disabled={!blockReason.trim() || blockingInProgress}
+                            className="flex-1 py-4 bg-red-600 hover:bg-red-700 disabled:bg-slate-200 disabled:text-slate-400 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-sm transition-all active:scale-95 cursor-pointer"
+                        >
+                            {blockingInProgress ? 'Blocco...' : '🔒 Blocca Veicolo'}
+                        </button>
+                    </div>
                 </div>
             </StandardModal>
         </div >

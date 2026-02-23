@@ -137,7 +137,7 @@ export const fleetApi = {
   },
   getChecklists: (params) => client.get("/fleet/checklists", { params }),
   getLatestChecklist: (vehicleId) => client.get(`/fleet/vehicles/${vehicleId}/checklist/latest`),
-  submitChecklistV2: async ({ vehicleId, checks, notes, tabletPhoto, tabletStatus, issuePhotos }) => {
+  submitChecklistV2: async ({ vehicleId, checks, notes, tabletPhoto, tabletStatus, issuePhotos, vehiclePhoto }) => {
     const formData = new FormData();
     const data = {
       vehicle_id: vehicleId,
@@ -148,6 +148,9 @@ export const fleetApi = {
     formData.append('notes', notes || '');
     formData.append('tablet_status', tabletStatus || 'ok');
     formData.append('photo', tabletPhoto);
+    if (vehiclePhoto) {
+      formData.append('vehicle_photo', vehiclePhoto);
+    }
 
     // Append issue photos
     if (issuePhotos) {
@@ -163,6 +166,31 @@ export const fleetApi = {
     });
   },
   resolveChecklist: (id, notes) => client.put(`/fleet/checklists/${id}/resolve`, { notes }),
+  getShiftInfo: () => client.get("/fleet/shift-info"),
+  blockVehicle: (vehicleId, reason) => client.patch(`/fleet/vehicles/${vehicleId}/block`, { reason }),
+  unblockVehicle: (vehicleId) => client.patch(`/fleet/vehicles/${vehicleId}/unblock`),
+};
+
+// ── Ricarica Mezzi ──
+export const chargeApi = {
+  getVehicles: () => client.get("/fleet/charge/vehicles"),
+  getMyActive: () => client.get("/fleet/charge/my-active"),
+  pickup: (vehicleId, data) => client.post(`/fleet/charge/pickup/${vehicleId}`, data),
+  takeoverVehicle: (vehicleId, data) => client.post(`/fleet/charge/takeover/${vehicleId}`, data),
+  returnVehicle: (cycleId, data) => client.post(`/fleet/charge/return/${cycleId}`, data),
+  getDashboard: (days = 7) => client.get("/fleet/charge/dashboard", { params: { days } }),
+  getHistory: (params) => client.get("/fleet/charge/history", { params }),
+  getVehicleHistory: (vehicleId, days = 90) => client.get(`/fleet/charge/vehicle/${vehicleId}/history`, { params: { days } }),
+  getOperatorStats: (days = 30) => client.get("/fleet/charge/operators/stats", { params: { days } }),
+};
+
+export const ovenApi = {
+  getItems: () => client.get("/oven/items"),
+  getHistory: (limit = 30) => client.get("/oven/items/history", { params: { limit } }),
+  insertItem: (data) => client.post("/oven/items", data),
+  removeItem: (id) => client.put(`/oven/items/${id}/remove`),
+  extendItem: (id, extraMinutes) => client.put(`/oven/items/${id}/extend`, { extra_minutes: extraMinutes }),
+  getStats: () => client.get("/oven/stats"),
 };
 
 export const notificationsApi = {
@@ -495,24 +523,29 @@ export const pickingApi = {
 
   // Requests (Orders)
   createRequest: (data) => client.post("/production/requests", data),
-  getRequests: (status, limit = 50) => client.get("/production/requests", { params: { status, limit } }),
+  getRequests: (status, limit) => client.get("/production/requests", { params: { status, limit } }),
   updateStatus: (id, status, notes) => client.patch(`/production/requests/${id}/status`, { status, notes }),
   acknowledge: (id) => client.patch(`/production/requests/${id}/acknowledge`),
   toggleUrgency: (id) => client.patch(`/production/requests/${id}/urgency`),
 
   // Reporting
-  // Reporting
-  getReports: (startDate, endDate, shiftType = 'all') =>
-    client.get("/production/reports", { params: { start_date: startDate, end_date: endDate, shift_type: shiftType } }),
+  getReports: (startDate, endDate, shiftType = 'all', targetSector = null) => {
+    const params = { start_date: startDate, end_date: endDate, shift_type: shiftType };
+    if (targetSector) params.target_sector = targetSector;
+    return client.get("/production/reports", { params });
+  },
 
-  downloadReport: (startDate, endDate, shiftType = 'all') =>
-    client.get("/production/reports", {
-      params: { start_date: startDate, end_date: endDate, shift_type: shiftType, format: 'excel' },
-      responseType: 'blob'
-    }),
+  downloadReport: (startDate, endDate, shiftType = 'all', targetSector = null) => {
+    const params = { start_date: startDate, end_date: endDate, shift_type: shiftType, format: 'excel' };
+    if (targetSector) params.target_sector = targetSector;
+    return client.get("/production/reports", { params, responseType: 'blob' });
+  },
 
-  getExportUrl: (startDate, endDate, shiftType = 'all') =>
-    `${API_BASE_URL}/production/reports?start_date=${startDate}&end_date=${endDate}&shift_type=${shiftType}&format=excel`,
+  getExportUrl: (startDate, endDate, shiftType = 'all', targetSector = null) => {
+    let url = `${API_BASE_URL}/production/reports?start_date=${startDate}&end_date=${endDate}&shift_type=${shiftType}&format=excel`;
+    if (targetSector) url += `&target_sector=${targetSector}`;
+    return url;
+  },
 };
 
 export const adminApi = {

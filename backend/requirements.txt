@@ -19,3 +19,5 @@ pywebpush
 py-vapid
 websockets
 filetype
+Pillow
+pillow-heif

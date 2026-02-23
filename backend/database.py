@@ -35,7 +35,15 @@ db_path = os.path.join(BASE_DIR, "sl_enterprise.db")
 DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{db_path}")
 connect_args = {"check_same_thread": False} if "sqlite" in DATABASE_URL else {}
 
-engine = create_engine(DATABASE_URL, connect_args=connect_args)
+engine = create_engine(
+    DATABASE_URL,
+    connect_args=connect_args,
+    pool_size=20,
+    max_overflow=30,
+    pool_timeout=10,
+    pool_pre_ping=True,
+    pool_recycle=300,
+)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def get_db():

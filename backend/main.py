@@ -13,7 +13,7 @@ from routers import (
     auth, users, employees, leaves, disciplinary, notifications, expiries, fleet, returns,
     tasks, events, audit, hr_stats, shifts, announcements, facility, factory, kpi, roles,
     admin_settings, mobile, maintenance, reports, bonuses, chat, production, logistics,
-    block_calculator
+    block_calculator, oven, fleet_charge
 )
 
 
@@ -62,9 +62,49 @@ async def lifespan(app: FastAPI):
                      conn.execute(text("ALTER TABLE block_requests ADD COLUMN target_sector VARCHAR(50) NULL"))
                      conn.commit()
 
-             # 4. logistics_requests: escalation, cancel, secure delivery
-             # RIMOSSO: La migrazione viene fatta esternamente con fix_db.py per evitare crash all'avvio
-             pass
+             # 4. users.pin_hash and users.pin_required (PIN Authentication)
+             if inspector.has_table("users"):
+                 cols = [c['name'] for c in inspector.get_columns("users")]
+                 if "pin_hash" not in cols:
+                     print("[MIGRATION] Aggiunto campo 'pin_hash' a users")
+                     conn.execute(text("ALTER TABLE users ADD COLUMN pin_hash VARCHAR(255) NULL"))
+                     conn.commit()
+                 if "pin_required" not in cols:
+                     print("[MIGRATION] Aggiunto campo 'pin_required' a users")
+                     conn.execute(text("ALTER TABLE users ADD COLUMN pin_required BOOLEAN DEFAULT 1"))
+                     conn.commit()
+
+             # 5. fleet_checklists.shift (Shift tracking)
+             if inspector.has_table("fleet_checklists"):
+                 cols = [c['name'] for c in inspector.get_columns("fleet_checklists")]
+                 if "shift" not in cols:
+                     print("[MIGRATION] Aggiunto campo 'shift' a fleet_checklists")
+                     conn.execute(text("ALTER TABLE fleet_checklists ADD COLUMN shift VARCHAR(50)"))
+                     conn.commit()
+
+             # 6. fleet_checklists.vehicle_photo_url (Foto Mezzo)
+             if inspector.has_table("fleet_checklists"):
+                 cols = [c['name'] for c in inspector.get_columns("fleet_checklists")]
+                 if "vehicle_photo_url" not in cols:
+                     print("[MIGRATION] Aggiunto campo 'vehicle_photo_url' a fleet_checklists")
+                     conn.execute(text("ALTER TABLE fleet_checklists ADD COLUMN vehicle_photo_url VARCHAR(255) NULL"))
+                     conn.commit()
+
+             # 6. Auto-fix: assegna role_id a utenti con role_id NULL
+             orphans = conn.execute(text(
+                 "SELECT u.id, u.role FROM users u WHERE u.role_id IS NULL AND u.is_active = 1"
+             )).fetchall()
+             if orphans:
+                 for uid, role_name in orphans:
+                     role_row = conn.execute(text(
+                         "SELECT id FROM roles WHERE name = :rn"
+                     ), {"rn": role_name}).fetchone()
+                     if role_row:
+                         conn.execute(text(
+                             "UPDATE users SET role_id = :rid WHERE id = :uid"
+                         ), {"rid": role_row[0], "uid": uid})
+                 conn.commit()
+                 print(f"[MIGRATION] Assegnato role_id a {len(orphans)} utenti orfani")
 
     except Exception as e:
         print(f"[MIGRATION WARNING] Errore auto-migration: {e}")
@@ -222,6 +262,7 @@ app.include_router(announcements.router)
 # Parco Mezzi & Resi
 app.include_router(fleet.router)
 app.include_router(returns.router)
+app.include_router(fleet_charge.router)  # Ricarica Mezzi
 
 # Factory / Production
 # app.include_router(factory.router)
@@ -242,6 +283,9 @@ app.include_router(logistics.router)
 
 # Block Calculator
 app.include_router(block_calculator.router)
+
+# Il Forno (Oven Tracking)
+app.include_router(oven.router)
 
 # ============================================================
 # LOGISTICS & PRODUCTION WEBSOCKETS

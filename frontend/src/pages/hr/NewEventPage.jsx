@@ -53,8 +53,22 @@ export default function NewEventPage() {
         leave_type: LEAVE_TYPES[0].value,
         start_date: '',
         end_date: '',
+        start_time: '08:00',
+        end_time: '17:00',
         reason: ''
     });
+
+    const isPermitType = ['permit', 'sudden_permit'].includes(leaveForm.leave_type);
+
+    const calculateHours = (startTime, endTime) => {
+        if (!startTime || !endTime) return 0;
+        const [sh, sm] = startTime.split(':').map(Number);
+        const [eh, em] = endTime.split(':').map(Number);
+        const diffMinutes = (eh * 60 + em) - (sh * 60 + sm);
+        return Math.max(0, Math.round(diffMinutes / 60));
+    };
+
+    const permitHours = calculateHours(leaveForm.start_time, leaveForm.end_time);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -108,16 +122,30 @@ export default function NewEventPage() {
     const handleLeaveSubmit = async (e) => {
         e.preventDefault();
         setError(null);
-        if (!leaveForm.employee_id || !leaveForm.start_date || !leaveForm.end_date) return;
+        if (!leaveForm.employee_id || !leaveForm.start_date) return;
+        if (!isPermitType && !leaveForm.end_date) return;
+        if (isPermitType && permitHours <= 0) {
+            setError('L\'ora di fine deve essere dopo l\'ora di inizio');
+            return;
+        }
 
         setLoading(true);
         try {
-            await leavesApi.createLeave(leaveForm.employee_id, {
+            let payload = {
                 leave_type: leaveForm.leave_type,
-                start_date: leaveForm.start_date,
-                end_date: leaveForm.end_date,
                 reason: leaveForm.reason || null
-            });
+            };
+
+            if (isPermitType) {
+                payload.start_date = `${leaveForm.start_date}T${leaveForm.start_time}:00`;
+                payload.end_date = `${leaveForm.start_date}T${leaveForm.end_time}:00`;
+                payload.hours = permitHours;
+            } else {
+                payload.start_date = leaveForm.start_date;
+                payload.end_date = leaveForm.end_date;
+            }
+
+            await leavesApi.createLeave(leaveForm.employee_id, payload);
             setSuccess('leave');
             setTimeout(() => navigate(afterSubmitPath), 1500);
         } catch (err) {
@@ -391,7 +419,9 @@ export default function NewEventPage() {
 
                         {/* Dates */}
                         <div className="flex justify-between items-center mb-2">
-                            <label className="block text-sm font-medium text-slate-700">Date Assenza *</label>
+                            <label className="block text-sm font-medium text-slate-700">
+                                {isPermitType ? 'Data Permesso *' : 'Date Assenza *'}
+                            </label>
                             <button
                                 type="button"
                                 onClick={() => {
@@ -404,28 +434,83 @@ export default function NewEventPage() {
                                 Solo Oggi
                             </button>
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className={labelClass}>Dal *</label>
-                                <input
-                                    type="date"
-                                    value={leaveForm.start_date}
-                                    onChange={(e) => setLeaveForm(prev => ({ ...prev, start_date: e.target.value }))}
-                                    className={inputClass}
-                                    required
-                                />
+
+                        {isPermitType ? (
+                            /* ── Permit: Data singola + Orari ── */
+                            <>
+                                <div>
+                                    <label className={labelClass}>Giorno *</label>
+                                    <input
+                                        type="date"
+                                        value={leaveForm.start_date}
+                                        onChange={(e) => setLeaveForm(prev => ({ ...prev, start_date: e.target.value, end_date: e.target.value }))}
+                                        className={inputClass}
+                                        required
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4 mt-3">
+                                    <div>
+                                        <label className={labelClass}>Da Ora *</label>
+                                        <input
+                                            type="time"
+                                            value={leaveForm.start_time}
+                                            onChange={(e) => setLeaveForm(prev => ({ ...prev, start_time: e.target.value }))}
+                                            className={inputClass}
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className={labelClass}>A Ora *</label>
+                                        <input
+                                            type="time"
+                                            value={leaveForm.end_time}
+                                            onChange={(e) => setLeaveForm(prev => ({ ...prev, end_time: e.target.value }))}
+                                            className={inputClass}
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                                {leaveForm.start_date && permitHours > 0 && (
+                                    <div className="mt-3 px-4 py-3 bg-purple-50 border border-purple-200 rounded-xl flex items-center gap-3">
+                                        <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center text-purple-600 font-bold text-sm">
+                                            {permitHours}h
+                                        </div>
+                                        <span className="text-purple-800 font-medium text-sm">
+                                            Permesso di <strong>{permitHours} {permitHours === 1 ? 'ora' : 'ore'}</strong> — dalle {leaveForm.start_time} alle {leaveForm.end_time}
+                                        </span>
+                                    </div>
+                                )}
+                                {leaveForm.start_time && leaveForm.end_time && permitHours <= 0 && (
+                                    <div className="mt-3 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm font-medium">
+                                        ⚠️ L'ora di fine deve essere successiva all'ora di inizio
+                                    </div>
+                                )}
+                            </>
+                        ) : (
+                            /* ── Others: Date range ── */
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className={labelClass}>Dal *</label>
+                                    <input
+                                        type="date"
+                                        value={leaveForm.start_date}
+                                        onChange={(e) => setLeaveForm(prev => ({ ...prev, start_date: e.target.value }))}
+                                        className={inputClass}
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className={labelClass}>Al *</label>
+                                    <input
+                                        type="date"
+                                        value={leaveForm.end_date}
+                                        onChange={(e) => setLeaveForm(prev => ({ ...prev, end_date: e.target.value }))}
+                                        className={inputClass}
+                                        required
+                                    />
+                                </div>
                             </div>
-                            <div>
-                                <label className={labelClass}>Al *</label>
-                                <input
-                                    type="date"
-                                    value={leaveForm.end_date}
-                                    onChange={(e) => setLeaveForm(prev => ({ ...prev, end_date: e.target.value }))}
-                                    className={inputClass}
-                                    required
-                                />
-                            </div>
-                        </div>
+                        )}
 
                         {/* Reason */}
                         <div>

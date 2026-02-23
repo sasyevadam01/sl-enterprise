@@ -2,12 +2,20 @@
  * LogisticsPoolPage.jsx
  * Pagina per magazzinieri - Piscina delle richieste
  * Lista live con presa in carico, ETA, e messaggi
+ * Light Enterprise Design System v5.0
  */
 import { useState, useEffect, useContext } from 'react';
 import AuthContext from '../../context/AuthContext';
 import { logisticsApi } from '../../api/client';
 import LogisticsModal from './components/LogisticsModal';
 import { useUI } from '../../components/ui/CustomUI';
+import {
+    Warehouse, Trophy, Package, Waves, ClipboardList, BarChart3,
+    Sparkles, MapPin, User, Clock, AlertCircle, ArrowRight, Inbox,
+    MessageCircle, XCircle, CheckCircle, AlertTriangle, Zap, Timer,
+    Rocket, Info, Send
+} from 'lucide-react';
+import MaterialIcon from './components/MaterialIcon';
 import './LogisticsStyles.css';
 
 export default function LogisticsPoolPage() {
@@ -35,6 +43,37 @@ export default function LogisticsPoolPage() {
     const [isSelectionMode, setIsSelectionMode] = useState(false);
     const [selectedRequestIds, setSelectedRequestIds] = useState(new Set());
 
+    // ── Notification Sound (Web Audio API — no files needed) ──
+    const playNotificationSound = () => {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            // Primo tono (Do alto)
+            const osc1 = ctx.createOscillator();
+            const gain1 = ctx.createGain();
+            osc1.type = 'sine';
+            osc1.frequency.value = 830;
+            gain1.gain.setValueAtTime(0.3, ctx.currentTime);
+            gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+            osc1.connect(gain1);
+            gain1.connect(ctx.destination);
+            osc1.start(ctx.currentTime);
+            osc1.stop(ctx.currentTime + 0.3);
+            // Secondo tono (Mi alto — più allegro)
+            const osc2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.value = 1050;
+            gain2.gain.setValueAtTime(0.3, ctx.currentTime + 0.15);
+            gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+            osc2.connect(gain2);
+            gain2.connect(ctx.destination);
+            osc2.start(ctx.currentTime + 0.15);
+            osc2.stop(ctx.currentTime + 0.5);
+        } catch (e) {
+            console.warn('[Sound] Audio non supportato:', e);
+        }
+    };
+
     useEffect(() => {
         loadData();
 
@@ -46,11 +85,11 @@ export default function LogisticsPoolPage() {
             try {
                 const data = JSON.parse(event.data);
                 if (data.type === 'new_request' || data.type === 'request_updated' || data.type === 'request_completed') {
-                    // Refresh data on any relevant update
                     loadRequests();
                     if (data.type === 'new_request') {
-                        // Optional: play a subtle notification sound (if permission allows) or show a special toast
-                        console.log("🚀 Nuova richiesta in piscina!");
+                        // 🔔 Suono + Toast notifica
+                        playNotificationSound();
+                        toast.info('📦 Nuova richiesta materiale in arrivo!');
                     }
                 }
             } catch (err) {
@@ -80,7 +119,6 @@ export default function LogisticsPoolPage() {
                 })
             ]);
 
-            // Fallback for ETA if empty
             const finalEta = (eta && eta.length > 0) ? eta : [
                 { id: 'f1', minutes: 5, label: '5 min' },
                 { id: 'f2', minutes: 10, label: '10 min' },
@@ -101,11 +139,9 @@ export default function LogisticsPoolPage() {
 
     const loadRequests = async () => {
         try {
-            // Pool (pendenti)
             const poolData = await logisticsApi.getRequests({ status: 'pending' });
             setPoolRequests(poolData.items || []);
 
-            // La mia coda (assegnate a me)
             const queueData = await logisticsApi.getRequests({ my_assigned: true, status: 'processing' });
             setMyQueue(queueData.items || []);
         } catch (err) {
@@ -139,8 +175,6 @@ export default function LogisticsPoolPage() {
         }
     };
 
-
-
     const handleTakeClick = (request) => {
         setSelectedRequest(request);
         setShowEtaModal(true);
@@ -156,7 +190,7 @@ export default function LogisticsPoolPage() {
             await loadRequests();
         } catch (err) {
             console.error('Errore presa in carico:', err);
-            setShowEtaModal(false); // Close on error too
+            setShowEtaModal(false);
         }
     };
 
@@ -170,18 +204,15 @@ export default function LogisticsPoolPage() {
         if (!requestToComplete) return;
 
         try {
-            // Se c'è un codice conferma inserito, passalo (logica da implementare in client se necessario, o via params)
-            // Per ora il backend accetta confirmation_code nelle custom props o params se lo aggiorniamo
             await logisticsApi.completeRequest(requestToComplete.id, confirmationCode);
 
-            toast.success(`✅ Materiale consegnato con successo!`);
+            toast.success('Materiale consegnato con successo!');
 
             setShowCompleteModal(false);
             setRequestToComplete(null);
-            setConfirmationCode(''); // Reset
+            setConfirmationCode('');
             await loadRequests();
 
-            // Ricarica performance
             const perf = await logisticsApi.getMyPerformance().catch(() => null);
             setPerformance(perf);
         } catch (err) {
@@ -264,13 +295,13 @@ export default function LogisticsPoolPage() {
     return (
         <div className="logistics-page pool-page">
             <header className="pool-header">
-                <h1>🚛 Gestione Magazzino</h1>
+                <h1><Warehouse size={24} className="inline-block mr-2 text-brand-green" style={{ verticalAlign: 'text-bottom' }} /> Gestione Magazzino</h1>
 
                 {/* Performance Badge */}
                 {performance && (
                     <div className="performance-badge">
-                        <span className="points">🏆 {performance.net_points || 0} pt</span>
-                        <span className="missions">📦 {performance.missions_completed || 0} missioni</span>
+                        <span className="points"><Trophy size={14} className="inline-block mr-1" style={{ verticalAlign: 'text-bottom' }} /> {performance.net_points || 0} pt</span>
+                        <span className="missions"><Package size={14} className="inline-block mr-1" style={{ verticalAlign: 'text-bottom' }} /> {performance.missions_completed || 0} missioni</span>
                     </div>
                 )}
             </header>
@@ -280,7 +311,7 @@ export default function LogisticsPoolPage() {
                 <div className="px-4 mb-2 flex justify-end">
                     <button
                         onClick={toggleSelectionMode}
-                        className={`text-sm px-3 py-1 rounded border ${isSelectionMode ? 'bg-blue-600 border-blue-500 text-white' : 'border-gray-600 text-gray-400'}`}
+                        className={`text-sm px-3 py-1 rounded border transition ${isSelectionMode ? 'bg-brand-green border-brand-green text-white' : 'border-slate-300 text-slate-500 hover:bg-slate-100'}`}
                     >
                         {isSelectionMode ? 'Annulla Selezione' : 'Selezione Multipla'}
                     </button>
@@ -293,19 +324,19 @@ export default function LogisticsPoolPage() {
                     className={`tab ${activeTab === 'pool' ? 'active' : ''}`}
                     onClick={() => setActiveTab('pool')}
                 >
-                    🏊 Piscina ({poolRequests.length})
+                    <Waves size={16} className="inline-block mr-1.5" style={{ verticalAlign: 'text-bottom' }} /> Piscina ({poolRequests.length})
                 </button>
                 <button
                     className={`tab ${activeTab === 'queue' ? 'active' : ''}`}
                     onClick={() => setActiveTab('queue')}
                 >
-                    📋 Mie ({myQueue.length})
+                    <ClipboardList size={16} className="inline-block mr-1.5" style={{ verticalAlign: 'text-bottom' }} /> Mie ({myQueue.length})
                 </button>
                 <button
                     className={`tab ${activeTab === 'stats' ? 'active' : ''}`}
                     onClick={() => setActiveTab('stats')}
                 >
-                    📊 Statistiche
+                    <BarChart3 size={16} className="inline-block mr-1.5" style={{ verticalAlign: 'text-bottom' }} /> Statistiche
                 </button>
             </div>
 
@@ -314,14 +345,14 @@ export default function LogisticsPoolPage() {
                 <div className="requests-list">
                     {poolRequests.length === 0 ? (
                         <div className="empty-state">
-                            <span className="emoji">✨</span>
+                            <Sparkles size={40} className="text-slate-300 mx-auto mb-2" />
                             <p>Nessuna richiesta in attesa</p>
                         </div>
                     ) : (
                         poolRequests.map(req => (
                             <div
                                 key={req.id}
-                                className={`request-card ${req.is_urgent || req.is_auto_urgent ? 'urgent urgent-pulse' : ''} ${getWaitClass(req.wait_time_seconds)} ${isSelectionMode && selectedRequestIds.has(req.id) ? 'ring-2 ring-blue-500 bg-blue-900/20' : ''}`}
+                                className={`request-card ${req.is_urgent || req.is_auto_urgent ? 'urgent urgent-pulse' : ''} ${getWaitClass(req.wait_time_seconds)} ${isSelectionMode && selectedRequestIds.has(req.id) ? 'ring-2 ring-brand-green bg-brand-green/5' : ''}`}
                                 onClick={() => isSelectionMode && toggleRequestSelection(req.id)}
                             >
                                 <div className="request-main">
@@ -331,12 +362,12 @@ export default function LogisticsPoolPage() {
                                                 type="checkbox"
                                                 checked={selectedRequestIds.has(req.id)}
                                                 readOnly
-                                                className="w-5 h-5 rounded border-gray-600 bg-gray-700 text-blue-600"
+                                                className="w-5 h-5 rounded border-slate-300 bg-white text-brand-green accent-brand-green"
                                             />
                                         </div>
                                     )}
                                     <div className="request-info">
-                                        <span className="material-icon">{req.material_type_icon || '📦'}</span>
+                                        <span className="material-icon"><MaterialIcon emoji={req.material_type_icon} size={28} className="text-brand-green" /></span>
                                         <div className="material-details">
                                             <strong>{req.material_type_label}</strong>
                                             {req.custom_description && <p>{req.custom_description}</p>}
@@ -344,24 +375,24 @@ export default function LogisticsPoolPage() {
                                         </div>
                                     </div>
 
-                                    <div className="request-meta grid grid-cols-2 gap-2 mt-2">
-                                        <div className="banchina bg-black/30 p-2 rounded-lg">
-                                            <span className="text-gray-400 text-xs font-bold uppercase block">Destinazione</span>
-                                            <span className="text-white font-bold text-lg">📍 Banchina {req.banchina_code}</span>
+                                    <div className="request-meta grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                                        <div className="banchina bg-slate-50 p-2 rounded-lg border border-slate-100">
+                                            <span className="text-slate-400 text-xs font-bold uppercase block">Destinazione</span>
+                                            <span className="text-slate-800 font-bold text-lg flex items-center gap-1"><MapPin size={16} className="text-brand-green" /> Banchina {req.banchina_code}</span>
                                         </div>
-                                        <div className="requester bg-black/30 p-2 rounded-lg">
-                                            <span className="text-gray-400 text-xs font-bold uppercase block">Richiedente</span>
-                                            <span className="text-white font-bold text-lg truncate">👤 {req.requester_name}</span>
+                                        <div className="requester bg-slate-50 p-2 rounded-lg border border-slate-100">
+                                            <span className="text-slate-400 text-xs font-bold uppercase block">Richiedente</span>
+                                            <span className="text-slate-800 font-bold text-lg truncate flex items-center gap-1"><User size={16} className="text-slate-500" /> {req.requester_name}</span>
                                         </div>
-                                        <div className={`wait-time col-span-2 text-center p-1 rounded-lg font-mono font-bold ${getWaitClass(req.wait_time_seconds)}`}>
-                                            ⏱️ Attesa: {formatTime(req.wait_time_seconds)}
+                                        <div className={`wait-time sm:col-span-2 text-center p-1 rounded-lg font-mono font-bold ${getWaitClass(req.wait_time_seconds)}`}>
+                                            <Clock size={14} className="inline-block mr-1" style={{ verticalAlign: 'text-bottom' }} /> Attesa: {formatTime(req.wait_time_seconds)}
                                         </div>
                                     </div>
                                 </div>
 
                                 {(req.is_urgent || req.is_auto_urgent) && (
                                     <div className="urgent-banner">
-                                        {req.is_urgent ? '🔴 URGENTE' : '⏱️ ATTESA LUNGA'}
+                                        {req.is_urgent ? <><AlertCircle size={14} className="inline-block mr-1" /> URGENTE</> : <><Clock size={14} className="inline-block mr-1" /> ATTESA LUNGA</>}
                                     </div>
                                 )}
 
@@ -370,7 +401,7 @@ export default function LogisticsPoolPage() {
                                         className="btn-take"
                                         onClick={(e) => { e.stopPropagation(); handleTakeClick(req); }}
                                     >
-                                        🏃 PRENDO IO
+                                        <ArrowRight size={16} className="inline-block mr-1" style={{ verticalAlign: 'text-bottom' }} /> PRENDO IO
                                     </button>
                                 )}
                             </div>
@@ -381,13 +412,13 @@ export default function LogisticsPoolPage() {
 
             {/* Batch Take Action Bar */}
             {isSelectionMode && selectedRequestIds.size > 0 && (
-                <div className="fixed bottom-20 left-4 right-4 bg-gray-900 border border-blue-500 rounded-xl p-4 shadow-2xl z-50 flex items-center justify-between">
-                    <span className="text-white font-bold">{selectedRequestIds.size} Richieste selezionate</span>
+                <div className="fixed bottom-20 left-4 right-4 bg-white border border-brand-green rounded-xl p-4 shadow-xl z-50 flex items-center justify-between">
+                    <span className="text-slate-700 font-bold">{selectedRequestIds.size} Richieste selezionate</span>
                     <button
                         onClick={() => setShowEtaModal(true)}
-                        className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-6 rounded-lg shadow-lg"
+                        className="bg-brand-green hover:bg-brand-green/90 text-white font-bold py-2 px-6 rounded-lg shadow-lg transition"
                     >
-                        PRENDI TUTTE 🚀
+                        PRENDI TUTTE <Rocket size={16} className="inline-block ml-1" style={{ verticalAlign: 'text-bottom' }} />
                     </button>
                 </div>
             )}
@@ -397,7 +428,7 @@ export default function LogisticsPoolPage() {
                 <div className="requests-list my-queue">
                     {myQueue.length === 0 ? (
                         <div className="empty-state">
-                            <span className="emoji">📭</span>
+                            <Inbox size={40} className="text-slate-300 mx-auto mb-2" />
                             <p>Nessuna richiesta in corso</p>
                         </div>
                     ) : (
@@ -408,23 +439,23 @@ export default function LogisticsPoolPage() {
                             >
                                 <div className="request-main">
                                     <div className="request-info">
-                                        <span className="material-icon">{req.material_type_icon || '📦'}</span>
+                                        <span className="material-icon"><MaterialIcon emoji={req.material_type_icon} size={28} className="text-brand-green" /></span>
                                         <div className="material-details">
                                             <strong>{req.material_type_label}</strong>
                                             {req.custom_description && <p>{req.custom_description}</p>}
                                         </div>
                                     </div>
 
-                                    <div className="request-meta grid grid-cols-2 gap-2 mt-2">
-                                        <div className="banchina bg-black/30 p-2 rounded-lg">
-                                            <span className="text-gray-400 text-xs font-bold uppercase block">Destinazione</span>
-                                            <span className="text-white font-bold text-lg">📍 Banchina {req.banchina_code}</span>
+                                    <div className="request-meta grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                                        <div className="banchina bg-slate-50 p-2 rounded-lg border border-slate-100">
+                                            <span className="text-slate-400 text-xs font-bold uppercase block">Destinazione</span>
+                                            <span className="text-slate-800 font-bold text-lg flex items-center gap-1"><MapPin size={16} className="text-brand-green" /> Banchina {req.banchina_code}</span>
                                         </div>
-                                        <div className="eta bg-blue-900/30 p-2 rounded-lg border border-blue-500/30">
-                                            <span className="text-blue-300 text-xs font-bold uppercase block">Tuo Arrivo</span>
-                                            <span className="text-white font-bold text-lg">⏱️ {req.promised_eta_minutes} min</span>
+                                        <div className="eta bg-brand-green/5 p-2 rounded-lg border border-brand-green/15">
+                                            <span className="text-brand-green text-xs font-bold uppercase block">Tuo Arrivo</span>
+                                            <span className="text-slate-800 font-bold text-lg flex items-center gap-1"><Clock size={16} className="text-brand-green" /> {req.promised_eta_minutes} min</span>
                                         </div>
-                                        {req.is_overdue && <div className="overdue-badge col-span-2 bg-red-500/20 text-red-400 text-center font-bold p-1 rounded border border-red-500/50 animate-pulse">⚠️ In ritardo!</div>}
+                                        {req.is_overdue && <div className="overdue-badge col-span-2 bg-red-50 text-red-500 text-center font-bold p-1 rounded border border-red-200 animate-pulse flex items-center justify-center gap-1"><AlertTriangle size={14} /> In ritardo!</div>}
                                     </div>
                                 </div>
 
@@ -433,19 +464,19 @@ export default function LogisticsPoolPage() {
                                         className="btn-message"
                                         onClick={() => handleMessageClick(req)}
                                     >
-                                        💬
+                                        <MessageCircle size={18} />
                                     </button>
                                     <button
                                         className="btn-release"
                                         onClick={() => handleReleaseClick(req)}
                                     >
-                                        ❌
+                                        <XCircle size={18} />
                                     </button>
                                     <button
                                         className="btn-complete"
                                         onClick={() => handleCompleteClick(req)}
                                     >
-                                        ✅ CONSEGNATO
+                                        <CheckCircle size={16} className="inline-block mr-1" style={{ verticalAlign: 'text-bottom' }} /> CONSEGNATO
                                     </button>
                                 </div>
                             </div>
@@ -482,7 +513,7 @@ export default function LogisticsPoolPage() {
                     {performance.fastest_reaction_seconds && (
                         <div className="stat-card">
                             <div className="stat-value">{formatTime(performance.fastest_reaction_seconds)}</div>
-                            <div className="stat-label">Record Personale ⚡</div>
+                            <div className="stat-label">Record Personale <Zap size={14} className="inline-block ml-0.5 text-amber-500" style={{ verticalAlign: 'text-bottom' }} /></div>
                         </div>
                     )}
                 </div>
@@ -493,10 +524,10 @@ export default function LogisticsPoolPage() {
                 isOpen={showEtaModal}
                 onClose={() => setShowEtaModal(false)}
                 title="Fra quanto arrivi?"
-                icon="⏰"
+                icon={<Timer size={40} className="text-brand-green" />}
             >
                 <div>
-                    <p className="text-gray-400 text-center mb-6">
+                    <p className="text-slate-500 text-center mb-6">
                         {selectedRequest?.material_type_icon} {selectedRequest?.material_type_label} <span className="mx-2">→</span> {selectedRequest?.banchina_code}
                     </p>
 
@@ -504,20 +535,20 @@ export default function LogisticsPoolPage() {
                         {etaOptions.map(opt => (
                             <button
                                 key={opt.id}
-                                className="py-4 px-4 bg-gray-800/80 hover:bg-blue-600/20 hover:border-blue-500 border border-transparent rounded-xl transition-all duration-200 flex flex-col items-center justify-center group"
+                                className="py-4 px-4 bg-slate-50 hover:bg-brand-green/10 hover:border-brand-green border border-slate-200 rounded-xl transition-all duration-200 flex flex-col items-center justify-center group cursor-pointer"
                                 onClick={() => {
                                     if (isSelectionMode) handleBatchTake(opt.minutes);
                                     else handleTake(opt.minutes);
                                 }}
                             >
-                                <span className="text-xl font-bold text-white group-hover:text-blue-400 mb-1">{opt.minutes}'</span>
-                                <span className="text-xs text-gray-400 group-hover:text-blue-200">{opt.label}</span>
+                                <span className="text-xl font-bold text-slate-800 group-hover:text-brand-green mb-1">{opt.minutes}'</span>
+                                <span className="text-xs text-slate-400 group-hover:text-brand-green/70">{opt.label}</span>
                             </button>
                         ))}
                     </div>
 
                     <button
-                        className="w-full py-3 bg-white/5 hover:bg-white/10 text-gray-300 rounded-xl font-medium transition"
+                        className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-medium transition border border-slate-200"
                         onClick={() => setShowEtaModal(false)}
                     >
                         Annulla
@@ -530,28 +561,28 @@ export default function LogisticsPoolPage() {
                 isOpen={showMessageModal}
                 onClose={() => setShowMessageModal(false)}
                 title="Invia Messaggio"
-                icon="💬"
+                icon={<MessageCircle size={40} className="text-blue-500" />}
             >
                 <div>
-                    <p className="text-gray-400 text-center mb-6">
-                        A: <span className="text-white font-medium">{selectedRequest?.requester_name}</span>
+                    <p className="text-slate-500 text-center mb-6">
+                        A: <span className="text-slate-800 font-medium">{selectedRequest?.requester_name}</span>
                     </p>
 
                     <div className="space-y-3 mb-6">
                         {presetMessages.map(msg => (
                             <button
                                 key={msg.id}
-                                className="w-full p-4 bg-gray-800/80 hover:bg-purple-600/20 hover:border-purple-500 border border-transparent rounded-xl transition-all duration-200 flex items-center gap-3 text-left group"
+                                className="w-full p-4 bg-slate-50 hover:bg-blue-50 hover:border-blue-400 border border-slate-200 rounded-xl transition-all duration-200 flex items-center gap-3 text-left group cursor-pointer"
                                 onClick={() => handleSendMessage(msg.content)}
                             >
-                                <span className="text-2xl group-hover:scale-110 transition-transform duration-200">{msg.icon}</span>
-                                <span className="text-gray-200 group-hover:text-purple-200 font-medium">{msg.content}</span>
+                                <span className="text-2xl group-hover:scale-110 transition-transform duration-200"><MaterialIcon emoji={msg.icon} size={22} className="text-slate-500 group-hover:text-blue-600" /></span>
+                                <span className="text-slate-700 group-hover:text-blue-700 font-medium">{msg.content}</span>
                             </button>
                         ))}
                     </div>
 
                     <button
-                        className="w-full py-3 bg-white/5 hover:bg-white/10 text-gray-300 rounded-xl font-medium transition"
+                        className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-medium transition border border-slate-200"
                         onClick={() => setShowMessageModal(false)}
                     >
                         Annulla
@@ -563,19 +594,19 @@ export default function LogisticsPoolPage() {
                 isOpen={showReleaseModal}
                 onClose={() => setShowReleaseModal(false)}
                 title="Rilasciare la richiesta?"
-                icon="⚠️"
+                icon={<AlertTriangle size={40} className="text-amber-500" />}
             >
                 <div className="text-center">
-                    <p className="text-gray-300 mb-6">
+                    <p className="text-slate-600 mb-6">
                         Attenzione! Se rilasci questa richiesta riceverai una
-                        <span className="text-red-400 font-bold ml-1">PENALITÀ</span>.
+                        <span className="text-red-500 font-bold ml-1">PENALITÀ</span>.
                         <br />
                         Sei sicuro di non poterla completare?
                     </p>
 
                     <div className="flex gap-3">
                         <button
-                            className="flex-1 py-3 px-4 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition"
+                            className="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium transition border border-slate-200"
                             onClick={() => setShowReleaseModal(false)}
                         >
                             Annulla
@@ -595,53 +626,52 @@ export default function LogisticsPoolPage() {
                 isOpen={showCompleteModal}
                 onClose={() => setShowCompleteModal(false)}
                 title="Conferma Consegna"
-                icon="✅"
+                icon={<CheckCircle size={40} className="text-brand-green" />}
             >
                 <div className="text-center">
-                    <p className="text-gray-300 mb-6">
+                    <p className="text-slate-600 mb-6">
                         Hai consegnato il materiale a
-                        <span className="text-white font-bold mx-1">{requestToComplete?.requester_name}</span>?
+                        <span className="text-slate-800 font-bold mx-1">{requestToComplete?.requester_name}</span>?
                     </p>
 
                     {/* Secure Delivery Input */}
                     {requestToComplete?.confirmation_code && (
                         <div className="mb-6">
-                            <label className="block text-left text-sm text-gray-400 mb-2">Codice Conferma (Richiesto)</label>
+                            <label className="block text-left text-sm text-slate-500 mb-2">Codice Conferma (Richiesto)</label>
                             <input
                                 type="text"
                                 value={confirmationCode}
                                 onChange={(e) => setConfirmationCode(e.target.value)}
                                 placeholder="Inserisci codice..."
-                                className="w-full p-3 bg-gray-700 rounded-xl text-white text-center text-xl font-bold tracking-widest border border-gray-600 focus:border-green-500 outline-none"
+                                className="w-full p-3 bg-slate-50 rounded-xl text-slate-800 text-center text-xl font-bold tracking-widest border border-slate-200 focus:border-brand-green outline-none"
                             />
                         </div>
                     )}
-                    {/* Fallback optional input if we want to allow manual code entry even if not strictly required by DB but by process */}
                     {!requestToComplete?.confirmation_code && (
                         <div className="mb-6">
-                            <label className="block text-left text-sm text-gray-400 mb-2">Codice Conferma (Opzionale)</label>
+                            <label className="block text-left text-sm text-slate-500 mb-2">Codice Conferma (Opzionale)</label>
                             <input
                                 type="text"
                                 value={confirmationCode}
                                 onChange={(e) => setConfirmationCode(e.target.value)}
                                 placeholder="Inserisci codice"
-                                className="w-full p-3 bg-gray-700 rounded-xl text-white text-center tracking-widest border border-gray-600 focus:border-green-500 outline-none"
+                                className="w-full p-3 bg-slate-50 rounded-xl text-slate-800 text-center tracking-widest border border-slate-200 focus:border-brand-green outline-none"
                             />
-                            <p className="text-[10px] text-gray-500 mt-2 text-left">
-                                ℹ️ Il codice compare sul tablet di <strong>{requestToComplete?.requester_name}</strong>
+                            <p className="text-[10px] text-slate-400 mt-2 text-left">
+                                <Info size={12} className="inline-block mr-0.5" style={{ verticalAlign: 'text-bottom' }} /> Il codice compare sul tablet di <strong>{requestToComplete?.requester_name}</strong>
                             </p>
                         </div>
                     )}
 
                     <div className="flex gap-3">
                         <button
-                            className="flex-1 py-3 px-4 bg-gray-700 hover:bg-gray-600 text-white rounded-xl font-medium transition"
+                            className="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-medium transition border border-slate-200"
                             onClick={() => setShowCompleteModal(false)}
                         >
                             No, aspetta
                         </button>
                         <button
-                            className="flex-1 py-3 px-4 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold shadow-lg shadow-green-500/20 transition-all transform active:scale-95"
+                            className="flex-1 py-3 px-4 bg-brand-green hover:bg-brand-green/90 text-white rounded-xl font-bold shadow-lg shadow-green-500/20 transition-all transform active:scale-95"
                             onClick={confirmComplete}
                         >
                             CONFERMA

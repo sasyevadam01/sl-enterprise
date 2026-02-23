@@ -26,6 +26,7 @@ def run_migrations():
         # FLEET CHECKLISTS
         ("fleet_checklists", "tablet_photo_url", "VARCHAR(500)"),
         ("fleet_checklists", "tablet_status", "VARCHAR(50) DEFAULT 'unknown'"),
+        ("fleet_checklists", "shift", "VARCHAR(50)"),
 
         # USERS (Location Tracking)
         ("users", "last_lat", "FLOAT"),
@@ -35,6 +36,14 @@ def run_migrations():
         # USERS (PIN Authentication)
         ("users", "pin_hash", "VARCHAR"),
         ("users", "pin_required", "BOOLEAN DEFAULT 1"),
+        
+        # FLEET CHARGE (Miglioramenti Takeover/Statistiche)
+        ("fleet_charge_cycles", "forgot_return", "BOOLEAN DEFAULT 0"),
+        ("fleet_charge_cycles", "forced_return_by", "INTEGER REFERENCES employees(id)"),
+        
+        # FLEET VEHICLES (Blocco temporaneo sicurezza)
+        ("fleet_vehicles", "is_blocked", "BOOLEAN DEFAULT 0"),
+        ("fleet_vehicles", "block_info", "JSON"),
         
         # OTHERS (Add here if needed)
     ]

@@ -1,48 +1,47 @@
-/**
- * LogisticsMap.jsx
- * Mappa interattiva stabilimento SIERVOPLAST
- * Stile Premium: Dark Mode, Neon Glow, Animazioni Pulse
- */
-import { useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useMemo, useState, useEffect } from 'react';
+import { Truck, MapPin, AlertTriangle, Clock, Package } from 'lucide-react';
 import './LogisticsStyles.css';
 
-const LogisticsMap = ({ requests = [], operators = [], onBanchinaClick }) => {
-    const navigate = useNavigate();
+const useIsMobile = (breakpoint = 768) => {
+    const [isMobile, setIsMobile] = useState(window.innerWidth < breakpoint);
+    useEffect(() => {
+        const handler = () => setIsMobile(window.innerWidth < breakpoint);
+        window.addEventListener('resize', handler);
+        return () => window.removeEventListener('resize', handler);
+    }, [breakpoint]);
+    return isMobile;
+};
 
-    // Configurazione Layout Banchine (Visualizzazione)
-    // Usiamo 'code' come chiave primaria per il matching visivo.
-    const banchineLayout = [
+const LogisticsMap = ({ requests = [], operators = [], onBanchinaClick }) => {
+    // Configurazione Layout Banchine (2D Blueprint Style)
+    const banchineLayout = useMemo(() => [
         // --- VEGA 5 (Alto) ---
-        { code: 'B1', name: 'Taglio / Incoll.', x: 50, y: 50, w: 100, h: 140, color: '#3b82f6' },
-        { code: 'B2', name: 'Mag. Blocchi', x: 180, y: 50, w: 100, h: 140, color: '#64748b' },
-        { code: 'B3', name: 'Mag. Blocchi', x: 310, y: 50, w: 100, h: 140, color: '#64748b' },
-        { code: 'B4', name: 'Mag. Clienti', x: 440, y: 50, w: 100, h: 140, color: '#64748b' },
-        { code: 'B5', name: 'Bordatura MP', x: 570, y: 50, w: 100, h: 140, color: '#3b82f6' },
-        { code: 'B6', name: 'Guanciali', x: 700, y: 50, w: 100, h: 140, color: '#3b82f6' },
-        { code: 'B7', name: 'Spedizioni', x: 830, y: 50, w: 100, h: 140, color: '#10b981' },
+        { code: 'B1', name: 'Taglio / Incoll.', x: 50, y: 70, w: 100, h: 120, color: '#3b82f6' },
+        { code: 'B2', name: 'Mag. Blocchi', x: 180, y: 70, w: 100, h: 120, color: '#64748b' },
+        { code: 'B3', name: 'Mag. Blocchi', x: 310, y: 70, w: 100, h: 120, color: '#64748b' },
+        { code: 'B4', name: 'Mag. Clienti', x: 440, y: 70, w: 100, h: 120, color: '#64748b' },
+        { code: 'B5', name: 'Bordatura MP', x: 570, y: 70, w: 100, h: 120, color: '#3b82f6' },
+        { code: 'B6', name: 'Guanciali', x: 700, y: 70, w: 100, h: 120, color: '#3b82f6' },
+        { code: 'B7', name: 'Spedizioni', x: 830, y: 70, w: 100, h: 120, color: '#10b981' },
 
         // --- VEGA 6 (Basso) ---
-        { code: 'B11', name: 'Assemblaggio', x: 50, y: 300, w: 120, h: 150, color: '#8b5cf6' },
-        { code: 'B12', name: 'Bugnatura', x: 200, y: 300, w: 90, h: 150, color: '#8b5cf6' },
-        { code: 'B13', name: 'Prep. Lastre', x: 320, y: 300, w: 100, h: 150, color: '#64748b' },
-        { code: 'B14', name: 'Bordatura Full', x: 450, y: 300, w: 220, h: 150, color: '#8b5cf6' }, // Grande
-        { code: 'B15', name: 'Molle / Key', x: 700, y: 300, w: 100, h: 150, color: '#8b5cf6' },
-        { code: 'B16', name: 'Magazzino', x: 830, y: 300, w: 100, h: 150, color: '#eab308' }
-    ];
+        { code: 'B11', name: 'Assemblaggio', x: 50, y: 320, w: 120, h: 130, color: '#8b5cf6' },
+        { code: 'B12', name: 'Bugnatura', x: 200, y: 320, w: 90, h: 130, color: '#8b5cf6' },
+        { code: 'B13', name: 'Prep. Lastre', x: 320, y: 320, w: 100, h: 130, color: '#64748b' },
+        { code: 'B14', name: 'Bordatura Full', x: 450, y: 320, w: 220, h: 130, color: '#8b5cf6' },
+        { code: 'B15', name: 'Molle / Key', x: 700, y: 320, w: 100, h: 130, color: '#8b5cf6' },
+        { code: 'B16', name: 'Magazzino', x: 830, y: 320, w: 100, h: 130, color: '#eab308' }
+    ], []);
 
-    // Helper per normalizzare i codici (es. "11" -> "B11")
     const normalizeCode = (code) => {
         if (!code) return '';
         const s = code.toString().toUpperCase();
         return s.startsWith('B') ? s : `B${s}`;
     };
 
-    // Mappa richieste per banchina (Matching by CODE)
     const banchinaStatus = useMemo(() => {
         const statusMap = {};
         banchineLayout.forEach(b => {
-            // Matching flessibile: ID DB potrebbe non corrispondere, usiamo il codice
             const activeReqs = requests.filter(r => {
                 const reqCode = normalizeCode(r.banchina_code);
                 return reqCode === b.code && ['pending', 'processing'].includes(r.status);
@@ -63,178 +62,199 @@ const LogisticsMap = ({ requests = [], operators = [], onBanchinaClick }) => {
             };
         });
         return statusMap;
-    }, [requests]);
+    }, [requests, banchineLayout]);
 
-    // Funzione per disegnare un blocco 3D isometrico (SVG paths)
     const renderBlock = (b) => {
         const status = banchinaStatus[b.code] || {};
         const { x, y, w, h } = b;
-        const depth = 20; // Profondità 3D
 
-        // Colori dinamici basati sullo stato
-        let baseColor = b.color;
-        let topColor = '#1e293b'; // Default top (spento)
-        let strokeColor = '#334155';
+        // Blueprint colors
+        let backgroundColor = '#ffffff';
+        let borderColor = '#e2e8f0';
+        let shadowColor = 'rgba(0,0,0,0.05)';
 
         if (status.hasRequest) {
             if (status.urgent) {
-                baseColor = '#ef4444'; // Rosso
-                topColor = '#7f1d1d';
-                strokeColor = '#fca5a5';
+                backgroundColor = '#fef2f2';
+                borderColor = '#ef4444';
+                shadowColor = 'rgba(239, 68, 68, 0.1)';
             } else if (status.processing) {
-                baseColor = '#3b82f6'; // Blu
-                topColor = '#1e3a8a';
-                strokeColor = '#93c5fd';
+                backgroundColor = '#eff6ff';
+                borderColor = '#3b82f6';
+                shadowColor = 'rgba(59, 130, 246, 0.1)';
             } else {
-                baseColor = '#fbbf24'; // Giallo
-                topColor = '#78350f';
-                strokeColor = '#fde68a';
+                backgroundColor = '#fffbeb';
+                borderColor = '#f59e0b';
+                shadowColor = 'rgba(245, 158, 11, 0.1)';
             }
         }
-
-        // Coordinate facce
-        // Top Face (Parallelogram)
-        const pathTop = `M ${x} ${y} L ${x + w} ${y} L ${x + w + depth} ${y - depth} L ${x + depth} ${y - depth} Z`;
-        // Front Face (Rect)
-        const pathFront = `M ${x} ${y} L ${x + w} ${y} L ${x + w} ${y + h} L ${x} ${y + h} Z`;
-        // Side Face (Parallelogram)
-        const pathSide = `M ${x + w} ${y} L ${x + w + depth} ${y - depth} L ${x + w + depth} ${y + h - depth} L ${x + w} ${y + h} Z`;
 
         return (
             <g
                 key={b.code}
-                className="banchina-3d-group"
+                className="banchina-2d-group"
                 onClick={() => onBanchinaClick && onBanchinaClick(b, status)}
-                style={{ cursor: 'pointer', opacity: status.hasRequest ? 1 : 0.7 }}
+                style={{ cursor: 'pointer' }}
             >
-                {/* 3D Faces */}
-                <path d={pathTop} fill={status.hasRequest ? baseColor : '#334155'} stroke={strokeColor} strokeWidth="1" opacity="0.6" />
-                <path d={pathSide} fill={status.hasRequest ? baseColor : '#1e293b'} stroke={strokeColor} strokeWidth="1" opacity="0.4" />
-                <path d={pathFront} fill={status.hasRequest ? topColor : '#0f172a'} stroke={strokeColor} strokeWidth={status.hasRequest ? 2 : 1} />
+                {/* Simplified rectangle with rounded corners */}
+                <rect
+                    x={x} y={y} width={w} height={h}
+                    rx="12"
+                    fill={backgroundColor}
+                    stroke={borderColor}
+                    strokeWidth={status.hasRequest ? "2.5" : "1"}
+                    style={{ transition: 'all 0.3s ease', filter: `drop-shadow(0 4px 6px ${shadowColor})` }}
+                />
 
-                {/* Neon Effect sotto se attivo */}
-                {status.hasRequest && (
-                    <ellipse cx={x + w / 2} cy={y + h} rx={w / 1.5} ry={15} fill={baseColor} opacity="0.4" filter="url(#blurLocal)" />
-                )}
-
-                {/* Label */}
-                <text x={x + w / 2} y={y + h / 2} fill="#fff" fontSize="20" fontWeight="bold" textAnchor="middle" style={{ pointerEvents: 'none' }}>
+                {/* Internal ID Text */}
+                <text x={x + w / 2} y={y + h / 2 - 5} fill="#1e293b" fontSize="24" fontWeight="800" textAnchor="middle" style={{ pointerEvents: 'none' }}>
                     {b.code}
                 </text>
-                <text x={x + w / 2} y={y + h / 2 + 20} fill="#94a3b8" fontSize="10" textAnchor="middle" style={{ pointerEvents: 'none' }}>
-                    {b.name.split(' ')[0]}
+
+                {/* Sub-label Name */}
+                <text x={x + w / 2} y={y + h / 2 + 20} fill="#64748b" fontSize="11" fontWeight="500" textAnchor="middle" style={{ pointerEvents: 'none' }}>
+                    {b.name}
                 </text>
 
-                {/* Badge Attività 3D Floating */}
+                {/* Status Indicator Badge */}
                 {status.hasRequest && (
-                    <g transform={`translate(${x + w - 10}, ${y - 10})`}>
-                        <circle r="16" fill={baseColor} stroke="#fff" strokeWidth="2" className={status.urgent ? "animate-bounce" : ""} />
-                        <text y="5" fill="#fff" fontSize="14" fontWeight="bold" textAnchor="middle">
+                    <g transform={`translate(${x + w - 5}, ${y + 5})`}>
+                        <circle r="12" fill={borderColor} />
+                        <text y="4" fill="#fff" fontSize="12" fontWeight="bold" textAnchor="middle">
                             {status.urgent ? '!' : status.count}
                         </text>
+                        {status.urgent && <circle r="12" fill="none" stroke={borderColor} strokeWidth="2"><animate attributeName="r" from="12" to="20" dur="1.5s" repeatCount="indefinite" /><animate attributeName="opacity" from="0.8" to="0" dur="1.5s" repeatCount="indefinite" /></circle>}
                     </g>
                 )}
             </g>
         );
     };
 
+    const isMobile = useIsMobile();
+
+    // ── MOBILE: Card Grid ──
+    if (isMobile) {
+        const vega5 = banchineLayout.filter(b => parseInt(b.code.replace('B', '')) <= 7);
+        const vega6 = banchineLayout.filter(b => parseInt(b.code.replace('B', '')) > 7);
+
+        const renderMobileCard = (b) => {
+            const status = banchinaStatus[b.code] || {};
+            let cardClass = 'mobile-banchina-card';
+            if (status.urgent) cardClass += ' urgent';
+            else if (status.processing) cardClass += ' processing';
+            else if (status.pending) cardClass += ' pending';
+
+            return (
+                <div
+                    key={b.code}
+                    className={cardClass}
+                    onClick={() => onBanchinaClick && onBanchinaClick(b, status)}
+                >
+                    <div className="mobile-banchina-header">
+                        <span className="mobile-banchina-code">{b.code}</span>
+                        {status.hasRequest && (
+                            <span className={`mobile-banchina-badge ${status.urgent ? 'urgent' : status.processing ? 'processing' : 'pending'}`}>
+                                {status.urgent ? <AlertTriangle size={12} /> : status.count}
+                            </span>
+                        )}
+                    </div>
+                    <span className="mobile-banchina-name">{b.name}</span>
+                    {status.hasRequest && status.requests?.[0] && (
+                        <div className="mobile-banchina-info">
+                            <Clock size={11} />
+                            <span>{Math.floor((Date.now() - new Date(status.requests[0].created_at).getTime()) / 60000)} min</span>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        return (
+            <div className="mobile-map-container">
+                <div className="mobile-section">
+                    <div className="mobile-section-label">VEGA 5</div>
+                    <div className="mobile-banchine-grid">
+                        {vega5.map(renderMobileCard)}
+                    </div>
+                </div>
+                <div className="mobile-section">
+                    <div className="mobile-section-label">VEGA 6</div>
+                    <div className="mobile-banchine-grid">
+                        {vega6.map(renderMobileCard)}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // ── DESKTOP: SVG Map ──
     return (
-        <div className="logistics-map-container" style={{ background: '#020617', borderRadius: '16px', overflow: 'hidden', minHeight: '500px' }}>
-            <svg viewBox="0 0 1000 600" className="logistics-map-svg" style={{ width: '100%', height: '100%' }}>
+        <div className="logistics-map-container" style={{ background: '#f8fafc', borderRadius: '24px', overflow: 'hidden', minHeight: '520px', border: '1px solid #e2e8f0', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)' }}>
+            <svg viewBox="0 0 1000 520" className="logistics-map-svg" style={{ width: '100%', height: '100%' }}>
                 <defs>
-                    <filter id="blurLocal" x="-50%" y="-50%" width="200%" height="200%">
-                        <feGaussianBlur stdDeviation="15" />
-                    </filter>
-                    <pattern id="grid3d" width="100" height="100" patternUnits="userSpaceOnUse">
-                        <path d="M 100 0 L 0 0 0 100" fill="none" stroke="#1e293b" strokeWidth="1" />
+                    <pattern id="smallGrid" width="20" height="20" patternUnits="userSpaceOnUse">
+                        <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e2e8f0" strokeWidth="0.5" />
+                    </pattern>
+                    <pattern id="grid" width="100" height="100" patternUnits="userSpaceOnUse">
+                        <rect width="100" height="100" fill="url(#smallGrid)" />
+                        <path d="M 100 0 L 0 0 0 100" fill="none" stroke="#cbd5e1" strokeWidth="1" />
                     </pattern>
                 </defs>
 
-                {/* Background Image Texture */}
-                <image href="/map_texture.png" x="0" y="0" width="100%" height="100%" preserveAspectRatio="none" opacity="0.6" />
+                <rect width="100%" height="100%" fill="url(#grid)" />
 
-                {/* Optional Grid Overlay (More subtle) */}
-                <rect width="100%" height="100%" fill="url(#grid3d)" opacity="0.1" />
+                <g opacity="0.4">
+                    <text x="50" y="45" fill="#475569" fontSize="12" fontWeight="800" letterSpacing="6">VEGA 5 SECTION</text>
+                    <text x="50" y="295" fill="#475569" fontSize="12" fontWeight="800" letterSpacing="6">VEGA 6 SECTION</text>
+                </g>
 
-                {/* Floor Labels */}
-                <text x="50" y="30" fill="#94a3b8" fontSize="14" fontWeight="bold" letterSpacing="4" opacity="0.8" style={{ textShadow: '0 2px 4px #000' }}>VEGA 5</text>
-                <text x="50" y="270" fill="#94a3b8" fontSize="14" fontWeight="bold" letterSpacing="4" opacity="0.8" style={{ textShadow: '0 2px 4px #000' }}>VEGA 6</text>
-
-                {/* Render Banchine */}
-                {banchineLayout.map(renderBlock)}
-
-                {/* --- UBER STYLE PATHS --- */}
                 {Object.entries(banchinaStatus).map(([code, status]) => {
                     if (!status.processing) return null;
                     const target = banchineLayout.find(b => b.code === code);
                     if (!target) return null;
-                    const startNode = banchineLayout.find(b => b.code === 'B16') || { x: 800, y: 300 };
+                    const startNode = banchineLayout.find(b => b.code === 'B16') || { x: 830, y: 320, w: 100, h: 130 };
                     const startX = startNode.x + startNode.w / 2;
                     const startY = startNode.y + startNode.h / 2;
                     const endX = target.x + target.w / 2;
                     const endY = target.y + target.h / 2;
-                    const controlX = (startX + endX) / 2;
-                    const controlY = 280;
-                    const pathData = `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`;
-
                     return (
-                        <g key={`path-${code}`} style={{ pointerEvents: 'none' }}>
-                            <path d={pathData} fill="none" stroke="#60a5fa" strokeWidth="2" opacity="0.2" />
-                            {status.urgent && (
-                                <path d={pathData} fill="none" stroke="#ef4444" strokeWidth="2" strokeDasharray="5,5" className="animate-dash" />
-                            )}
-                        </g>
+                        <line key={`path-${code}`} x1={startX} y1={startY} x2={endX} y2={endY}
+                            stroke={status.urgent ? '#ef4444' : '#3b82f6'} strokeWidth="2"
+                            strokeDasharray="8,8" opacity="0.2" className="animate-dash" />
                     );
                 })}
 
-                {/* --- REAL TIME GPS TRACKING --- */}
+                {banchineLayout.map(renderBlock)}
+
                 {operators && operators.map(op => {
                     const pos = gpsToSvg(op.lat, op.lon);
                     return (
-                        <g key={op.id} style={{ transition: 'all 1s linear' }} transform={`translate(${pos.x}, ${pos.y})`}>
-                            {/* Ripple Effect */}
-                            <circle r="20" fill="#22c55e" opacity="0.2" className="animate-ping-slow" />
-
-                            {/* Forklift SVG Icon */}
-                            <g transform="translate(-12, -12) scale(1)">
-                                <circle cx="12" cy="12" r="14" fill="#0f172a" stroke="#22c55e" strokeWidth="2" />
-                                <text x="12" y="16" fontSize="14" textAnchor="middle">🚜</text>
-                            </g>
-
-                            {/* Label Name */}
-                            <g transform="translate(0, -25)">
-                                <rect x="-30" y="-14" width="60" height="18" rx="4" fill="#0f172a" opacity="0.8" />
-                                <text x="0" y="0" fill="#fff" fontSize="10" fontWeight="bold" textAnchor="middle">
+                        <g key={op.id} style={{ transition: 'all 1.5s cubic-bezier(0.4, 0, 0.2, 1)' }} transform={`translate(${pos.x}, ${pos.y})`}>
+                            <circle r="18" fill="white" stroke="#22c55e" strokeWidth="2" style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }} />
+                            <g transform="translate(-10, -10)"><Truck size={20} className="text-green-600" /></g>
+                            <g transform="translate(0, -28)">
+                                <rect x="-35" y="-14" width="70" height="18" rx="6" fill="#1e293b" />
+                                <text x="0" y="-1" fill="white" fontSize="10" fontWeight="700" textAnchor="middle">
                                     {op.fullName ? op.fullName.split(' ')[0] : op.username}
                                 </text>
                             </g>
                         </g>
                     );
                 })}
-
             </svg>
         </div>
     );
 };
 
-// CALIBRAZIONE GPS (DA CONFIGURARE SUL CAMPO)
-// Inserire qui le coordinate reali degli angoli del capannone
+// CALIBRAZIONE GPS
 const MAP_CONFIG = {
-    // Angolo Alto-Sinistra (B1/Ingresso)
     topLeft: { lat: 45.0000, lon: 10.0000 },
-    // Angolo Basso-Destra (B16/Magazzino)
     bottomRight: { lat: 44.9950, lon: 10.0080 },
-
-    // Dimensioni SVG
     width: 1000,
     height: 600
 };
 
 const gpsToSvg = (lat, lon) => {
-    // Normalizzazione semplice lineare
-    // X = (lon - minLon) / (maxLon - minLon) * width
-    // Y = (maxLat - lat) / (maxLat - minLat) * height (Lat cresce verso l'alto, Y verso il basso)
-
     const { topLeft, bottomRight, width, height } = MAP_CONFIG;
 
     const minLon = topLeft.lon;
@@ -245,7 +265,6 @@ const gpsToSvg = (lat, lon) => {
     let x = ((lon - minLon) / (maxLon - minLon)) * width;
     let y = ((maxLat - lat) / (maxLat - minLat)) * height;
 
-    // Clamp to map boundaries
     x = Math.max(0, Math.min(x, width));
     y = Math.max(0, Math.min(y, height));
 

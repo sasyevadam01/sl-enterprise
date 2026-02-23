@@ -45,6 +45,10 @@ import LogisticsDashboardPage from './pages/logistics/LogisticsDashboardPage';
 import LogisticsConfigPage from './pages/admin/LogisticsConfigPage';
 import VehicleChecklistPage from './pages/fleet/VehicleChecklistPage';
 import ChecklistHistoryPage from './pages/fleet/ChecklistHistoryPage';
+import OvenPage from './pages/production/OvenPage';
+import ControlRoomPage from './pages/logistics/ControlRoomPage';
+import VehicleChargePage from './pages/fleet/VehicleChargePage';
+import ChargeControlPage from './pages/fleet/ChargeControlPage';
 
 function App() {
   return (
@@ -220,6 +224,21 @@ function App() {
                   <ChecklistHistoryPage />
                 </PermissionRoute>
               } />
+              <Route path="production/oven" element={
+                <PermissionRoute permission="use_oven">
+                  <OvenPage />
+                </PermissionRoute>
+              } />
+
+              {/* Ricarica Mezzi */}
+              <Route path="fleet/charge" element={
+                <VehicleChargePage />
+              } />
+              <Route path="fleet/charge/control" element={
+                <PermissionRoute permission="view_charge_control">
+                  <ChargeControlPage />
+                </PermissionRoute>
+              } />
 
               {/* Logistics - Richiesta Materiale */}
               <Route path="logistics/request" element={
@@ -235,6 +254,11 @@ function App() {
               <Route path="logistics/dashboard" element={
                 <PermissionRoute permission="supervise_logistics">
                   <LogisticsDashboardPage />
+                </PermissionRoute>
+              } />
+              <Route path="logistics/control-room" element={
+                <PermissionRoute permission="admin_users">
+                  <ControlRoomPage />
                 </PermissionRoute>
               } />
 

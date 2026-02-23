@@ -63,6 +63,7 @@ def get_or_create_performance(db: Session, employee_id: int) -> LogisticsPerform
     return perf
 
 
+def calculate_points_and_penalties(request, db: Session):
     """Calcola punti e penalità per una missione completata."""
     points = int(get_config_value(db, "points_base_mission", "1"))
     
@@ -255,19 +256,19 @@ async def create_request(
     if material.requires_description and not data.custom_description:
         raise HTTPException(400, f"Il materiale '{material.label}' richiede una descrizione")
     
-    # --- BLOCCO DOPPIONI (Anti-Flood) ---
-    # Verifica se esiste già una richiesta IDENTICA (stesso materiale, stessa banchina) in sospeso
-    existing_pending = db.query(LogisticsRequest).filter(
+    # --- ANTI-FLOOD (solo double-click, 10 sec) ---
+    from datetime import datetime, timedelta
+    flood_threshold = datetime.utcnow() - timedelta(seconds=10)
+    recent_duplicate = db.query(LogisticsRequest).filter(
         LogisticsRequest.material_type_id == data.material_type_id,
         LogisticsRequest.banchina_id == banchina_id,
-        LogisticsRequest.status == "pending"
+        LogisticsRequest.requester_id == current_user.id,
+        LogisticsRequest.status == "pending",
+        LogisticsRequest.created_at >= flood_threshold
     ).first()
     
-    if existing_pending:
-        # Se fatta dallo stesso utente negli ultimi 2 minuti, blocca (possibile click multiplo)
-        if existing_pending.requester_id == current_user.id:
-            raise HTTPException(400, "Hai già una richiesta identica in attesa per questa banchina.")
-        # Altrimenti, se è di un altro, permettiamo o segnaliamo (per ora permettiamo ma logghiamo)
+    if recent_duplicate:
+        raise HTTPException(400, "Richiesta identica inviata pochi secondi fa. Attendi qualche secondo.")
     
     # --- GENERAZIONE OTP (Secure Delivery) ---
     otp = None
@@ -296,34 +297,117 @@ async def create_request(
     except Exception as e:
         print(f"[WS ERROR] Broadcast fallito: {e}")
     
+    # ── Web Push Notifications ──────────────────────────────────
+    try:
+        from models.chat import PushSubscription
+        from push_service import send_logistics_push
+
+        # Trova utenti target: manage_logistics_pool OR supervise_logistics OR super_admin
+        target_user_ids = set()
+
+        # 1. Super admin (role field legacy)
+        super_admins = db.query(User.id).filter(User.role == "super_admin", User.is_active == True).all()
+        target_user_ids.update(uid for (uid,) in super_admins)
+
+        # 2. Utenti con permessi logistics tramite Role JSON
+        from models.core import Role
+        all_roles = db.query(Role).all()
+        target_role_ids = []
+        for r in all_roles:
+            perms = r.permissions or []
+            if "*" in perms or "manage_logistics_pool" in perms or "supervise_logistics" in perms:
+                target_role_ids.append(r.id)
+
+        if target_role_ids:
+            users_with_roles = db.query(User.id).filter(
+                User.role_id.in_(target_role_ids),
+                User.is_active == True
+            ).all()
+            target_user_ids.update(uid for (uid,) in users_with_roles)
+
+        # Escludi il richiedente stesso
+        target_user_ids.discard(current_user.id)
+
+        if target_user_ids:
+            # Recupera subscriptions
+            subs = db.query(PushSubscription).filter(
+                PushSubscription.user_id.in_(list(target_user_ids))
+            ).all()
+
+            dead_subs = []
+            mat_label = material.label if material else "Materiale"
+            ban_code = request.banchina.code if request.banchina else "?"
+            req_name = current_user.full_name or current_user.username
+
+            for sub in subs:
+                subscription_info = {
+                    "endpoint": sub.endpoint,
+                    "keys": {"p256dh": sub.p256dh_key, "auth": sub.auth_key}
+                }
+                success = send_logistics_push(
+                    subscription_info=subscription_info,
+                    material_label=mat_label,
+                    banchina_code=ban_code,
+                    requester_name=req_name,
+                    is_urgent=False
+                )
+                if not success:
+                    dead_subs.append(sub)
+
+            # Cleanup subscription scadute
+            for sub in dead_subs:
+                db.delete(sub)
+            if dead_subs:
+                db.commit()
+                print(f"[PUSH] Cleaned {len(dead_subs)} dead subscriptions")
+
+            print(f"[PUSH] Logistics push inviati a {len(subs) - len(dead_subs)}/{len(subs)} subscriptions")
+
+    except Exception as e:
+        print(f"[PUSH ERROR] Invio push logistics fallito: {e}")
+    
     return enrich_request_response(request)
 
 
 @router.patch("/requests/{request_id}/cancel")
 async def cancel_request(
     request_id: int,
-    reason: str = Body(None, min_length=3, embed=True),
+    reason: Optional[str] = Body(None, embed=True),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Annulla una richiesta (se non ancora presa in carico)."""
+    """Annulla una richiesta. Super admin può annullare qualsiasi richiesta in qualsiasi stato."""
     request = db.query(LogisticsRequest).filter(LogisticsRequest.id == request_id).first()
     if not request:
         raise HTTPException(404, "Richiesta non trovata")
     
-    # Solo il richiedente può annullare (o un coordinatore)
-    if request.requester_id != current_user.id and not current_user.has_permission("supervise_logistics"):
+    is_admin = current_user.has_permission("supervise_logistics") or current_user.role == "super_admin"
+    is_owner = request.requester_id == current_user.id
+    
+    if not is_admin and not is_owner:
         raise HTTPException(403, "Non puoi annullare questa richiesta")
     
-    if request.status != "pending":
-        raise HTTPException(400, "Impossibile annullare: richiesta già in lavorazione o completata")
+    # Utenti normali: solo pending. Admin: qualsiasi stato attivo
+    if not is_admin and request.status != "pending":
+        raise HTTPException(400, "Impossibile annullare: richiesta già in lavorazione")
+    
+    if request.status in ("completed", "cancelled"):
+        raise HTTPException(400, "Richiesta già chiusa, impossibile annullare")
     
     request.status = "cancelled"
     request.cancelled_at = datetime.utcnow()
     request.cancelled_by_id = current_user.id
-    request.cancellation_reason = reason
+    request.cancellation_reason = reason or f"Annullata da {current_user.full_name or current_user.username}"
     
     db.commit()
+    
+    # WS Broadcast per aggiornare le dashboard
+    try:
+        lm = get_logistics_manager()
+        await lm.broadcast("logistics", {"type": "request_updated", "request_id": request.id})
+    except Exception as e:
+        print(f"[WS ERROR] Broadcast cancel fallito: {e}")
+    
     return {"message": "Richiesta annullata"}
 
 

@@ -1,6 +1,16 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Text, Float, JSON, Index
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
+
+# Fuso orario Italia (CET/CEST)
+def _now_italy():
+    """Ritorna l'ora locale italiana (UTC+1 inverno, UTC+2 estate)."""
+    try:
+        from zoneinfo import ZoneInfo
+        return datetime.now(ZoneInfo('Europe/Rome')).replace(tzinfo=None)
+    except ImportError:
+        # Fallback: UTC+1
+        return datetime.now(timezone(timedelta(hours=1))).replace(tzinfo=None)
 from .base import Base
 
 class ProductionSession(Base):
@@ -381,3 +391,49 @@ class RecoveryRule(Base):
             return self.material_label
         return self.material.label if self.material else None
 
+
+# ============================================================
+# OVEN TRACKING (IL FORNO)
+# ============================================================
+
+OVEN_MAX_MINUTES = 180  # Durata massima accensione forno
+
+class OvenItem(Base):
+    """Tracciamento materiali nel forno industriale."""
+    __tablename__ = "oven_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    # Tipo materiale
+    item_type = Column(String(30), nullable=False)  # memory_block, wet_mattress, wet_other
+
+    # RIFERIMENTO PRODOTTO (obbligatorio)
+    reference = Column(String(200), nullable=False)  # Es: "Cuorflex 160x200", "V25 Verde 180x200"
+
+    # Descrizione aggiuntiva (opzionale)
+    description = Column(String(300), nullable=True)
+
+    quantity = Column(Integer, default=1)
+
+    # Chi ha inserito
+    operator_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    inserted_at = Column(DateTime, default=_now_italy)
+
+    # Durata prevista (max 180 min)
+    expected_minutes = Column(Integer, default=OVEN_MAX_MINUTES)
+
+    # Rimozione
+    removed_at = Column(DateTime, nullable=True)
+    removed_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+
+    # Status: in_oven, removed, overdue
+    status = Column(String(20), default="in_oven")
+
+    # Notifica di stagnazione già inviata?
+    notified_overdue = Column(Boolean, default=False)
+
+    notes = Column(Text, nullable=True)
+
+    # Relationships
+    operator = relationship("User", foreign_keys=[operator_id])
+    remover = relationship("User", foreign_keys=[removed_by])

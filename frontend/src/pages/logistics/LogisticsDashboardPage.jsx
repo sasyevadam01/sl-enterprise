@@ -3,13 +3,19 @@
  * Dashboard Coordinatore Logistica
  * Visualizzazione Mappa, Feed Live e KPI
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
+import AuthContext from '../../context/AuthContext';
 import api, { logisticsApi } from '../../api/client';
 import LogisticsMap from './LogisticsMap';
+import { User, ArrowRight, Radio, XCircle } from 'lucide-react';
+import MaterialIcon from './components/MaterialIcon';
+import { useUI } from '../../components/ui/CustomUI';
 import './LogisticsStyles.css';
 
 export default function LogisticsDashboardPage() {
+    const { user } = useContext(AuthContext);
     const [requests, setRequests] = useState([]);
+    const [cancellingId, setCancellingId] = useState(null);
     const [operators, setOperators] = useState([]); // Real-time operators
     const [stats, setStats] = useState({
         active: 0,
@@ -19,6 +25,36 @@ export default function LogisticsDashboardPage() {
     });
     const [selectedBanchina, setSelectedBanchina] = useState(null);
     const [loading, setLoading] = useState(true);
+    const { toast } = useUI();
+
+    // ── Notification Sound (Web Audio API) ──
+    const playNotificationSound = () => {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc1 = ctx.createOscillator();
+            const gain1 = ctx.createGain();
+            osc1.type = 'sine';
+            osc1.frequency.value = 830;
+            gain1.gain.setValueAtTime(0.3, ctx.currentTime);
+            gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+            osc1.connect(gain1);
+            gain1.connect(ctx.destination);
+            osc1.start(ctx.currentTime);
+            osc1.stop(ctx.currentTime + 0.3);
+            const osc2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.value = 1050;
+            gain2.gain.setValueAtTime(0.3, ctx.currentTime + 0.15);
+            gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+            osc2.connect(gain2);
+            gain2.connect(ctx.destination);
+            osc2.start(ctx.currentTime + 0.15);
+            osc2.stop(ctx.currentTime + 0.5);
+        } catch (e) {
+            console.warn('[Sound] Audio non supportato:', e);
+        }
+    };
 
     useEffect(() => {
         loadData();
@@ -31,8 +67,11 @@ export default function LogisticsDashboardPage() {
             try {
                 const data = JSON.parse(event.data);
                 if (data.type === 'new_request' || data.type === 'request_updated' || data.type === 'request_completed') {
-                    console.log("📍 Dashboard update event:", data.type);
-                    loadData(); // Full refresh for dashboard map/stats
+                    loadData();
+                    if (data.type === 'new_request') {
+                        playNotificationSound();
+                        toast.info('📦 Nuova richiesta materiale in arrivo!');
+                    }
                 }
             } catch (err) {
                 console.error("WS error:", err);
@@ -94,6 +133,25 @@ export default function LogisticsDashboardPage() {
         });
     };
 
+    const isSuperAdmin = user?.role === 'super_admin' || user?.permissions?.includes('supervise_logistics') || user?.permissions?.includes('*');
+
+    const handleAdminCancel = async (requestId) => {
+        if (!window.confirm('Sei sicuro di voler annullare questa richiesta?')) return;
+        setCancellingId(requestId);
+        try {
+            await logisticsApi.cancelRequest(requestId, 'Annullata da Super Admin');
+            toast.success('Richiesta annullata con successo');
+            // Aggiorna i dati
+            await loadData();
+            setSelectedBanchina(null);
+        } catch (err) {
+            console.error('Errore annullamento:', err);
+            toast.error(err.response?.data?.detail || 'Errore durante l\'annullamento');
+        } finally {
+            setCancellingId(null);
+        }
+    };
+
     const formatTime = (seconds) => {
         const mins = Math.floor(seconds / 60);
         const secs = Math.floor(seconds % 60);
@@ -152,13 +210,13 @@ export default function LogisticsDashboardPage() {
                                 {selectedBanchina.requests.map(req => (
                                     <div key={req.id} className={`mini-card ${req.is_urgent ? 'urgent urgent-pulse' : ''}`}>
                                         <div className="card-header">
-                                            <span className="icon">{req.material_type_icon}</span>
+                                            <span className="icon"><MaterialIcon emoji={req.material_type_icon} size={18} className="text-brand-green" /></span>
                                             <strong>{req.material_type_label}</strong>
                                         </div>
                                         {req.custom_description && <p className="desc">{req.custom_description}</p>}
 
                                         <div className="meta">
-                                            <div className="requester">👤 {req.requester_name}</div>
+                                            <div className="requester flex items-center gap-1"><User size={14} className="text-slate-400" /> {req.requester_name}</div>
 
                                             {req.status === 'pending' ? (
                                                 <div className="status pending">
@@ -166,17 +224,29 @@ export default function LogisticsDashboardPage() {
                                                 </div>
                                             ) : (
                                                 <div className="status processing">
-                                                    🚶 {req.assigned_to_name} (ETA: {req.promised_eta_minutes} min)
+                                                    <ArrowRight size={12} className="inline-block mr-0.5" style={{ verticalAlign: 'text-bottom' }} /> {req.assigned_to_name} (ETA: {req.promised_eta_minutes} min)
                                                 </div>
                                             )}
                                         </div>
+
+                                        {/* Super Admin Cancel Button */}
+                                        {isSuperAdmin && (
+                                            <button
+                                                onClick={() => handleAdminCancel(req.id)}
+                                                disabled={cancellingId === req.id}
+                                                className="mt-2 w-full py-2 flex items-center justify-center gap-1 border-2 border-red-200 text-red-500 font-bold text-xs rounded-lg hover:bg-red-50 transition cursor-pointer disabled:opacity-50"
+                                            >
+                                                <XCircle size={14} />
+                                                {cancellingId === req.id ? 'Annullamento...' : 'ANNULLA RICHIESTA'}
+                                            </button>
+                                        )}
                                     </div>
                                 ))}
                             </div>
                         </div>
                     ) : (
                         <div className="activity-feed">
-                            <h3>📡 Feed Attività</h3>
+                            <h3 className="flex items-center gap-2"><Radio size={16} className="text-brand-green" /> Feed Attività</h3>
                             {requests.length === 0 ? (
                                 <div className="empty-feed">Nessuna attività corrente</div>
                             ) : (

@@ -39,7 +39,7 @@ export default function PermissionRoute({ children, permission }) {
                         Non hai i permessi necessari per accedere a questa sezione.
                     </p>
                     <p className="text-xs text-gray-500 mb-6 font-mono bg-slate-900 p-2 rounded">
-                        Permesso richiesto: <span className="text-red-400">{permission}</span>
+                        Permesso richiesto: <span className="text-red-400">{Array.isArray(permission) ? permission.join(', ') : permission}</span>
                     </p>
                     <button
                         onClick={() => window.history.back()}

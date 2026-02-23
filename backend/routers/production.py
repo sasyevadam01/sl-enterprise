@@ -208,7 +208,7 @@ async def create_block_request(
 async def list_block_requests(
     status: Optional[str] = None, # pending, processing, delivered, history (delivered/completed)
     material_type: Optional[str] = None,  # memory, sponge - filtro tipo materiale
-    limit: int = 50,
+    limit: Optional[int] = None,  # None = nessun limite (record infiniti)
     offset: int = 0,  # Paginazione
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -246,7 +246,10 @@ async def list_block_requests(
     from sqlalchemy import desc
     query = query.order_by(desc(BlockRequest.is_urgent), BlockRequest.created_at.desc())
     
-    results = query.offset(offset).limit(limit).all()
+    query = query.offset(offset)
+    if limit is not None:
+        query = query.limit(limit)
+    results = query.all()
     
     response_list = []
     for req in results:
@@ -530,6 +533,7 @@ async def get_production_reports(
     start_date: datetime,
     end_date: datetime,
     shift_type: Optional[str] = "all", # morning, afternoon, night, custom, all
+    target_sector: Optional[str] = None,  # pantografo, giostra - filtro settore
     format: str = "json", # json or excel
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -587,6 +591,10 @@ async def get_production_reports(
     else:
         filtered_requests = requests
 
+    # Filtro per settore (pantografo / giostra)
+    if target_sector:
+        filtered_requests = [r for r in filtered_requests if r.target_sector == target_sector]
+
     # 3. Data Aggregation
     data_rows = []
     
@@ -603,6 +611,7 @@ async def get_production_reports(
     trimmed_count = 0
     cancelled_count = 0  # NEW: Cancellation tracking
     urgent_count = 0     # NEW: Urgent blocks tracking
+    by_sector = {}       # Aggregazione per settore
     
     time_created_processing = [] # minutes
     time_processing_delivered = [] # minutes
@@ -628,7 +637,16 @@ async def get_production_reports(
         # NEW: Count urgent requests
         if hasattr(req, 'is_urgent') and req.is_urgent:
             urgent_count += req.quantity
-            
+
+        # Aggregazione per settore con breakdown memory/spugna
+        sector_key = (req.target_sector or 'non_specificato').lower()
+        if sector_key not in by_sector:
+            by_sector[sector_key] = {"memory": 0, "sponge": 0, "total": 0}
+        by_sector[sector_key]["total"] += req.quantity
+        if req.request_type == 'memory':
+            by_sector[sector_key]["memory"] += req.quantity
+        else:
+            by_sector[sector_key]["sponge"] += req.quantity
         # Count Type
         by_type[mat_label] = by_type.get(mat_label, 0) + req.quantity
         
@@ -655,11 +673,16 @@ async def get_production_reports(
             delta = (req.delivered_at - req.processed_at).total_seconds() / 60
             time_processing_delivered.append(delta)
 
+        # Sector label for Excel
+        sector_labels = {'pantografo': 'Pantografo', 'giostra': 'Giostra', 'altro': 'Altro'}
+        sector_display = sector_labels.get(req.target_sector.lower(), '') if req.target_sector else ''
+
         # Row for Excel
         data_rows.append({
             "ID": req.id,
             "Data": req.created_at.strftime("%Y-%m-%d %H:%M"),
             "Utente Ordine": creator,
+            "Settore": sector_display,
             "Tipo": req.request_type,
             "Materiale": mat_label,
             "Misure": req.dimensions,
@@ -695,7 +718,9 @@ async def get_production_reports(
         "cancelled_percentage": round((cancelled_count / total_blocks * 100) if total_blocks > 0 else 0, 1),
         # NEW: Urgent stats
         "urgent_count": urgent_count,
-        "urgent_percentage": round((urgent_count / total_blocks * 100) if total_blocks > 0 else 0, 1)
+        "urgent_percentage": round((urgent_count / total_blocks * 100) if total_blocks > 0 else 0, 1),
+        # Aggregazione per settore
+        "by_sector": by_sector
     }
 
     if format == 'json':

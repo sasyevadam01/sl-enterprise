@@ -53,10 +53,10 @@ export default function HomeRedirect() {
         return <Navigate to="/dashboard" replace />;
     }
 
-    // Magazzinieri (warehouse workers) go to Checklist
-    if (['magazziniere', 'warehouse', 'forklift_operator'].includes(role)) {
-        console.log("[HomeRedirect] Magazziniere detected - redirecting to /production/checklist");
-        return <Navigate to="/production/checklist" replace />;
+    // Magazzinieri (warehouse workers) go to Logistics Pool
+    if (['magazziniere', 'warehouse', 'warehouse_operator', 'forklift_operator'].includes(role)) {
+        console.log("[HomeRedirect] Magazziniere detected - redirecting to /logistics/pool");
+        return <Navigate to="/logistics/pool" replace />;
     }
 
     // Default fallback - go to tasks for safety
