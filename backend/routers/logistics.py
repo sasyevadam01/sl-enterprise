@@ -19,7 +19,8 @@ from models.logistics import (
 )
 from schemas_logistics import (
     LogisticsMaterialTypeCreate, LogisticsMaterialTypeUpdate, LogisticsMaterialTypeResponse,
-    LogisticsRequestCreate, LogisticsRequestTake, LogisticsRequestComplete, LogisticsRequestResponse,
+    LogisticsRequestCreate, LogisticsRequestTake, LogisticsRequestComplete,
+    LogisticsRequestEditPoints, LogisticsRequestResponse,
     LogisticsMessageCreate, LogisticsMessageResponse,
     LogisticsPresetMessageCreate, LogisticsPresetMessageUpdate, LogisticsPresetMessageResponse,
     LogisticsEtaOptionCreate, LogisticsEtaOptionUpdate, LogisticsEtaOptionResponse,
@@ -409,6 +410,104 @@ async def cancel_request(
         print(f"[WS ERROR] Broadcast cancel fallito: {e}")
     
     return {"message": "Richiesta annullata"}
+
+
+@router.delete("/requests/{request_id}")
+async def delete_request(
+    request_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Cancella definitivamente una richiesta (hard delete) con rollback performance."""
+    # PERMESSO_ZERO — da assegnare in seguito
+    request = db.query(LogisticsRequest).options(
+        joinedload(LogisticsRequest.material_type),
+        joinedload(LogisticsRequest.assigned_to)
+    ).filter(LogisticsRequest.id == request_id).first()
+    if not request:
+        raise HTTPException(404, "Richiesta non trovata")
+
+    # Rollback punti/penalità sull'operatore se la richiesta è stata completata
+    if request.status == "completed" and request.assigned_to and request.assigned_to.employee:
+        employee_id = request.assigned_to.employee.id
+        now = request.completed_at or datetime.utcnow()
+        perf = db.query(LogisticsPerformance).filter(
+            LogisticsPerformance.employee_id == employee_id,
+            LogisticsPerformance.month == now.month,
+            LogisticsPerformance.year == now.year
+        ).first()
+        if perf:
+            perf.total_points = max(0, perf.total_points - (request.points_awarded or 0))
+            perf.penalties_received = max(0, perf.penalties_received - (request.penalty_applied or 0))
+            perf.missions_completed = max(0, perf.missions_completed - 1)
+            if request.is_urgent:
+                perf.missions_urgent = max(0, perf.missions_urgent - 1)
+
+    # Cancella messaggi collegati (cascade) e poi la richiesta
+    db.delete(request)
+    db.commit()
+
+    # WebSocket Broadcast
+    try:
+        lm = get_logistics_manager()
+        await lm.broadcast("logistics", {"type": "request_deleted", "request_id": request_id})
+    except Exception as e:
+        print(f"[WS ERROR] Broadcast delete fallito: {e}")
+
+    return {"message": "Richiesta eliminata definitivamente"}
+
+
+@router.patch("/requests/{request_id}/edit-points")
+async def edit_request_points(
+    request_id: int,
+    data: LogisticsRequestEditPoints,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Modifica punteggi di una richiesta completata dalla Control Room."""
+    # PERMESSO_ZERO — da assegnare in seguito
+    request = db.query(LogisticsRequest).options(
+        joinedload(LogisticsRequest.assigned_to)
+    ).filter(LogisticsRequest.id == request_id).first()
+    if not request:
+        raise HTTPException(404, "Richiesta non trovata")
+
+    # Calcola delta per aggiornare performance
+    old_points = request.points_awarded or 0
+    old_penalty = request.penalty_applied or 0
+    new_points = data.points_awarded if data.points_awarded is not None else old_points
+    new_penalty = data.penalty_applied if data.penalty_applied is not None else old_penalty
+
+    delta_points = new_points - old_points
+    delta_penalty = new_penalty - old_penalty
+
+    # Aggiorna la richiesta
+    request.points_awarded = new_points
+    request.penalty_applied = new_penalty
+
+    # Aggiorna performance dell'operatore se completata
+    if request.status == "completed" and request.assigned_to and request.assigned_to.employee:
+        employee_id = request.assigned_to.employee.id
+        ref_date = request.completed_at or datetime.utcnow()
+        perf = db.query(LogisticsPerformance).filter(
+            LogisticsPerformance.employee_id == employee_id,
+            LogisticsPerformance.month == ref_date.month,
+            LogisticsPerformance.year == ref_date.year
+        ).first()
+        if perf:
+            perf.total_points = max(0, perf.total_points + delta_points)
+            perf.penalties_received = max(0, perf.penalties_received + delta_penalty)
+
+    db.commit()
+
+    # WebSocket Broadcast
+    try:
+        lm = get_logistics_manager()
+        await lm.broadcast("logistics", {"type": "request_updated", "request_id": request_id})
+    except Exception as e:
+        print(f"[WS ERROR] Broadcast edit-points fallito: {e}")
+
+    return {"message": "Punteggi aggiornati", "points_awarded": new_points, "penalty_applied": new_penalty}
 
 
 @router.patch("/requests/take-batch")

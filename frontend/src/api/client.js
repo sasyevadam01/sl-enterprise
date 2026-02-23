@@ -612,6 +612,8 @@ export const logisticsApi = {
   releaseRequest: (id) => client.patch(`/logistics/requests/${id}/release`),
   markUrgent: (id) => client.patch(`/logistics/requests/${id}/urgent`),
   cancelRequest: (id, reason) => client.patch(`/logistics/requests/${id}/cancel`, { reason }),
+  deleteRequest: (id) => client.delete(`/logistics/requests/${id}`),
+  updateRequestPoints: (id, data) => client.patch(`/logistics/requests/${id}/edit-points`, data),
   takeRequestBatch: (ids, eta) => client.patch("/logistics/requests/take-batch", ids, { params: { eta_minutes: eta } }),
 
   // Messages

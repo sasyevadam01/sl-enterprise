@@ -67,6 +67,12 @@ class LogisticsRequestComplete(BaseModel):
     confirmation_code: Optional[str] = None
 
 
+class LogisticsRequestEditPoints(BaseModel):
+    """Schema per modificare punteggi dalla Control Room."""
+    points_awarded: Optional[int] = None
+    penalty_applied: Optional[int] = None
+
+
 class LogisticsRequestResponse(BaseModel):
     id: int
     
