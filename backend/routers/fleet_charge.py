@@ -626,6 +626,59 @@ async def vehicle_charge_history(
     }
 
 
+@router.delete("/cycle/{cycle_id}", summary="Elimina un ciclo storico")
+async def delete_charge_cycle(
+    cycle_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Elimina un ciclo di ricarica dallo storico.
+    
+    Sicurezza:
+    - Richiede permesso view_charge_control
+    - Non si possono eliminare cicli con status 'in_use'
+    - Se il ciclo eliminato era l'ultimo di un veicolo, ricalcola lo stato
+    """
+    _require_charge_control(current_user, db)
+    
+    cycle = db.query(FleetChargeCycle).filter(FleetChargeCycle.id == cycle_id).first()
+    if not cycle:
+        raise HTTPException(404, "Ciclo non trovato")
+    
+    if cycle.status == 'in_use':
+        raise HTTPException(400, "Non puoi eliminare un ciclo ancora in uso. Attendi la riconsegna.")
+    
+    vehicle_id = cycle.vehicle_id
+    
+    db.delete(cycle)
+    db.commit()
+    
+    # Ricalcola stato veicolo: se il ciclo eliminato era l'ultimo, 
+    # il veicolo potrebbe dover tornare 'available'
+    latest_cycle = (
+        db.query(FleetChargeCycle)
+        .filter(FleetChargeCycle.vehicle_id == vehicle_id)
+        .order_by(desc(FleetChargeCycle.created_at))
+        .first()
+    )
+    
+    vehicle = db.query(FleetVehicle).filter(FleetVehicle.id == vehicle_id).first()
+    if vehicle:
+        if not latest_cycle:
+            vehicle.charge_status = 'available'
+            vehicle.battery_pct = None
+            db.commit()
+        elif latest_cycle.status != 'in_use' and vehicle.charge_status == cycle.status:
+            # Se lo status del veicolo era uguale a quello del ciclo eliminato,
+            # aggiorna con lo stato dell'ultimo ciclo rimasto
+            vehicle.charge_status = latest_cycle.status if latest_cycle.status in ('charging', 'parked') else 'available'
+            if latest_cycle.return_battery_pct is not None:
+                vehicle.battery_pct = latest_cycle.return_battery_pct
+            db.commit()
+    
+    return {"status": "deleted", "message": f"Ciclo #{cycle_id} eliminato con successo"}
+
+
 @router.get("/operators/stats", summary="Statistiche comportamento operatori")
 async def operator_stats(
     days: int = 30,

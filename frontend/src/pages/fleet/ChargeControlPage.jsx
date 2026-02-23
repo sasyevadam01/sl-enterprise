@@ -13,7 +13,7 @@ import {
     ArrowLeft, BarChart3, Activity, Users,
     Zap, ParkingCircle, ChevronDown, ChevronRight,
     MapPin, Calendar, Filter, RefreshCw, Shield,
-    CheckCircle2, XCircle
+    CheckCircle2, XCircle, Trash2
 } from 'lucide-react';
 
 // ── Forklift SVG ──
@@ -54,6 +54,8 @@ export default function ChargeControlPage() {
     const [section, setSection] = useState('dashboard'); // dashboard | operators | vehicles
     const [selectedVehicle, setSelectedVehicle] = useState(null);
     const [vehicleHistory, setVehicleHistory] = useState(null);
+    const [deletingCycleId, setDeletingCycleId] = useState(null);
+    const [confirmDelete, setConfirmDelete] = useState(null);
 
     const loadData = useCallback(async () => {
         try {
@@ -81,6 +83,23 @@ export default function ChargeControlPage() {
             setSelectedVehicle(vehicleId);
         } catch (err) {
             toast.error('Errore caricamento storico');
+        }
+    };
+
+    const handleDeleteCycle = async (cycleId) => {
+        setDeletingCycleId(cycleId);
+        try {
+            await chargeApi.deleteCycle(cycleId);
+            toast.success('Ciclo eliminato con successo');
+            if (selectedVehicle) {
+                await loadVehicleHistory(selectedVehicle);
+            }
+            await loadData();
+        } catch (err) {
+            toast.error(err.response?.data?.detail || 'Errore durante l\'eliminazione');
+        } finally {
+            setDeletingCycleId(null);
+            setConfirmDelete(null);
         }
     };
 
@@ -371,20 +390,32 @@ export default function ChargeControlPage() {
                                                     {vehicleHistory.cycles?.length > 0 ? (
                                                         <div className="space-y-2 max-h-80 overflow-y-auto">
                                                             {vehicleHistory.cycles.map(c => (
-                                                                <div key={c.id} className="bg-white rounded-xl p-3 border border-slate-200 text-sm">
+                                                                <div key={c.id} className="bg-white rounded-xl p-3 border border-slate-200 text-sm group relative">
                                                                     <div className="flex items-center justify-between mb-1">
                                                                         <span className="font-medium text-slate-900">
                                                                             {c.pickup_time ? new Date(c.pickup_time).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '--'}
                                                                         </span>
-                                                                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium
-                                                                            ${c.status === 'in_use' ? 'bg-red-50 text-red-700'
-                                                                                : c.status === 'charging' ? 'bg-blue-50 text-blue-700'
-                                                                                    : c.status === 'parked' ? 'bg-amber-50 text-amber-700'
-                                                                                        : 'bg-slate-100 text-slate-600'
-                                                                            }`}>
-                                                                            {c.status === 'completed' ? (c.return_type === 'charge' ? 'Caricato' : 'Parcheggiato')
-                                                                                : c.status}
-                                                                        </span>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium
+                                                                                ${c.status === 'in_use' ? 'bg-red-50 text-red-700'
+                                                                                    : c.status === 'charging' ? 'bg-blue-50 text-blue-700'
+                                                                                        : c.status === 'parked' ? 'bg-amber-50 text-amber-700'
+                                                                                            : 'bg-slate-100 text-slate-600'
+                                                                                }`}>
+                                                                                {c.status === 'completed' ? (c.return_type === 'charge' ? 'Caricato' : 'Parcheggiato')
+                                                                                    : c.status}
+                                                                            </span>
+                                                                            {c.status !== 'in_use' && (
+                                                                                <button
+                                                                                    onClick={(e) => { e.stopPropagation(); setConfirmDelete(c); }}
+                                                                                    disabled={deletingCycleId === c.id}
+                                                                                    className="p-1 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
+                                                                                    title="Elimina ciclo"
+                                                                                >
+                                                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                                                </button>
+                                                                            )}
+                                                                        </div>
                                                                     </div>
                                                                     <div className="text-xs text-slate-500 space-y-0.5">
                                                                         <div className="flex items-center gap-1">
@@ -422,6 +453,53 @@ export default function ChargeControlPage() {
                     </div>
                 )}
             </div>
+
+            {/* ── Delete Confirmation Modal ── */}
+            {confirmDelete && (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <motion.div
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl"
+                    >
+                        <div className="text-center mb-4">
+                            <div className="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <Trash2 className="w-7 h-7 text-red-500" />
+                            </div>
+                            <h3 className="text-lg font-bold text-slate-900">Elimina Ciclo</h3>
+                            <p className="text-sm text-slate-600 mt-2">
+                                Stai per eliminare il ciclo di <strong>{confirmDelete.operator_name}</strong>
+                                {confirmDelete.pickup_time && (
+                                    <> del <strong>{new Date(confirmDelete.pickup_time).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</strong></>
+                                )}
+                                . Questa azione è <strong className="text-red-600">irreversibile</strong>.
+                            </p>
+                        </div>
+                        <div className="space-y-2">
+                            <button
+                                onClick={() => handleDeleteCycle(confirmDelete.id)}
+                                disabled={deletingCycleId === confirmDelete.id}
+                                className="w-full py-3 rounded-xl bg-red-600 text-white font-bold text-sm hover:bg-red-700 transition-colors cursor-pointer"
+                            >
+                                {deletingCycleId === confirmDelete.id ? (
+                                    <div className="flex items-center justify-center gap-2">
+                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                        Eliminazione...
+                                    </div>
+                                ) : (
+                                    '🗑️ Conferma Eliminazione'
+                                )}
+                            </button>
+                            <button
+                                onClick={() => setConfirmDelete(null)}
+                                className="w-full py-3 rounded-xl border border-slate-300 text-slate-600 font-medium text-sm hover:bg-slate-50 transition-colors cursor-pointer"
+                            >
+                                Annulla
+                            </button>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
         </div>
     );
 }

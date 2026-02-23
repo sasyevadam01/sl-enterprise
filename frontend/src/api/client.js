@@ -182,6 +182,7 @@ export const chargeApi = {
   getHistory: (params) => client.get("/fleet/charge/history", { params }),
   getVehicleHistory: (vehicleId, days = 90) => client.get(`/fleet/charge/vehicle/${vehicleId}/history`, { params: { days } }),
   getOperatorStats: (days = 30) => client.get("/fleet/charge/operators/stats", { params: { days } }),
+  deleteCycle: (cycleId) => client.delete(`/fleet/charge/cycle/${cycleId}`),
 };
 
 export const ovenApi = {
