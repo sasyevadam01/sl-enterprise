@@ -12,7 +12,8 @@ import {
     AlertTriangle, Clock, CheckCircle2, XCircle, Zap,
     RefreshCw, Package, User, MapPin, Timer, Calendar, History,
     Trophy, Medal, TrendingUp, TrendingDown,
-    Radio, Edit3, Trash2, X, Save, Star
+    Radio, Edit3, Trash2, X, Save, Star,
+    ChevronLeft, ChevronRight
 } from 'lucide-react';
 import './ControlRoomStyles.css';
 
@@ -48,6 +49,10 @@ export default function ControlRoomPage() {
     const [editReq, setEditReq] = useState(null);
     const [editForm, setEditForm] = useState({ points_awarded: 0, penalty_applied: 0 });
     const [editSaving, setEditSaving] = useState(false);
+
+    // --- Leaderboard Pagination ---
+    const [lbPage, setLbPage] = useState(0);
+    const LB_PAGE_SIZE = 10;
 
     const loadData = useCallback(async () => {
         try {
@@ -677,7 +682,7 @@ export default function ControlRoomPage() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {leaderboard.map((entry) => (
+                                    {leaderboard.slice(lbPage * LB_PAGE_SIZE, (lbPage + 1) * LB_PAGE_SIZE).map((entry) => (
                                         <tr key={entry.employee_id} className={entry.rank <= 3 ? 'cr-lb-top' : ''}>
                                             <td className="cr-lb-rank">
                                                 {entry.rank <= 3 ? <Star size={16} style={{ color: MEDAL_COLORS[entry.rank - 1]?.fill }} /> : entry.rank}
@@ -705,6 +710,28 @@ export default function ControlRoomPage() {
                                     ))}
                                 </tbody>
                             </table>
+                            {/* Pagination */}
+                            {leaderboard.length > LB_PAGE_SIZE && (
+                                <div className="cr-lb-pagination">
+                                    <button
+                                        className="cr-lb-page-btn"
+                                        disabled={lbPage === 0}
+                                        onClick={() => setLbPage(p => p - 1)}
+                                    >
+                                        <ChevronLeft size={16} />
+                                    </button>
+                                    <span className="cr-lb-page-info">
+                                        {lbPage * LB_PAGE_SIZE + 1}–{Math.min((lbPage + 1) * LB_PAGE_SIZE, leaderboard.length)} di {leaderboard.length}
+                                    </span>
+                                    <button
+                                        className="cr-lb-page-btn"
+                                        disabled={(lbPage + 1) * LB_PAGE_SIZE >= leaderboard.length}
+                                        onClick={() => setLbPage(p => p + 1)}
+                                    >
+                                        <ChevronRight size={16} />
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </>
                 )}
