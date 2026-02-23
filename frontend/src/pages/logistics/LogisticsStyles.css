@@ -816,6 +816,14 @@
   font-weight: bold;
 }
 
+.assigned-tag {
+  display: block;
+  font-size: 0.75rem;
+  color: #2563eb;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
 /* Banchina Details Panel */
 .banchina-details .details-header {
   display: flex;

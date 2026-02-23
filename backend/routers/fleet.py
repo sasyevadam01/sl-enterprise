@@ -503,8 +503,8 @@ def get_current_shift():
     minute = now.minute
     time_val = hour * 60 + minute  # minuti dalla mezzanotte
     
-    # Mattutino: 06:00 (360) - 13:50 (830)
-    if 360 <= time_val <= 830:
+    # Mattutino: 05:30 (330) - 13:50 (830)
+    if 330 <= time_val <= 830:
         return 'morning'
     # Serale: 14:00 (840) - 21:50 (1310)
     elif 840 <= time_val <= 1310:
@@ -515,7 +515,7 @@ def get_current_shift():
 def get_shift_label(shift):
     """Restituisce il nome leggibile del turno."""
     if shift == 'morning':
-        return 'Check Mattutino (06:00 – 13:50)'
+        return 'Check Mattutino (05:30 – 13:50)'
     elif shift == 'evening':
         return 'Check Serale (14:00 – 21:50)'
     return 'Fuori Turno'
@@ -938,12 +938,12 @@ async def get_shift_info(
             }
         else:
             # Outside any shift window
-            if time_val < 360:
-                msg = "Nessun check disponibile. Il turno mattutino inizia alle 06:00."
+            if time_val < 330:
+                msg = "Nessun check disponibile. Il turno mattutino inizia alle 05:30."
             elif 830 < time_val < 840:
                 msg = "Pausa — il prossimo check sarà disponibile alle 14:00."
             else:
-                msg = "Turno terminato. Il prossimo check sarà disponibile domani alle 06:00."
+                msg = "Turno terminato. Il prossimo check sarà disponibile domani alle 05:30."
             
             return {
                 "shift": None,

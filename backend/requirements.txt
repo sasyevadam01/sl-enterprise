@@ -21,3 +21,4 @@ websockets
 filetype
 Pillow
 pillow-heif
+tzdata
