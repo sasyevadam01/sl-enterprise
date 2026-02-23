@@ -241,6 +241,41 @@
     font-weight: 700;
 }
 
+.cr-filter-btn.history.active {
+    background: rgba(139, 92, 246, 0.15);
+    border-color: rgba(139, 92, 246, 0.4);
+    color: #a78bfa;
+}
+
+.cr-history-date-picker {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-left: 0.5rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 10px;
+    background: rgba(139, 92, 246, 0.1);
+    border: 1px solid rgba(139, 92, 246, 0.25);
+    color: #a78bfa;
+}
+
+.cr-date-input {
+    background: transparent;
+    border: none;
+    color: #e2e8f0;
+    font-size: 0.82rem;
+    font-weight: 600;
+    outline: none;
+    cursor: pointer;
+    color-scheme: dark;
+}
+
+.cr-history-date {
+    font-size: 0.78rem;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
 /* Table Container */
 .cr-table-container {
     background: rgba(255, 255, 255, 0.03);

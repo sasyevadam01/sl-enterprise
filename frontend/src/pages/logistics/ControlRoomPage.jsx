@@ -11,7 +11,7 @@ import MaterialIcon from './components/MaterialIcon';
 import {
     AlertTriangle, Clock, CheckCircle2, XCircle, Zap,
     RefreshCw, Package, User, MapPin, Timer, ChevronDown, Eye,
-    Trophy, Medal, TrendingUp, TrendingDown
+    Trophy, Medal, TrendingUp, TrendingDown, Calendar, History
 } from 'lucide-react';
 import './ControlRoomStyles.css';
 
@@ -28,6 +28,7 @@ export default function ControlRoomPage() {
     const [requests, setRequests] = useState([]);
     const [stats, setStats] = useState({ total: 0, pending_count: 0, urgent_count: 0, completed_today: 0, avg_wait: 0 });
     const [filter, setFilter] = useState('active');
+    const [historyDate, setHistoryDate] = useState(new Date().toISOString().split('T')[0]);
     const [loading, setLoading] = useState(true);
     const [cancellingId, setCancellingId] = useState(null);
     const [urgingId, setUrgingId] = useState(null);
@@ -39,23 +40,43 @@ export default function ControlRoomPage() {
 
     const loadData = useCallback(async () => {
         try {
-            const params = {};
-            if (filter === 'active') params.status = 'active';
-            else if (filter === 'pending') params.status = 'pending';
-            else if (filter === 'processing') params.status = 'processing';
-            else if (filter === 'urgent') params.status = 'active';
-            params.limit = 200;
+            if (filter === 'history') {
+                // Load completed + cancelled for the selected date
+                const [completedData, cancelledData] = await Promise.all([
+                    logisticsApi.getRequests({ status: 'completed', limit: 500 }),
+                    logisticsApi.getRequests({ status: 'cancelled', limit: 500 })
+                ]);
+                let allHistory = [...(completedData.items || []), ...(cancelledData.items || [])];
+                // Filter by date
+                allHistory = allHistory.filter(r => {
+                    const refDate = r.completed_at || r.created_at;
+                    return refDate && refDate.startsWith(historyDate);
+                });
+                // Sort by most recent first
+                allHistory.sort((a, b) => {
+                    const dateA = new Date(a.completed_at || a.created_at);
+                    const dateB = new Date(b.completed_at || b.created_at);
+                    return dateB - dateA;
+                });
+                setRequests(allHistory);
+            } else {
+                const params = {};
+                if (filter === 'active') params.status = 'active';
+                else if (filter === 'pending') params.status = 'pending';
+                else if (filter === 'processing') params.status = 'processing';
+                else if (filter === 'urgent') params.status = 'active';
+                params.limit = 200;
 
-            const data = await logisticsApi.getRequests(params);
-            let items = data.items || [];
+                const data = await logisticsApi.getRequests(params);
+                let items = data.items || [];
 
-            if (filter === 'urgent') {
-                items = items.filter(r => r.is_urgent);
+                if (filter === 'urgent') {
+                    items = items.filter(r => r.is_urgent);
+                }
+                setRequests(items);
             }
 
-            setRequests(items);
-
-            // Calculate stats from response
+            // Calculate stats (always from active)
             const allActive = await logisticsApi.getRequests({ status: 'active', limit: 500 });
             const today = new Date().toISOString().split('T')[0];
             const completedToday = await logisticsApi.getRequests({ status: 'completed', limit: 500 });
@@ -80,7 +101,7 @@ export default function ControlRoomPage() {
         } finally {
             setLoading(false);
         }
-    }, [filter]);
+    }, [filter, historyDate]);
 
     const loadLeaderboard = useCallback(async () => {
         try {
@@ -168,11 +189,18 @@ export default function ControlRoomPage() {
         return 'cr-ok';
     };
 
+    const formatDateTime = (dateStr) => {
+        if (!dateStr) return '-';
+        const d = new Date(dateStr);
+        return d.toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    };
+
     const filters = [
         { key: 'active', label: 'Attive', count: stats.total },
         { key: 'pending', label: 'In Attesa', count: stats.pending_count },
         { key: 'processing', label: 'In Corso', count: stats.total - stats.pending_count },
         { key: 'urgent', label: 'Urgenti', count: stats.urgent_count },
+        { key: 'history', label: 'Storico', count: null, icon: History },
     ];
 
     return (
@@ -252,12 +280,24 @@ export default function ControlRoomPage() {
                     <button
                         key={f.key}
                         onClick={() => setFilter(f.key)}
-                        className={`cr-filter-btn ${filter === f.key ? 'active' : ''} ${f.key === 'urgent' ? 'urgent' : ''}`}
+                        className={`cr-filter-btn ${filter === f.key ? 'active' : ''} ${f.key === 'urgent' ? 'urgent' : ''} ${f.key === 'history' ? 'history' : ''}`}
                     >
+                        {f.icon && <f.icon size={14} />}
                         {f.label}
-                        <span className="cr-filter-count">{f.count}</span>
+                        {f.count !== null && <span className="cr-filter-count">{f.count}</span>}
                     </button>
                 ))}
+                {filter === 'history' && (
+                    <div className="cr-history-date-picker">
+                        <Calendar size={14} />
+                        <input
+                            type="date"
+                            value={historyDate}
+                            onChange={(e) => setHistoryDate(e.target.value)}
+                            className="cr-date-input"
+                        />
+                    </div>
+                )}
             </div>
 
             {/* Requests Table / Cards */}
@@ -284,7 +324,7 @@ export default function ControlRoomPage() {
                                     <th>Richiedente</th>
                                     <th>Stato</th>
                                     <th>Operatore</th>
-                                    <th>Tempo</th>
+                                    {filter === 'history' ? <th>Data</th> : <th>Tempo</th>}
                                     <th>Azioni</th>
                                 </tr>
                             </thead>
@@ -346,30 +386,40 @@ export default function ControlRoomPage() {
                                                 )}
                                             </td>
                                             <td>
-                                                <span className={`cr-wait-badge ${getWaitClass(req.wait_time_seconds)}`}>
-                                                    {formatTime(req.wait_time_seconds)}
-                                                </span>
+                                                {filter === 'history' ? (
+                                                    <span className="cr-history-date">
+                                                        {formatDateTime(req.completed_at || req.created_at)}
+                                                    </span>
+                                                ) : (
+                                                    <span className={`cr-wait-badge ${getWaitClass(req.wait_time_seconds)}`}>
+                                                        {formatTime(req.wait_time_seconds)}
+                                                    </span>
+                                                )}
                                             </td>
                                             <td className="cr-td-actions">
-                                                {req.status === 'pending' && !req.is_urgent && (
-                                                    <button
-                                                        onClick={() => handleUrgent(req.id)}
-                                                        disabled={urgingId === req.id}
-                                                        className="cr-action-btn cr-action-urgent"
-                                                        title="Marca Urgente"
-                                                    >
-                                                        <Zap size={14} />
-                                                    </button>
-                                                )}
-                                                {(req.status === 'pending' || req.status === 'processing') && (
-                                                    <button
-                                                        onClick={() => handleCancel(req.id)}
-                                                        disabled={cancellingId === req.id}
-                                                        className="cr-action-btn cr-action-cancel"
-                                                        title="Annulla"
-                                                    >
-                                                        <XCircle size={14} />
-                                                    </button>
+                                                {filter !== 'history' && (
+                                                    <>
+                                                        {req.status === 'pending' && !req.is_urgent && (
+                                                            <button
+                                                                onClick={() => handleUrgent(req.id)}
+                                                                disabled={urgingId === req.id}
+                                                                className="cr-action-btn cr-action-urgent"
+                                                                title="Marca Urgente"
+                                                            >
+                                                                <Zap size={14} />
+                                                            </button>
+                                                        )}
+                                                        {(req.status === 'pending' || req.status === 'processing') && (
+                                                            <button
+                                                                onClick={() => handleCancel(req.id)}
+                                                                disabled={cancellingId === req.id}
+                                                                className="cr-action-btn cr-action-cancel"
+                                                                title="Annulla"
+                                                            >
+                                                                <XCircle size={14} />
+                                                            </button>
+                                                        )}
+                                                    </>
                                                 )}
                                             </td>
                                         </tr>
@@ -393,6 +443,7 @@ export default function ControlRoomPage() {
                                         <div className="cr-card-top">
                                             <div className="cr-card-material">
                                                 <MaterialIcon emoji={req.material_type_icon} size={20} />
+
                                                 <div>
                                                     <strong>{req.material_type_label}</strong>
                                                     {req.quantity > 1 && <span className="cr-qty-badge">×{req.quantity}</span>}
@@ -414,6 +465,11 @@ export default function ControlRoomPage() {
                                             <div className="cr-card-operator">
                                                 Operatore: <strong>{req.assigned_to_name}</strong>
                                                 {req.promised_eta_minutes && <span> (ETA {req.promised_eta_minutes}m)</span>}
+                                            </div>
+                                        )}
+                                        {filter === 'history' && (
+                                            <div className="cr-card-operator" style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                                                {formatDateTime(req.completed_at || req.created_at)}
                                             </div>
                                         )}
                                         {isExpanded && (
