@@ -2,7 +2,7 @@
  * SL Enterprise - Notification Bell Component
  * Icona campanella con badge e dropdown notifiche
  */
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { notificationsApi, chatApi } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
@@ -18,6 +18,8 @@ export default function NotificationBell() {
     const dropdownRef = useRef(null);
     const prevConversationsRef = useRef({}); // Traccia lo stato precedente per i Toast
     const isFirstLoadRef = useRef(true); // Evita toast al primo caricamento
+    const unreadCountRef = useRef(0); // Ref stabile per il confronto (no stale closure)
+    const lastSoundTimeRef = useRef(0); // Cooldown anti-sovrapposizione suoni
     const { toast } = useUI();
 
     // Determine destination based on role
@@ -25,10 +27,12 @@ export default function NotificationBell() {
         ? '/hr/tasks'
         : '/hr/approvals';
 
-    // Sound Logic
-    const [lastPlayedRequest, setLastPlayedRequest] = useState(0);
+    const playElegantSound = useCallback(() => {
+        // Cooldown: ignora se suonato meno di 5 secondi fa
+        const now = Date.now();
+        if (now - lastSoundTimeRef.current < 5000) return;
+        lastSoundTimeRef.current = now;
 
-    const playElegantSound = () => {
         try {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             if (!AudioContext) return;
@@ -52,9 +56,9 @@ export default function NotificationBell() {
         } catch (e) {
             console.error("Audio play failed", e);
         }
-    };
+    }, []);
 
-    // Fetch unread count and play sound if increased
+    // Fetch unread count and play sound if increased — runs ONCE at mount
     useEffect(() => {
         const fetchCount = async () => {
             try {
@@ -76,8 +80,6 @@ export default function NotificationBell() {
 
                 const notifCount = notifData.unread_count || 0;
                 const chatCount = chatData.total_unread || 0;
-                // console.log("🔔 BELL DEBUG:", { notifCount, chatCount, notifData, chatData }); // DEBUG LOG REMOVED
-
 
                 const newTotal = notifCount + chatCount;
 
@@ -86,6 +88,8 @@ export default function NotificationBell() {
                 (chatData.conversations || []).forEach(c => {
                     currentConvs[c.conversation_id] = c.unread_count;
                 });
+
+                const prevTotal = unreadCountRef.current;
 
                 if (!isFirstLoadRef.current) {
                     // Chat Toasts
@@ -96,25 +100,18 @@ export default function NotificationBell() {
                         }
                     });
 
-                    // System Notification Toasts (NEW)
-                    // We check if total unread count increased more than what chat accounted for
-                    // Or simply track the previous System Unread Count separately.
-                    // Let's use a simpler heuristic for now: if total unread increased, and sound played, show generic toast if not chat.
-                    // Better: Let's fetch the latest notification if count increased.
-
-                    if (newTotal > unreadCount) {
+                    if (newTotal > prevTotal) {
                         playElegantSound();
 
                         // Se l'incremento non è solo chat, mostra toast di sistema
                         const chatIncrease = Object.values(currentConvs).reduce((a, b) => a + b, 0) -
                             Object.values(prevConversationsRef.current || {}).reduce((a, b) => a + b, 0);
 
-                        if ((newTotal - unreadCount) > chatIncrease) {
+                        if ((newTotal - prevTotal) > chatIncrease) {
                             // È arrivata una notifica di sistema!
                             try {
                                 const latest = await notificationsApi.getNotifications({ limit: 1 });
                                 if (latest[0]) {
-                                    // Custom toast based on type
                                     const n = latest[0];
                                     if (n.notif_type === 'critical') toast.error(n.title);
                                     else if (n.notif_type === 'urgent') toast.warning(n.title);
@@ -129,8 +126,9 @@ export default function NotificationBell() {
                     isFirstLoadRef.current = false;
                 }
 
-                // Aggiorna Refs
+                // Aggiorna Refs e State
                 prevConversationsRef.current = currentConvs;
+                unreadCountRef.current = newTotal;
                 setUnreadCount(newTotal);
             } catch (error) {
                 console.error('Error fetching notification count:', error);
@@ -138,9 +136,10 @@ export default function NotificationBell() {
         };
 
         fetchCount();
-        const interval = setInterval(fetchCount, 5000); // Back to 5s to save calls
+        const interval = setInterval(fetchCount, 5000);
         return () => clearInterval(interval);
-    }, [unreadCount]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     // Fetch notifications when dropdown opens
     useEffect(() => {
