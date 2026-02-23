@@ -351,6 +351,18 @@ export default function VehicleChargePage() {
                     {step === 'list' && (
                         <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
 
+                            {/* Guide hint */}
+                            {!myActive && (
+                                <div className="mb-4 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 flex items-start gap-2.5">
+                                    <span className="text-lg mt-0.5">💡</span>
+                                    <p className="text-sm text-blue-800">
+                                        <strong>Come funziona:</strong> Tocca un mezzo <span className="text-emerald-600 font-semibold">disponibile</span> per prelevarlo.
+                                        I mezzi <span className="text-red-600 font-semibold">in uso</span> da altri non sono selezionabili.
+                                    </p>
+                                </div>
+                            )}
+
+
                             {/* My Active Vehicle Banner */}
                             {myActive && (
                                 <motion.div
@@ -507,6 +519,14 @@ export default function VehicleChargePage() {
                                 )}
                             </div>
 
+                            {/* Guide hint */}
+                            <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 mb-4 flex items-start gap-2.5">
+                                <span className="text-lg mt-0.5">👇</span>
+                                <p className="text-sm text-emerald-800">
+                                    <strong>Passo 1:</strong> Controlla il livello di batteria indicato sul mezzo e seleziona la percentuale corrispondente qui sotto.
+                                </p>
+                            </div>
+
                             {/* Battery Selection */}
                             <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-4 shadow-sm">
                                 <h3 className="font-semibold text-slate-700 mb-3 flex items-center gap-2">
@@ -575,6 +595,14 @@ export default function VehicleChargePage() {
                                 </div>
                             </div>
 
+                            {/* Guide hint */}
+                            <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-4 flex items-start gap-2.5">
+                                <span className="text-lg mt-0.5">📋</span>
+                                <p className="text-sm text-amber-800">
+                                    <strong>Riconsegna mezzo:</strong> Scegli se metterlo <strong>in carica</strong> (collegalo alla colonnina) oppure se lasciarlo <strong>parcheggiato</strong> in una banchina.
+                                </p>
+                            </div>
+
                             {/* Return Type Selection */}
                             <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-4 shadow-sm">
                                 <h3 className="font-semibold text-slate-700 mb-3">Cosa vuoi fare?</h3>
@@ -606,6 +634,14 @@ export default function VehicleChargePage() {
                                         </span>
                                     </button>
                                 </div>
+                            </div>
+
+                            {/* Guide hint */}
+                            <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 mb-4 flex items-start gap-2.5">
+                                <span className="text-lg mt-0.5">🔋</span>
+                                <p className="text-sm text-slate-600">
+                                    Indica la percentuale di batteria <strong>attuale</strong> del mezzo prima di riconsegnarlo.
+                                </p>
                             </div>
 
                             {/* Battery Selection */}
@@ -640,6 +676,14 @@ export default function VehicleChargePage() {
                                         exit={{ height: 0, opacity: 0 }}
                                         className="overflow-hidden"
                                     >
+                                        {/* Guide hint */}
+                                        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 mb-4 flex items-start gap-2.5">
+                                            <span className="text-base mt-0.5">📍</span>
+                                            <p className="text-xs text-amber-700">
+                                                Seleziona il <strong>numero della banchina</strong> dove lasci il mezzo, così che gli altri sappiano dove trovarlo.
+                                            </p>
+                                        </div>
+
                                         <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-4 shadow-sm">
                                             <h3 className="font-semibold text-slate-700 mb-3 flex items-center gap-2">
                                                 <MapPin className="w-5 h-5 text-slate-400" />
