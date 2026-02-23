@@ -650,7 +650,7 @@ export default function VehicleChecklistPage() {
                                         <div className="text-center py-20 bg-white rounded-[32px] border border-dashed border-slate-200">
                                             <Clock size={48} className="mx-auto text-slate-300 mb-4" />
                                             <p className="text-slate-500 font-bold text-sm">{shiftInfo.message || 'Nessun check disponibile'}</p>
-                                            <p className="text-slate-400 text-xs mt-2">I check sono attivi dalle 06:00 alle 12:30 e dalle 14:00 alle 21:30</p>
+                                            <p className="text-slate-400 text-xs mt-2">I check sono attivi dalle 05:30 alle 13:50 e dalle 14:00 alle 21:50</p>
                                         </div>
                                     ) : Object.entries(grouped).length === 0 ? (
                                         <div className="text-center py-20 bg-white rounded-[32px] border border-dashed border-slate-200">
