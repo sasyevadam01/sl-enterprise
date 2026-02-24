@@ -332,6 +332,12 @@ export default function OrderDashboardPage() {
                                                     {order.client_ref && <p className="font-bold text-slate-800">Rif: {order.client_ref}</p>}
                                                     {order.supplier_label && <p className="text-blue-600">{order.supplier_label}</p>}
                                                     <p className="text-xs text-slate-400">{order.is_trimmed ? 'Rifilare' : 'Non Rifilato'}</p>
+                                                    {order.delivered_at && (
+                                                        <p className="text-xs text-emerald-600 font-semibold mt-1">
+                                                            ✓ Consegnato alle {formatTime(order.delivered_at)}
+                                                            {order.processor_name && ` da ${order.processor_name}`}
+                                                        </p>
+                                                    )}
                                                 </div>
                                             </div>
                                             {isOwner ? (
