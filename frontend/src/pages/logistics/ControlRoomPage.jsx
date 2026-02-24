@@ -3,8 +3,8 @@
  * MONITOR SPOSTAMENTI — Torre di Controllo Admin
  * Light Enterprise Design + SVG Icons + Edit/Delete + Filtri Richiedente/Operatore
  */
-import { useState, useEffect, useContext, useCallback, useRef } from 'react';
-import AuthContext from '../../context/AuthContext';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useAuth } from '../../context/AuthContext';
 import { logisticsApi } from '../../api/client';
 import { useUI } from '../../components/ui/CustomUI';
 import MaterialIcon from './components/MaterialIcon';
@@ -27,7 +27,8 @@ const STATUS_MAP = {
 };
 
 export default function ControlRoomPage() {
-    const { user } = useContext(AuthContext);
+    const { user, hasPermission } = useAuth();
+    const isAdmin = hasPermission('admin_users');
     const { toast } = useUI();
     const [requests, setRequests] = useState([]);
     const [stats, setStats] = useState({ total: 0, pending_count: 0, urgent_count: 0, completed_today: 0, avg_wait: 0 });
@@ -130,7 +131,7 @@ export default function ControlRoomPage() {
         }
     }, []);
 
-    useEffect(() => { loadLeaderboard(); }, [loadLeaderboard]);
+    useEffect(() => { if (isAdmin) loadLeaderboard(); }, [isAdmin, loadLeaderboard]);
     useEffect(() => { loadData(); }, [loadData]);
 
     // WebSocket real-time
@@ -406,8 +407,8 @@ export default function ControlRoomPage() {
                                     <th>Stato</th>
                                     <th>Operatore</th>
                                     {filter === 'history' ? <th>Data</th> : <th>Tempo</th>}
-                                    <th>Punti</th>
-                                    <th>Azioni</th>
+                                    {isAdmin && <th>Punti</th>}
+                                    {isAdmin && <th>Azioni</th>}
                                 </tr>
                             </thead>
                             <tbody>
@@ -476,61 +477,65 @@ export default function ControlRoomPage() {
                                                     </span>
                                                 )}
                                             </td>
-                                            <td className="cr-td-points">
-                                                {req.status === 'completed' ? (
-                                                    <div className="cr-points-cell">
-                                                        {(req.points_awarded || 0) > 0 && <span className="cr-pts-plus">+{req.points_awarded}</span>}
-                                                        {(req.penalty_applied || 0) > 0 && <span className="cr-pts-minus">-{req.penalty_applied}</span>}
-                                                        {!(req.points_awarded || 0) && !(req.penalty_applied || 0) && <span className="cr-pts-zero">0</span>}
-                                                    </div>
-                                                ) : <span className="cr-pts-zero">—</span>}
-                                            </td>
-                                            <td className="cr-td-actions">
-                                                {/* Urgent & Cancel for active */}
-                                                {filter !== 'history' && (
-                                                    <>
-                                                        {req.status === 'pending' && !req.is_urgent && (
-                                                            <button
-                                                                onClick={() => handleUrgent(req.id)}
-                                                                disabled={urgingId === req.id}
-                                                                className="cr-action-btn cr-action-urgent"
-                                                                title="Marca Urgente"
-                                                            >
-                                                                <Zap size={14} />
-                                                            </button>
-                                                        )}
-                                                        {(req.status === 'pending' || req.status === 'processing') && (
-                                                            <button
-                                                                onClick={() => handleCancel(req.id)}
-                                                                disabled={cancellingId === req.id}
-                                                                className="cr-action-btn cr-action-cancel"
-                                                                title="Annulla"
-                                                            >
-                                                                <XCircle size={14} />
-                                                            </button>
-                                                        )}
-                                                    </>
-                                                )}
-                                                {/* Edit points (completed only) */}
-                                                {req.status === 'completed' && (
+                                            {isAdmin && (
+                                                <td className="cr-td-points">
+                                                    {req.status === 'completed' ? (
+                                                        <div className="cr-points-cell">
+                                                            {(req.points_awarded || 0) > 0 && <span className="cr-pts-plus">+{req.points_awarded}</span>}
+                                                            {(req.penalty_applied || 0) > 0 && <span className="cr-pts-minus">-{req.penalty_applied}</span>}
+                                                            {!(req.points_awarded || 0) && !(req.penalty_applied || 0) && <span className="cr-pts-zero">0</span>}
+                                                        </div>
+                                                    ) : <span className="cr-pts-zero">—</span>}
+                                                </td>
+                                            )}
+                                            {isAdmin && (
+                                                <td className="cr-td-actions">
+                                                    {/* Urgent & Cancel for active */}
+                                                    {filter !== 'history' && (
+                                                        <>
+                                                            {req.status === 'pending' && !req.is_urgent && (
+                                                                <button
+                                                                    onClick={() => handleUrgent(req.id)}
+                                                                    disabled={urgingId === req.id}
+                                                                    className="cr-action-btn cr-action-urgent"
+                                                                    title="Marca Urgente"
+                                                                >
+                                                                    <Zap size={14} />
+                                                                </button>
+                                                            )}
+                                                            {(req.status === 'pending' || req.status === 'processing') && (
+                                                                <button
+                                                                    onClick={() => handleCancel(req.id)}
+                                                                    disabled={cancellingId === req.id}
+                                                                    className="cr-action-btn cr-action-cancel"
+                                                                    title="Annulla"
+                                                                >
+                                                                    <XCircle size={14} />
+                                                                </button>
+                                                            )}
+                                                        </>
+                                                    )}
+                                                    {/* Edit points (completed only) */}
+                                                    {req.status === 'completed' && (
+                                                        <button
+                                                            onClick={() => handleEditOpen(req)}
+                                                            className="cr-action-btn cr-action-edit"
+                                                            title="Modifica Punteggi"
+                                                        >
+                                                            <Edit3 size={14} />
+                                                        </button>
+                                                    )}
+                                                    {/* Hard Delete (any status) */}
                                                     <button
-                                                        onClick={() => handleEditOpen(req)}
-                                                        className="cr-action-btn cr-action-edit"
-                                                        title="Modifica Punteggi"
+                                                        onClick={() => handleDelete(req.id)}
+                                                        disabled={deletingId === req.id}
+                                                        className="cr-action-btn cr-action-delete"
+                                                        title="Elimina Definitivamente"
                                                     >
-                                                        <Edit3 size={14} />
+                                                        <Trash2 size={14} />
                                                     </button>
-                                                )}
-                                                {/* Hard Delete (any status) */}
-                                                <button
-                                                    onClick={() => handleDelete(req.id)}
-                                                    disabled={deletingId === req.id}
-                                                    className="cr-action-btn cr-action-delete"
-                                                    title="Elimina Definitivamente"
-                                                >
-                                                    <Trash2 size={14} />
-                                                </button>
-                                            </td>
+                                                </td>
+                                            )}
                                         </tr>
                                     );
                                 })}
@@ -581,7 +586,7 @@ export default function ControlRoomPage() {
                                                 {formatDateTime(req.completed_at || req.created_at)}
                                             </div>
                                         )}
-                                        {isExpanded && (
+                                        {isExpanded && isAdmin && (
                                             <div className="cr-card-actions">
                                                 {req.status === 'pending' && !req.is_urgent && (
                                                     <button onClick={(e) => { e.stopPropagation(); handleUrgent(req.id); }} className="cr-mob-btn urgent" disabled={urgingId === req.id}>
@@ -616,8 +621,8 @@ export default function ControlRoomPage() {
                 <span>{filteredRequests.length} risultati</span>
             </div>
 
-            {/* LEADERBOARD SECTION */}
-            <div className="cr-leaderboard-section">
+            {/* LEADERBOARD SECTION — Solo Admin */}
+            {isAdmin && <div className="cr-leaderboard-section">
                 <div className="cr-leaderboard-header">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <div className="cr-kpi-icon" style={{ background: '#fef3c7', color: '#f59e0b' }}>
@@ -736,10 +741,10 @@ export default function ControlRoomPage() {
                         </div>
                     </>
                 )}
-            </div>
+            </div>}
 
-            {/* Edit Points Modal */}
-            {editReq && (
+            {/* Edit Points Modal — Solo Admin */}
+            {isAdmin && editReq && (
                 <div className="cr-modal-overlay" onClick={() => setEditReq(null)}>
                     <div className="cr-modal" onClick={e => e.stopPropagation()}>
                         <div className="cr-modal-header">

@@ -132,14 +132,14 @@ const getMenuItems = (hasPermission) => {
         ],
     });
 
-    // MONITOR SPOSTAMENTI - Control Room Admin
+    // MONITOR SPOSTAMENTI - Control Room (Admin + Coordinatori)
     items.push({
         title: 'Monitor Spostamenti',
         icon: '📡',
-        permission: 'admin_users',
+        permission: ['admin_users', 'supervise_logistics'],
         titleColor: '#ef4444',
         children: [
-            { title: 'Control Room', path: '/logistics/control-room', permission: 'admin_users', icon: '🎯' },
+            { title: 'Control Room', path: '/logistics/control-room', permission: ['admin_users', 'supervise_logistics'], icon: '🎯' },
         ],
     });
 
@@ -517,16 +517,21 @@ export default function Sidebar({ isOpen, onToggle, mobileOpen, setMobileOpen })
             {/* Menu */}
             <nav className="p-3 space-y-1 flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar">
                 {menuItems.map((item) => {
-                    // Filter Parent by permission
-                    if (item.permission && !hasPermission(item.permission)) return null;
+                    // Filter Parent by permission (supports string or array with OR logic)
+                    if (item.permission) {
+                        const perms = Array.isArray(item.permission) ? item.permission : [item.permission];
+                        if (!perms.some(p => hasPermission(p))) return null;
+                    }
 
                     // Filter Children and Handle Dividers
                     const filteredItem = { ...item };
                     if (item.children) {
                         // 1. Filter out items user doesn't have permission for
-                        let visibleChildren = item.children.filter(child =>
-                            !child.permission || hasPermission(child.permission)
-                        );
+                        let visibleChildren = item.children.filter(child => {
+                            if (!child.permission) return true;
+                            const perms = Array.isArray(child.permission) ? child.permission : [child.permission];
+                            return perms.some(p => hasPermission(p));
+                        });
 
                         // 2. Remove Dividers that are at the end or followed by another divider
                         // We iterate backwards to easily remove trailing dividers
