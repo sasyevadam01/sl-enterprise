@@ -156,19 +156,38 @@ export default function SupplyDashboardPage() {
 
     // --- SECTOR FILTER (Touch-friendly) ---
     const [sectorFilter, setSectorFilter] = useState('all'); // all, Pantografo, Giostra
+    const [searchQuery, setSearchQuery] = useState('');
+
+    // Text search helper — matches reference, density, color, dimensions, material
+    const matchesSearch = (order) => {
+        if (!searchQuery.trim()) return true;
+        const q = searchQuery.toLowerCase().trim();
+        const fields = [
+            order.client_ref,
+            order.density_label,
+            order.color_label,
+            order.dimensions,
+            order.material_label,
+            order.supplier_label,
+            order.creator_name,
+        ].filter(Boolean).map(f => f.toLowerCase());
+        return fields.some(f => f.includes(q));
+    };
 
     // Separate pending, processing, and cancelled
     const allPendingOrders = orders.filter(o => o.status === 'pending');
-    const pendingOrders = sectorFilter === 'all'
+    const pendingOrders = (sectorFilter === 'all'
         ? allPendingOrders
-        : allPendingOrders.filter(o => o.target_sector === sectorFilter);
+        : allPendingOrders.filter(o => o.target_sector === sectorFilter)
+    ).filter(matchesSearch);
     const allProcessingOrders = orders.filter(o => o.status === 'processing');
-    const processingOrders = sectorFilter === 'all'
+    const processingOrders = (sectorFilter === 'all'
         ? allProcessingOrders
-        : allProcessingOrders.filter(o => o.target_sector === sectorFilter);
+        : allProcessingOrders.filter(o => o.target_sector === sectorFilter)
+    ).filter(matchesSearch);
     // "Cancelled" orders displayed here are ONLY those cancelled by the USER (processed_by_id is null)
     // If *I* rejected them (processed_by_id is me), I don't need to see them as "Blocked"
-    const cancelledOrders = orders.filter(o => o.status === 'cancelled' && !o.processed_by_id);
+    const cancelledOrders = orders.filter(o => o.status === 'cancelled' && !o.processed_by_id).filter(matchesSearch);
 
 
     // --- SIREN / AUDIO ALERT LOGIC ---
@@ -326,6 +345,30 @@ export default function SupplyDashboardPage() {
                         >
                             Giostra
                         </button>
+                    </div>
+
+                    {/* Search Filter */}
+                    <div className="relative mt-3">
+                        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        <input
+                            type="text"
+                            placeholder="Cerca per rif., densità, colore, misura..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full pl-9 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                        {searchQuery && (
+                            <button
+                                onClick={() => setSearchQuery('')}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
