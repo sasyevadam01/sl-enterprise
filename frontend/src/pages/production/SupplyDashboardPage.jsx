@@ -162,7 +162,10 @@ export default function SupplyDashboardPage() {
     const pendingOrders = sectorFilter === 'all'
         ? allPendingOrders
         : allPendingOrders.filter(o => o.target_sector === sectorFilter);
-    const processingOrders = orders.filter(o => o.status === 'processing');
+    const allProcessingOrders = orders.filter(o => o.status === 'processing');
+    const processingOrders = sectorFilter === 'all'
+        ? allProcessingOrders
+        : allProcessingOrders.filter(o => o.target_sector === sectorFilter);
     // "Cancelled" orders displayed here are ONLY those cancelled by the USER (processed_by_id is null)
     // If *I* rejected them (processed_by_id is me), I don't need to see them as "Blocked"
     const cancelledOrders = orders.filter(o => o.status === 'cancelled' && !o.processed_by_id);

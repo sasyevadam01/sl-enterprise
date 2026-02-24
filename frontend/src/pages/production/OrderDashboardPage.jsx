@@ -31,8 +31,20 @@ export default function OrderDashboardPage() {
 
     const loadOrders = async () => {
         try {
-            const data = await pickingApi.getRequests();
-            setOrders(data || []);
+            // Fetch only active + delivered (user's own orders)
+            const [activeData, deliveredData, cancelledData, completedData] = await Promise.all([
+                pickingApi.getRequests('active'),
+                pickingApi.getRequests('delivered'),
+                pickingApi.getRequests('cancelled'),
+                pickingApi.getRequests('completed', 10), // Storico recente (ultimi 10)
+            ]);
+            const combined = [
+                ...(activeData || []),
+                ...(deliveredData || []),
+                ...(cancelledData || []),
+                ...(completedData || []),
+            ];
+            setOrders(combined);
         } catch (err) {
             console.error('Error loading orders:', err);
         } finally {
@@ -43,10 +55,15 @@ export default function OrderDashboardPage() {
     const handleArchive = async (orderId) => {
         try {
             await pickingApi.updateStatus(orderId, 'completed');
-            toast.success('Ordine archiviato');
+            toast.success('Ricezione confermata!');
             loadOrders();
-        } catch {
-            toast.error('Errore archiviazione');
+        } catch (err) {
+            const detail = err.response?.data?.detail;
+            if (err.response?.status === 403) {
+                toast.error('Solo il richiedente originale può confermare la ricezione');
+            } else {
+                toast.error(detail || 'Errore conferma ricezione');
+            }
         }
     };
 
@@ -294,42 +311,51 @@ export default function OrderDashboardPage() {
                 <div className="mb-6">
                     <h2 className="text-sm font-bold text-emerald-600 uppercase mb-3">Pronti per conferma</h2>
                     <div className="space-y-2">
-                        {deliveredOrders.map(order => (
-                            <div
-                                key={order.id}
-                                onClick={() => handleArchive(order.id)}
-                                className="bg-emerald-50 rounded-2xl p-4 border-2 border-emerald-200 cursor-pointer hover:border-emerald-400 hover:shadow-md transition-all"
-                            >
-                                <div className="flex flex-col gap-2">
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <span className="text-lg font-bold text-slate-900 block">
-                                                {order.request_type === 'memory'
-                                                    ? order.material_label
-                                                    : `${order.density_label} ${order.color_label}`}
-                                            </span>
-                                            <div className="text-sm text-slate-500 space-y-0.5 mt-1">
-                                                <p>{order.dimensions} {order.custom_height ? `(H: ${order.custom_height}cm)` : ''}</p>
-                                                {order.client_ref && <p className="font-bold text-slate-800">Rif: {order.client_ref}</p>}
-                                                {order.supplier_label && <p className="text-blue-600">{order.supplier_label}</p>}
-                                                <p className="text-xs text-slate-400">{order.is_trimmed ? 'Rifilare' : 'Non Rifilato'}</p>
+                        {deliveredOrders.map(order => {
+                            const isOwner = order.created_by_id === user?.id;
+                            return (
+                                <div
+                                    key={order.id}
+                                    onClick={() => isOwner && handleArchive(order.id)}
+                                    className={`bg-emerald-50 rounded-2xl p-4 border-2 border-emerald-200 transition-all ${isOwner ? 'cursor-pointer hover:border-emerald-400 hover:shadow-md' : 'opacity-70'}`}
+                                >
+                                    <div className="flex flex-col gap-2">
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <span className="text-lg font-bold text-slate-900 block">
+                                                    {order.request_type === 'memory'
+                                                        ? order.material_label
+                                                        : `${order.density_label} ${order.color_label}`}
+                                                </span>
+                                                <div className="text-sm text-slate-500 space-y-0.5 mt-1">
+                                                    <p>{order.dimensions} {order.custom_height ? `(H: ${order.custom_height}cm)` : ''}</p>
+                                                    {order.client_ref && <p className="font-bold text-slate-800">Rif: {order.client_ref}</p>}
+                                                    {order.supplier_label && <p className="text-blue-600">{order.supplier_label}</p>}
+                                                    <p className="text-xs text-slate-400">{order.is_trimmed ? 'Rifilare' : 'Non Rifilato'}</p>
+                                                </div>
                                             </div>
+                                            {isOwner ? (
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleArchive(order.id); }}
+                                                    className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold shadow-sm transition-all active:scale-[0.98] cursor-pointer"
+                                                >
+                                                    Conferma Ricezione
+                                                </button>
+                                            ) : (
+                                                <span className="px-3 py-2 bg-slate-100 text-slate-400 rounded-xl text-xs font-medium">
+                                                    Ordine di {order.creator_name?.split(' ')[0] || 'altro utente'}
+                                                </span>
+                                            )}
                                         </div>
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); handleArchive(order.id); }}
-                                            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold shadow-sm transition-all active:scale-[0.98] cursor-pointer"
-                                        >
-                                            Conferma Ricezione
-                                        </button>
+                                        {order.notes && (
+                                            <div className="text-xs text-slate-400 italic border-t border-slate-100 pt-2 mt-1">
+                                                "Note: {order.notes}"
+                                            </div>
+                                        )}
                                     </div>
-                                    {order.notes && (
-                                        <div className="text-xs text-slate-400 italic border-t border-slate-100 pt-2 mt-1">
-                                            "Note: {order.notes}"
-                                        </div>
-                                    )}
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
             )}
