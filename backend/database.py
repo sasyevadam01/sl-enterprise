@@ -23,6 +23,7 @@ from models.production import (
 from models.logistics import ReturnTicket
 from models.maintenance import MaintenanceRequest
 from models.chat import Conversation, ConversationMember, Message, PushSubscription
+from models.checklist_web import ChecklistWebEntry
 
 # Force absolute path to avoid CWD confusion
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))

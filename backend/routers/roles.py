@@ -162,6 +162,7 @@ async def get_permission_definitions(current_user: User = Depends(get_current_us
         {"code": "use_oven", "label": "Utilizzare Il Forno", "category": "Production", "description": "Permette di inserire e rimuovere materiali dal forno industriale."},
         {"code": "block_vehicles", "label": "Blocco Mezzi", "category": "Production", "description": "Permette di bloccare o sbloccare l'utilizzo di un mezzo per manutenzione o sicurezza."},
         {"code": "view_charge_control", "label": "Gestione Ricariche", "category": "Production", "description": "Accesso al pannello Controllo Ricariche e Statistiche Operatori."},
+        {"code": "checklist_web", "label": "CheckList Web Clienti", "category": "Production", "description": "Accesso alla CheckList Web per il controllo giornaliero dei clienti."},
         {"code": "manage_logistics_config", "label": "Configurazione Logistica", "category": "Admin", "description": "Gestione configurazioni generali modulo logistica."},
         {"code": "admin_users", "label": "Gestione Utenti", "category": "Admin", "description": "Accesso all'area Admin per gestire utenti e configurazioni di sistema."},
         {"code": "admin_audit", "label": "Audit Logs", "category": "Admin", "description": "Visualizza il registro di tutte le azioni critiche eseguite nel sistema."},

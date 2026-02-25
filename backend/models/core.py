@@ -93,6 +93,7 @@ class User(Base):
             'admin': ['view_dashboard', 'manage_employees', 'manage_attendance', 'view_hr_calendar', 'request_events', 'manage_tasks', 'manage_shifts', 'view_announcements', 'access_factory', 'manage_kpi', 'access_logistics', 'manage_fleet', 'admin_users', 'admin_config', 'admin_audit'],
             'hr_manager': ['view_dashboard', 'manage_employees', 'manage_attendance', 'view_hr_calendar', 'request_events', 'manage_tasks', 'manage_shifts', 'view_announcements'],
             'coordinator': ['manage_shifts', 'manage_tasks', 'view_announcements', 'request_events'],
+            'super_coordinator': ['manage_shifts', 'manage_tasks', 'view_announcements', 'request_events', 'checklist_web'],
             'factory_controller': ['access_factory', 'manage_kpi', 'view_dashboard'],
             'record_user': [],
             'order_user': ['create_production_orders'],

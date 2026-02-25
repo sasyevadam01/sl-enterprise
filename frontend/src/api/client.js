@@ -685,5 +685,19 @@ export const blockCalculatorApi = {
     }),
 };
 
+// ============================================================
+// CHECKLIST WEB (Controllo Clienti Coordinatori)
+// ============================================================
+export const checklistWebApi = {
+  getByDate: (date) => client.get("/api/checklist-web", { params: { date } }),
+  initDay: (date) => client.post("/api/checklist-web/init", { data: date }),
+  updateEntry: (id, data) => client.put(`/api/checklist-web/${id}`, data),
+  deleteNote: (id) => client.delete(`/api/checklist-web/${id}/note`),
+  exportPdf: (date) => client.get("/api/checklist-web/pdf", {
+    params: { date },
+    responseType: "blob",
+  }),
+};
+
 export default client;
 

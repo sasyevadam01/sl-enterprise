@@ -13,7 +13,7 @@ from routers import (
     auth, users, employees, leaves, disciplinary, notifications, expiries, fleet, returns,
     tasks, events, audit, hr_stats, shifts, announcements, facility, factory, kpi, roles,
     admin_settings, mobile, maintenance, reports, bonuses, chat, production, logistics,
-    block_calculator, oven, fleet_charge
+    block_calculator, oven, fleet_charge, checklist_web
 )
 
 
@@ -105,6 +105,19 @@ async def lifespan(app: FastAPI):
                          ), {"rid": role_row[0], "uid": uid})
                  conn.commit()
                  print(f"[MIGRATION] Assegnato role_id a {len(orphans)} utenti orfani")
+
+             # 7. Seed ruolo Super Coordinatore (se non esiste)
+             existing_sc = conn.execute(text(
+                 "SELECT id FROM roles WHERE name = 'super_coordinator'"
+             )).fetchone()
+             if not existing_sc:
+                 conn.execute(text(
+                     "INSERT INTO roles (name, label, description, is_static, permissions, default_home) "
+                     "VALUES ('super_coordinator', 'Super Coordinatore', "
+                     "'Coordinatore con permessi estesi (es. CheckList Web)', 0, '[]', '/hr/tasks')"
+                 ))
+                 conn.commit()
+                 print("[SEED] Creato ruolo 'Super Coordinatore'")
 
     except Exception as e:
         print(f"[MIGRATION WARNING] Errore auto-migration: {e}")
@@ -286,6 +299,9 @@ app.include_router(block_calculator.router)
 
 # Il Forno (Oven Tracking)
 app.include_router(oven.router)
+
+# CheckList Web (Controllo Clienti Coordinatori)
+app.include_router(checklist_web.router)
 
 # ============================================================
 # LOGISTICS & PRODUCTION WEBSOCKETS

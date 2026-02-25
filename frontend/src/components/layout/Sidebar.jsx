@@ -115,6 +115,7 @@ const getMenuItems = (hasPermission) => {
             { title: 'Gestione Turni', path: '/hr/planner', permission: 'manage_shifts', icon: '🗓️' },
             { title: 'Bacheca Annunci', path: '/hr/announcements', permission: 'view_announcements', icon: '📢' },
             { title: 'Chat', path: '/chat', permission: null, icon: '💬' },  // Visibile a tutti
+            { title: 'CheckList Web Clienti', path: '/coordinator/checklist-web', permission: 'checklist_web', icon: '✅' },
         ],
     });
 

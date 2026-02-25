@@ -18,6 +18,7 @@ class UserRole(str, Enum):
     factory_controller = "factory_controller"
     hr_manager = "hr_manager"
     coordinator = "coordinator"
+    super_coordinator = "super_coordinator"
     record_user = "record_user"
     order_user = "order_user"       # <-- Added
     block_supply = "block_supply"   # <-- Added

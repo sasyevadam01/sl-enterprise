@@ -1,0 +1,667 @@
+/* ═══════════════════════════════════════════════════
+   CheckList Web — Coordinator Suite
+   Desktop-First Enterprise-Grade Table UI
+   ═══════════════════════════════════════════════════ */
+
+:root {
+    --clw-primary: #0f172a;
+    --clw-accent: #10b981;
+    --clw-success: #22c55e;
+    --clw-warning: #f59e0b;
+    --clw-danger: #ef4444;
+    --clw-surface: #ffffff;
+    --clw-bg: #f8fafc;
+    --clw-border: #e2e8f0;
+    --clw-text: #1e293b;
+    --clw-text-muted: #64748b;
+    --clw-text-dim: #94a3b8;
+    --clw-radius: 12px;
+    --clw-radius-sm: 8px;
+}
+
+/* ── Page Container ── */
+.clw-page {
+    min-height: 100vh;
+    background: var(--clw-bg);
+    padding: 24px 32px;
+}
+
+/* ── Header ── */
+.clw-header {
+    background: var(--clw-surface);
+    border-radius: var(--clw-radius);
+    border: 1px solid var(--clw-border);
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.clw-header-top {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.clw-header-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--clw-radius);
+    background: linear-gradient(135deg, #10b981, #059669);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+}
+
+.clw-header-info {
+    flex: 1;
+}
+
+.clw-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--clw-text);
+    margin: 0;
+    line-height: 1.2;
+}
+
+.clw-subtitle {
+    font-size: 13px;
+    color: var(--clw-text-muted);
+    margin: 2px 0 0;
+}
+
+.clw-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* ── Date Picker ── */
+.clw-date-picker {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--clw-bg);
+    border: 1px solid var(--clw-border);
+    border-radius: var(--clw-radius-sm);
+    padding: 8px 14px;
+    color: var(--clw-text-muted);
+}
+
+.clw-date-input {
+    border: none;
+    background: transparent;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--clw-text);
+    outline: none;
+    cursor: pointer;
+}
+
+/* ── Progress Section ── */
+.clw-progress-section {
+    margin-bottom: 16px;
+}
+
+.clw-progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.clw-progress-label {
+    font-size: 13px;
+    color: var(--clw-text-muted);
+}
+
+.clw-progress-label strong {
+    color: var(--clw-text);
+}
+
+.clw-progress-pct {
+    font-size: 16px;
+    font-weight: 800;
+}
+
+.clw-progress-bar {
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 99px;
+    overflow: hidden;
+}
+
+.clw-progress-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.6s ease, background 0.3s ease;
+}
+
+/* ── Toolbar ── */
+.clw-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.clw-search-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 200px;
+}
+
+.clw-search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--clw-text-dim);
+    pointer-events: none;
+}
+
+.clw-search-input {
+    width: 100%;
+    padding: 9px 12px 9px 36px;
+    border: 1px solid var(--clw-border);
+    border-radius: var(--clw-radius-sm);
+    font-size: 13px;
+    color: var(--clw-text);
+    background: var(--clw-bg);
+    outline: none;
+    transition: border-color .2s;
+}
+
+.clw-search-input:focus {
+    border-color: var(--clw-accent);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.clw-search-input::placeholder {
+    color: var(--clw-text-dim);
+}
+
+.clw-filter-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 14px;
+    border: 1px solid var(--clw-border);
+    border-radius: var(--clw-radius-sm);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--clw-text-muted);
+    background: var(--clw-surface);
+    cursor: pointer;
+    transition: all .2s;
+    white-space: nowrap;
+}
+
+.clw-filter-btn:hover {
+    background: #f1f5f9;
+}
+
+.clw-filter-btn.active {
+    background: #fef3c7;
+    border-color: #f59e0b;
+    color: #92400e;
+}
+
+.clw-pdf-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 16px;
+    border: none;
+    border-radius: var(--clw-radius-sm);
+    font-size: 12px;
+    font-weight: 700;
+    color: white;
+    background: linear-gradient(135deg, #10b981, #059669);
+    cursor: pointer;
+    transition: all .2s;
+    white-space: nowrap;
+}
+
+.clw-pdf-btn:hover {
+    box-shadow: 0 4px 12px rgba(16, 185, 129, .25);
+    transform: translateY(-1px);
+}
+
+.clw-pdf-btn:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ── Loading ── */
+.clw-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 0;
+    gap: 12px;
+    color: var(--clw-text-muted);
+}
+
+.clw-spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid #e2e8f0;
+    border-top-color: var(--clw-accent);
+    border-radius: 50%;
+    animation: clw-spin .8s linear infinite;
+}
+
+@keyframes clw-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ── Empty State ── */
+.clw-empty {
+    text-align: center;
+    padding: 80px 20px;
+    background: var(--clw-surface);
+    border-radius: var(--clw-radius);
+    border: 2px dashed var(--clw-border);
+}
+
+.clw-empty-icon {
+    color: #cbd5e1;
+    margin: 0 auto 16px;
+}
+
+.clw-empty h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--clw-text);
+    margin: 0 0 8px;
+}
+
+.clw-empty p {
+    font-size: 14px;
+    color: var(--clw-text-muted);
+    margin: 0 0 24px;
+}
+
+.clw-init-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 28px;
+    border: none;
+    border-radius: var(--clw-radius);
+    font-size: 15px;
+    font-weight: 700;
+    color: white;
+    background: linear-gradient(135deg, #10b981, #059669);
+    cursor: pointer;
+    transition: all .2s;
+    box-shadow: 0 4px 16px rgba(16, 185, 129, .3);
+}
+
+.clw-init-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(16, 185, 129, .35);
+}
+
+.clw-init-btn:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ── Table Container ── */
+.clw-table-container {
+    background: var(--clw-surface);
+    border-radius: var(--clw-radius);
+    border: 1px solid var(--clw-border);
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* ── Table ── */
+.clw-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.clw-table thead {
+    background: #1e293b;
+    color: white;
+}
+
+.clw-table th {
+    padding: 12px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.clw-th-num {
+    width: 50px;
+    text-align: center !important;
+}
+
+.clw-th-check {
+    width: 90px;
+    text-align: center !important;
+}
+
+.clw-th-operator {
+    width: 150px;
+}
+
+.clw-th-time {
+    width: 70px;
+    text-align: center !important;
+}
+
+.clw-th-actions {
+    width: 80px;
+    text-align: center !important;
+}
+
+/* ── Rows ── */
+.clw-table tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+    transition: background .15s;
+}
+
+.clw-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.clw-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.clw-table td {
+    padding: 10px 14px;
+    vertical-align: middle;
+}
+
+/* Row states */
+.clw-row-checked {
+    background: #f0fdf4 !important;
+}
+
+.clw-row-checked:hover {
+    background: #ecfdf5 !important;
+}
+
+.clw-row-unchecked {
+    background: white;
+}
+
+/* ── Cells ── */
+.clw-td-num {
+    text-align: center;
+    font-weight: 700;
+    color: var(--clw-text-dim);
+    font-size: 12px;
+}
+
+.clw-td-client {
+    font-weight: 600;
+}
+
+.clw-client-done {
+    color: var(--clw-text);
+}
+
+.clw-client-pending {
+    color: var(--clw-text);
+}
+
+.clw-td-check {
+    text-align: center;
+}
+
+.clw-check-btn {
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 50%;
+    transition: all .2s;
+    display: inline-flex;
+}
+
+.clw-check-btn.checked {
+    color: var(--clw-success);
+}
+
+.clw-check-btn.checked:hover {
+    color: #16a34a;
+    background: #dcfce7;
+}
+
+.clw-check-btn.unchecked {
+    color: #cbd5e1;
+}
+
+.clw-check-btn.unchecked:hover {
+    color: var(--clw-danger);
+    background: #fee2e2;
+}
+
+/* ── Note ── */
+.clw-td-note {
+    max-width: 300px;
+}
+
+.clw-note-text {
+    display: block;
+    padding: 4px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background .15s;
+    font-size: 13px;
+    color: var(--clw-text);
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.clw-note-text:hover {
+    background: #f1f5f9;
+}
+
+.clw-note-empty {
+    color: var(--clw-text-dim);
+    font-style: italic;
+    font-size: 12px;
+}
+
+.clw-note-edit {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.clw-note-input {
+    flex: 1;
+    padding: 6px 10px;
+    border: 2px solid var(--clw-accent);
+    border-radius: 6px;
+    font-size: 13px;
+    outline: none;
+    background: #f0fdf4;
+    color: var(--clw-text);
+}
+
+.clw-note-save {
+    padding: 4px;
+    border: none;
+    background: none;
+    color: var(--clw-success);
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background .15s;
+    display: flex;
+}
+
+.clw-note-save:hover {
+    background: #dcfce7;
+}
+
+.clw-note-cancel {
+    padding: 4px;
+    border: none;
+    background: none;
+    color: var(--clw-text-dim);
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background .15s;
+    display: flex;
+}
+
+.clw-note-cancel:hover {
+    background: #fee2e2;
+    color: var(--clw-danger);
+}
+
+/* ── Operator Badge ── */
+.clw-td-operator {
+    font-size: 12px;
+}
+
+.clw-operator-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    background: #f1f5f9;
+    border-radius: 6px;
+    color: var(--clw-text-muted);
+    font-weight: 500;
+    font-size: 12px;
+}
+
+.clw-no-operator {
+    color: var(--clw-text-dim);
+}
+
+/* ── Time Badge ── */
+.clw-td-time {
+    text-align: center;
+    font-size: 12px;
+}
+
+.clw-time-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--clw-text-muted);
+    font-weight: 500;
+    font-size: 12px;
+}
+
+/* ── Action Buttons ── */
+.clw-td-actions {
+    text-align: center;
+}
+
+.clw-action-btn {
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 6px;
+    transition: all .2s;
+    display: inline-flex;
+    margin: 0 1px;
+    opacity: 0.3;
+}
+
+.clw-table tbody tr:hover .clw-action-btn {
+    opacity: 1;
+}
+
+.clw-action-edit {
+    color: var(--clw-text-muted);
+}
+
+.clw-action-edit:hover {
+    background: #e2e8f0;
+    color: var(--clw-text);
+}
+
+.clw-action-delete {
+    color: var(--clw-text-dim);
+}
+
+.clw-action-delete:hover {
+    background: #fee2e2;
+    color: var(--clw-danger);
+}
+
+/* ── No Results ── */
+.clw-no-results {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 40px;
+    color: var(--clw-text-dim);
+    font-size: 14px;
+}
+
+/* ── Footer ── */
+.clw-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 16px;
+    color: var(--clw-text-dim);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* ── Touch / Mobile Tweaks (minimal, desktop-first) ── */
+@media (max-width: 768px) {
+    .clw-page {
+        padding: 12px 8px;
+    }
+
+    .clw-header-top {
+        flex-wrap: wrap;
+    }
+
+    .clw-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .clw-search-wrap {
+        min-width: 100%;
+    }
+
+    .clw-th-operator,
+    .clw-td-operator,
+    .clw-th-time,
+    .clw-td-time {
+        display: none;
+    }
+
+    .clw-table th,
+    .clw-table td {
+        padding: 8px 8px;
+        font-size: 12px;
+    }
+
+    .clw-action-btn {
+        opacity: 0.6;
+    }
+}

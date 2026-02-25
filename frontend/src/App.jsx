@@ -49,6 +49,7 @@ import OvenPage from './pages/production/OvenPage';
 import ControlRoomPage from './pages/logistics/ControlRoomPage';
 import VehicleChargePage from './pages/fleet/VehicleChargePage';
 import ChargeControlPage from './pages/fleet/ChargeControlPage';
+import ChecklistWebPage from './pages/coordinator/ChecklistWebPage';
 
 function App() {
   return (
@@ -227,6 +228,13 @@ function App() {
               <Route path="production/oven" element={
                 <PermissionRoute permission="use_oven">
                   <OvenPage />
+                </PermissionRoute>
+              } />
+
+              {/* Coordinator - CheckList Web Clienti */}
+              <Route path="coordinator/checklist-web" element={
+                <PermissionRoute permission="checklist_web">
+                  <ChecklistWebPage />
                 </PermissionRoute>
               } />
 
