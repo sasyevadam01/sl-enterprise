@@ -282,11 +282,26 @@ def _generate_checklist_pdf(target_date: date, entries: list) -> io.BytesIO:
         if entry.updated_at:
             ora = entry.updated_at.strftime("%H:%M")
 
+        # Renderizza sub-items: [x] → ✓, [ ] → ☐
+        nota_display = ""
+        if entry.nota:
+            lines = entry.nota.split("\n")
+            rendered = []
+            for line in lines:
+                stripped = line.strip()
+                if stripped.startswith("[x] ") or stripped.startswith("[X] "):
+                    rendered.append(f"✓ {stripped[4:]}")
+                elif stripped.startswith("[ ] "):
+                    rendered.append(f"☐ {stripped[4:]}")
+                elif stripped:
+                    rendered.append(stripped)
+            nota_display = "\n".join(rendered)
+
         table_data.append([
             str(i),
             entry.cliente,
             check_symbol,
-            entry.nota or "",
+            nota_display,
             operator_name,
             ora,
         ])
