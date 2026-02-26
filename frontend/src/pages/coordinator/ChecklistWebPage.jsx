@@ -110,6 +110,18 @@ export default function ChecklistWebPage() {
 
     useEffect(() => { loadData(); }, [loadData]);
 
+    // ── Live Polling (30s) — silenzioso, senza loader ──
+    useEffect(() => {
+        const interval = setInterval(async () => {
+            if (editingNoteId) return; // non sovrascrivere mentre si edita
+            try {
+                const data = await checklistWebApi.getByDate(selectedDate);
+                if (data) setEntries(data);
+            } catch { /* silenzioso */ }
+        }, 30000);
+        return () => clearInterval(interval);
+    }, [selectedDate, editingNoteId]);
+
     // ── Init Day ──
     const handleInitDay = async () => {
         setInitializing(true);
