@@ -1096,11 +1096,12 @@
 
 .clw-page .clw-heatmap {
     margin-top: 16px !important;
-    padding: 20px !important;
+    padding: 14px 16px !important;
     background: #ffffff !important;
     border: 1px solid #e2e8f0 !important;
-    border-radius: 12px !important;
+    border-radius: 10px !important;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+    max-width: 380px !important;
 }
 
 .clw-page .clw-heatmap-header {
@@ -1112,10 +1113,10 @@
 }
 
 .clw-page .clw-heatmap-title {
-    font-size: 16px !important;
+    font-size: 14px !important;
     font-weight: 700 !important;
     color: #1e293b !important;
-    min-width: 180px !important;
+    min-width: 150px !important;
     text-align: center !important;
 }
 
@@ -1144,26 +1145,26 @@
 
 .clw-page .clw-heatmap-dayname {
     text-align: center !important;
-    font-size: 11px !important;
+    font-size: 10px !important;
     font-weight: 700 !important;
     color: #94a3b8 !important;
     text-transform: uppercase !important;
-    padding: 4px 0 8px !important;
+    padding: 2px 0 4px !important;
 }
 
 .clw-page .clw-heatmap-cell {
-    aspect-ratio: 1 !important;
     border: none !important;
-    border-radius: 8px !important;
+    border-radius: 6px !important;
     cursor: pointer !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 2px !important;
+    gap: 1px !important;
     transition: all 0.15s ease !important;
     position: relative !important;
-    min-height: 44px !important;
+    min-height: 32px !important;
+    padding: 3px 0 !important;
     font-family: inherit !important;
 }
 
@@ -1190,14 +1191,14 @@
 }
 
 .clw-page .clw-heatmap-day-num {
-    font-size: 13px !important;
+    font-size: 11px !important;
     font-weight: 700 !important;
     color: #1e293b !important;
     line-height: 1 !important;
 }
 
 .clw-page .clw-heatmap-day-pct {
-    font-size: 9px !important;
+    font-size: 8px !important;
     font-weight: 600 !important;
     color: #64748b !important;
     line-height: 1 !important;
