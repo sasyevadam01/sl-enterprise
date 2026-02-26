@@ -836,6 +836,7 @@
     display: flex !important;
     align-items: center !important;
     gap: 6px !important;
+    flex-wrap: wrap !important;
 }
 
 .clw-page .clw-editor-btn {
@@ -852,6 +853,7 @@
     font-family: inherit !important;
     background: #ffffff !important;
     color: #64748b !important;
+    white-space: nowrap !important;
 }
 
 .clw-page .clw-editor-btn:hover {
