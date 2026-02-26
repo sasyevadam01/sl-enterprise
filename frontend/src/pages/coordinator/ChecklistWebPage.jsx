@@ -291,10 +291,10 @@ export default function ChecklistWebPage() {
     const openNotesCount = entries.filter(e => countOpenItems(e.nota) > 0).length;
 
     const progressColor = progressPct === 100
-        ? 'var(--clw-success)'
+        ? '#22c55e'
         : progressPct >= 50
-            ? 'var(--clw-warning)'
-            : 'var(--clw-danger)';
+            ? '#f59e0b'
+            : '#ef4444';
 
     // ── Render ──
     return (

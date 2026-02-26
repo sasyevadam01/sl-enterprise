@@ -269,8 +269,35 @@ def _generate_checklist_pdf(target_date: date, entries: list) -> io.BytesIO:
     checked_count = sum(1 for e in entries if e.checked)
     c.drawString(margin, page_h - 38 * mm, f"Completamento: {checked_count}/{len(entries)} clienti controllati")
 
-    # ── Table ──
-    header = ["#", "Cliente", "✓", "Nota", "Operatore", "Ora"]
+    # ── Table with Paragraph wrapping ──
+    from reportlab.platypus import Paragraph
+    from reportlab.lib.styles import ParagraphStyle
+
+    cell_style = ParagraphStyle(
+        "cell", fontName="Helvetica", fontSize=8, leading=10,
+        textColor=colors.Color(55 / 255, 65 / 255, 81 / 255),
+    )
+    cell_bold = ParagraphStyle(
+        "cellBold", fontName="Helvetica-Bold", fontSize=8, leading=10,
+        textColor=colors.Color(55 / 255, 65 / 255, 81 / 255),
+    )
+    nota_style = ParagraphStyle(
+        "nota", fontName="Helvetica", fontSize=7.5, leading=10,
+        textColor=colors.Color(55 / 255, 65 / 255, 81 / 255),
+    )
+    header_style = ParagraphStyle(
+        "header", fontName="Helvetica-Bold", fontSize=8, leading=10,
+        textColor=colors.white,
+    )
+
+    header = [
+        Paragraph("#", header_style),
+        Paragraph("Cliente", header_style),
+        Paragraph("✓", header_style),
+        Paragraph("Nota", header_style),
+        Paragraph("Operatore", header_style),
+        Paragraph("Ora", header_style),
+    ]
     table_data = [header]
 
     for i, entry in enumerate(entries, 1):
@@ -295,30 +322,29 @@ def _generate_checklist_pdf(target_date: date, entries: list) -> io.BytesIO:
                     rendered.append(f"☐ {stripped[4:]}")
                 elif stripped:
                     rendered.append(stripped)
-            nota_display = "\n".join(rendered)
+            nota_display = "<br/>".join(rendered)
 
         table_data.append([
-            str(i),
-            entry.cliente,
-            check_symbol,
-            nota_display,
-            operator_name,
-            ora,
+            Paragraph(str(i), cell_style),
+            Paragraph(entry.cliente or "", cell_bold),
+            Paragraph(check_symbol, cell_style),
+            Paragraph(nota_display, nota_style),
+            Paragraph(operator_name, cell_style),
+            Paragraph(ora, cell_style),
         ])
 
     # Column widths
     usable_w = page_w - 2 * margin
     col_widths = [
         8 * mm,           # #
-        50 * mm,          # Cliente
+        45 * mm,          # Cliente
         10 * mm,          # ✓
-        usable_w - 8 * mm - 50 * mm - 10 * mm - 35 * mm - 15 * mm,  # Nota (flex)
-        35 * mm,          # Operatore
-        15 * mm,          # Ora
+        usable_w - 8 * mm - 45 * mm - 10 * mm - 40 * mm - 16 * mm,  # Nota (flex)
+        40 * mm,          # Operatore
+        16 * mm,          # Ora
     ]
 
-    row_height = 7 * mm
-    t = Table(table_data, colWidths=col_widths, rowHeights=row_height)
+    t = Table(table_data, colWidths=col_widths)
 
     # Colors
     color_header_bg = colors.Color(30 / 255, 41 / 255, 59 / 255)
@@ -328,19 +354,16 @@ def _generate_checklist_pdf(target_date: date, entries: list) -> io.BytesIO:
     color_unchecked = colors.Color(254 / 255, 226 / 255, 226 / 255)
 
     style_commands = [
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("FONTSIZE", (0, 0), (-1, 0), 9),
-        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
         ("BACKGROUND", (0, 0), (-1, 0), color_header_bg),
-        ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
-        ("FONTSIZE", (0, 1), (-1, -1), 8),
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
         ("ALIGN", (0, 0), (0, -1), "CENTER"),   # #
         ("ALIGN", (2, 0), (2, -1), "CENTER"),    # ✓
         ("ALIGN", (5, 0), (5, -1), "CENTER"),    # Ora
         ("GRID", (0, 0), (-1, -1), 0.5, color_border),
-        ("LEFTPADDING", (1, 1), (1, -1), 4),
-        ("LEFTPADDING", (3, 1), (3, -1), 4),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ("LEFTPADDING", (0, 0), (-1, -1), 4),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 4),
     ]
 
     # Zebra + check coloring
@@ -351,17 +374,26 @@ def _generate_checklist_pdf(target_date: date, entries: list) -> io.BytesIO:
         # Check cell coloring
         check_color = color_checked if entry.checked else color_unchecked
         style_commands.append(("BACKGROUND", (2, i), (2, i), check_color))
-        if entry.checked:
-            style_commands.append(("TEXTCOLOR", (2, i), (2, i), colors.Color(22 / 255, 163 / 255, 74 / 255)))
-        else:
-            style_commands.append(("TEXTCOLOR", (2, i), (2, i), colors.Color(220 / 255, 38 / 255, 38 / 255)))
-
     t.setStyle(TableStyle(style_commands))
 
-    # Draw table
+    # Draw table (auto-height, multi-page if needed)
     table_y_top = page_h - 44 * mm
-    w, h = t.wrap(usable_w, page_h)
-    t.drawOn(c, margin, table_y_top - h)
+    available_h = table_y_top - 15 * mm
+    w, h = t.wrap(usable_w, available_h)
+
+    if h <= available_h:
+        t.drawOn(c, margin, table_y_top - h)
+    else:
+        result = t.split(usable_w, available_h)
+        if result:
+            first_table, remaining_table = result
+            fw, fh = first_table.wrap(usable_w, available_h)
+            first_table.drawOn(c, margin, table_y_top - fh)
+            c.showPage()
+            rw, rh = remaining_table.wrap(usable_w, page_h - 30 * mm)
+            remaining_table.drawOn(c, margin, page_h - 15 * mm - rh)
+        else:
+            t.drawOn(c, margin, table_y_top - h)
 
     # ── Footer ──
     c.setStrokeColor(colors.Color(15 / 255, 23 / 255, 42 / 255))
