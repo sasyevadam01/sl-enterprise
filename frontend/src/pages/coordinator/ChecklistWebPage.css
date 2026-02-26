@@ -422,6 +422,8 @@
 
 .clw-page .clw-th-note {
     min-width: 200px !important;
+    max-width: 0 !important;
+    /* forces table-layout fixed to respect widths */
 }
 
 .clw-page .clw-th-operator {
@@ -460,6 +462,8 @@
     color: #1e293b !important;
     border-bottom: none !important;
     background: transparent !important;
+    overflow: hidden !important;
+    word-break: break-word !important;
 }
 
 /* Row states */
