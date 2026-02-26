@@ -1058,6 +1058,200 @@
 }
 
 /* ═══════════════════════════════════════════════════
+   HELP GUIDE BOX
+   ═══════════════════════════════════════════════════ */
+
+.clw-page .clw-help-box {
+    margin-top: 16px !important;
+    padding: 16px 20px !important;
+    background: #f0f9ff !important;
+    border: 1px solid #bae6fd !important;
+    border-radius: 10px !important;
+}
+
+.clw-page .clw-help-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px 24px !important;
+    font-size: 13px !important;
+    color: #475569 !important;
+    line-height: 1.5 !important;
+}
+
+.clw-page .clw-help-grid b {
+    color: #1e293b !important;
+}
+
+.clw-page .clw-help-grid code {
+    background: #e2e8f0 !important;
+    padding: 1px 5px !important;
+    border-radius: 4px !important;
+    font-size: 12px !important;
+    font-family: 'SF Mono', monospace !important;
+}
+
+/* ═══════════════════════════════════════════════════
+   HEATMAP CALENDAR
+   ═══════════════════════════════════════════════════ */
+
+.clw-page .clw-heatmap {
+    margin-top: 16px !important;
+    padding: 20px !important;
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+}
+
+.clw-page .clw-heatmap-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 16px !important;
+    margin-bottom: 16px !important;
+}
+
+.clw-page .clw-heatmap-title {
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    color: #1e293b !important;
+    min-width: 180px !important;
+    text-align: center !important;
+}
+
+.clw-page .clw-heatmap-nav {
+    border: none !important;
+    background: #f1f5f9 !important;
+    border-radius: 8px !important;
+    padding: 6px 10px !important;
+    cursor: pointer !important;
+    color: #64748b !important;
+    transition: all 0.15s ease !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.clw-page .clw-heatmap-nav:hover {
+    background: #e2e8f0 !important;
+    color: #1e293b !important;
+}
+
+.clw-page .clw-heatmap-grid {
+    display: grid !important;
+    grid-template-columns: repeat(7, 1fr) !important;
+    gap: 4px !important;
+}
+
+.clw-page .clw-heatmap-dayname {
+    text-align: center !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    color: #94a3b8 !important;
+    text-transform: uppercase !important;
+    padding: 4px 0 8px !important;
+}
+
+.clw-page .clw-heatmap-cell {
+    aspect-ratio: 1 !important;
+    border: none !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 2px !important;
+    transition: all 0.15s ease !important;
+    position: relative !important;
+    min-height: 44px !important;
+    font-family: inherit !important;
+}
+
+.clw-page .clw-heatmap-cell.empty {
+    cursor: default !important;
+    background: transparent !important;
+}
+
+.clw-page .clw-heatmap-cell:not(.empty):hover {
+    transform: scale(1.08) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12) !important;
+    z-index: 2 !important;
+}
+
+.clw-page .clw-heatmap-cell.selected {
+    outline: 3px solid #10b981 !important;
+    outline-offset: -1px !important;
+    box-shadow: 0 0 0 5px rgba(16, 185, 129, 0.15) !important;
+}
+
+.clw-page .clw-heatmap-cell.today {
+    outline: 2px solid #3b82f6 !important;
+    outline-offset: -1px !important;
+}
+
+.clw-page .clw-heatmap-day-num {
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    color: #1e293b !important;
+    line-height: 1 !important;
+}
+
+.clw-page .clw-heatmap-day-pct {
+    font-size: 9px !important;
+    font-weight: 600 !important;
+    color: #64748b !important;
+    line-height: 1 !important;
+}
+
+.clw-page .clw-heatmap-legend {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 16px !important;
+    margin-top: 14px !important;
+    font-size: 11px !important;
+    color: #64748b !important;
+    font-weight: 500 !important;
+}
+
+.clw-page .clw-heatmap-legend-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+}
+
+.clw-page .clw-heatmap-dot {
+    width: 14px !important;
+    height: 14px !important;
+    border-radius: 4px !important;
+    display: inline-block !important;
+    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+
+/* ═══════════════════════════════════════════════════
+   VOICE RECORDING BUTTON
+   ═══════════════════════════════════════════════════ */
+
+.clw-page .clw-editor-btn.recording {
+    background: #ef4444 !important;
+    color: white !important;
+    border-color: #ef4444 !important;
+    animation: clw-pulse-mic 1.5s ease-in-out infinite !important;
+}
+
+@keyframes clw-pulse-mic {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+    }
+}
+
+/* ═══════════════════════════════════════════════════
    MOBILE RESPONSIVE
    ═══════════════════════════════════════════════════ */
 

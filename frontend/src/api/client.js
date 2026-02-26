@@ -697,6 +697,9 @@ export const checklistWebApi = {
     params: { date },
     responseType: "blob",
   }),
+  monthlySummary: (year, month) => client.get("/api/checklist-web/monthly-summary", {
+    params: { year, month },
+  }),
 };
 
 export default client;

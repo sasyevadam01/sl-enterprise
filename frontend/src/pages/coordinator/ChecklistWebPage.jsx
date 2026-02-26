@@ -1,6 +1,7 @@
 /**
  * CheckList Web v2.0 — Controllo giornaliero clienti per coordinatori.
  * Desktop-first, sub-checklist nelle note, righe espandibili, progress badge.
+ * Features: Heatmap calendar, Voice notes, Enter-to-next, Live polling.
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { checklistWebApi } from '../../api/client';
@@ -8,7 +9,8 @@ import toast from 'react-hot-toast';
 import {
     ClipboardCheck, Calendar, Download, Play, Search,
     Filter, CheckCircle2, XCircle, Edit3, Trash2, Clock,
-    Plus, ChevronDown, ChevronRight, Check, ListChecks, AlertCircle
+    Plus, ChevronDown, ChevronRight, Check, ListChecks, AlertCircle,
+    Mic, MicOff, HelpCircle, ChevronLeft
 } from 'lucide-react';
 import './ChecklistWebPage.css';
 
@@ -91,8 +93,13 @@ export default function ChecklistWebPage() {
     const [expandedRowId, setExpandedRowId] = useState(null);
     const [quickAddText, setQuickAddText] = useState('');
     const [checkAnimations, setCheckAnimations] = useState({});
+    const [heatmapData, setHeatmapData] = useState({});
+    const [showHeatmap, setShowHeatmap] = useState(false);
+    const [showHelp, setShowHelp] = useState(false);
+    const [isRecording, setIsRecording] = useState(false);
 
     const quickAddRef = useRef(null);
+    const recognitionRef = useRef(null);
 
     // ── Load Data ──
     const loadData = useCallback(async () => {
@@ -188,18 +195,97 @@ export default function ChecklistWebPage() {
         }
     };
 
-    // ── Save Note ──
-    const handleSaveNote = async (entryId) => {
+    // ── Save Note (con Enter-to-next) ──
+    const handleSaveNote = async (entryId, moveToNext = false) => {
         try {
             const updated = await checklistWebApi.updateEntry(entryId, { nota: editingNoteValue });
             setEntries(prev => prev.map(e => e.id === updated.id ? updated : e));
+            toast.success('Nota salvata');
+
+            if (moveToNext) {
+                // Trova la prossima riga nella lista filtrata
+                const currentIdx = filteredEntries.findIndex(e => e.id === entryId);
+                const nextEntry = filteredEntries[currentIdx + 1];
+                if (nextEntry) {
+                    setEditingNoteId(nextEntry.id);
+                    setEditingNoteValue(nextEntry.nota || '');
+                    return;
+                }
+            }
             setEditingNoteId(null);
             setEditingNoteValue('');
-            toast.success('Nota salvata');
         } catch {
             toast.error('Errore salvataggio nota');
         }
     };
+
+    // ── Voice Note (SpeechRecognition) ──
+    const startVoiceRecording = () => {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            toast.error('Il tuo browser non supporta il riconoscimento vocale');
+            return;
+        }
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'it-IT';
+        recognition.continuous = true;
+        recognition.interimResults = false;
+
+        recognition.onresult = (event) => {
+            let transcript = '';
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                if (event.results[i].isFinal) transcript += event.results[i][0].transcript;
+            }
+            if (transcript) {
+                setEditingNoteValue(prev => {
+                    const sep = prev && !prev.endsWith('\n') ? ' ' : '';
+                    return prev + sep + transcript;
+                });
+            }
+        };
+
+        recognition.onerror = () => {
+            setIsRecording(false);
+            toast.error('Errore riconoscimento vocale');
+        };
+
+        recognition.onend = () => setIsRecording(false);
+
+        recognitionRef.current = recognition;
+        recognition.start();
+        setIsRecording(true);
+        toast.success('🎤 Registrazione avviata — parla ora!');
+    };
+
+    const stopVoiceRecording = () => {
+        if (recognitionRef.current) {
+            recognitionRef.current.stop();
+            recognitionRef.current = null;
+        }
+        setIsRecording(false);
+    };
+
+    // ── Heatmap Load ──
+    useEffect(() => {
+        const loadHeatmap = async () => {
+            const d = new Date(selectedDate + 'T00:00:00');
+            try {
+                const data = await checklistWebApi.monthlySummary(d.getFullYear(), d.getMonth() + 1);
+                const map = {};
+                (data || []).forEach(r => { map[r.date] = r; });
+                setHeatmapData(map);
+            } catch { /* silenzioso */ }
+        };
+        loadHeatmap();
+    }, [selectedDate]);
+
+    // ── Filtered Entries (moved before handleSaveNote needs it) ──
+    const filteredEntries = entries.filter(e => {
+        if (searchTerm && !e.cliente.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+        if (showUncheckedOnly && e.checked) return false;
+        if (showOpenNotesOnly && countOpenItems(e.nota) === 0) return false;
+        return true;
+    });
 
     // ── Delete Note ──
     const handleDeleteNote = async (entryId, e) => {
@@ -288,13 +374,7 @@ export default function ChecklistWebPage() {
         setEditingNoteValue('');
     };
 
-    // ── Filtering ──
-    const filteredEntries = entries.filter(e => {
-        if (searchTerm && !e.cliente.toLowerCase().includes(searchTerm.toLowerCase())) return false;
-        if (showUncheckedOnly && e.checked) return false;
-        if (showOpenNotesOnly && countOpenItems(e.nota) === 0) return false;
-        return true;
-    });
+    // filteredEntries already defined above (needed by handleSaveNote)
 
     // ── Stats ──
     const checkedCount = entries.filter(e => e.checked).length;
@@ -307,6 +387,32 @@ export default function ChecklistWebPage() {
         : progressPct >= 50
             ? '#f59e0b'
             : '#ef4444';
+
+    // ── Heatmap helpers ──
+    const heatmapDate = new Date(selectedDate + 'T00:00:00');
+    const heatmapYear = heatmapDate.getFullYear();
+    const heatmapMonth = heatmapDate.getMonth();
+    const daysInMonth = new Date(heatmapYear, heatmapMonth + 1, 0).getDate();
+    const firstDayOfWeek = new Date(heatmapYear, heatmapMonth, 1).getDay();
+    const dayNames = ['L', 'M', 'M', 'G', 'V', 'S', 'D'];
+    const monthNames = ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'];
+
+    const navigateMonth = (delta) => {
+        const d = new Date(heatmapYear, heatmapMonth + delta, 1);
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        setSelectedDate(`${y}-${m}-01`);
+    };
+
+    const getHeatColor = (dayStr) => {
+        const info = heatmapData[dayStr];
+        if (!info) return '#f1f5f9';
+        const pct = info.total > 0 ? info.checked / info.total : 0;
+        if (pct === 0) return '#fee2e2';
+        if (pct < 0.5) return '#fecaca';
+        if (pct < 1) return '#fef3c7';
+        return '#bbf7d0';
+    };
 
     // ── Render ──
     return (
@@ -322,6 +428,20 @@ export default function ChecklistWebPage() {
                         <p className="clw-subtitle">Controllo Giornaliero Clienti</p>
                     </div>
                     <div className="clw-header-actions">
+                        <button
+                            onClick={() => setShowHelp(!showHelp)}
+                            className={`clw-filter-btn ${showHelp ? 'active' : ''}`}
+                            title="Guida rapida"
+                        >
+                            <HelpCircle size={16} />
+                        </button>
+                        <button
+                            onClick={() => setShowHeatmap(!showHeatmap)}
+                            className={`clw-filter-btn ${showHeatmap ? 'active' : ''}`}
+                            title="Calendario mensile"
+                        >
+                            <Calendar size={16} /> Calendario
+                        </button>
                         <div className="clw-date-picker">
                             <Calendar size={16} />
                             <input
@@ -333,6 +453,68 @@ export default function ChecklistWebPage() {
                         </div>
                     </div>
                 </div>
+
+                {/* Help Box */}
+                {showHelp && (
+                    <div className="clw-help-box">
+                        <div className="clw-help-grid">
+                            <span>🔘 <b>Toggle</b> — spunta il cliente come controllato</span>
+                            <span>📝 <b>Click riga</b> — espandi per vedere le sotto-note</span>
+                            <span>✏️ <b>Matita</b> — apri l'editor nota</span>
+                            <span>☑ <b>[ ]</b> — scrivi <code>[ ] testo</code> per creare item spuntabili</span>
+                            <span>🎤 <b>Microfono</b> — detta la nota a voce</span>
+                            <span>⏎ <b>Invio</b> — salva nota e passa alla prossima</span>
+                            <span>📅 <b>Calendario</b> — vedi completamento del mese</span>
+                            <span>📄 <b>PDF</b> — esporta la giornata in PDF</span>
+                        </div>
+                    </div>
+                )}
+
+                {/* Heatmap Calendar */}
+                {showHeatmap && (
+                    <div className="clw-heatmap">
+                        <div className="clw-heatmap-header">
+                            <button onClick={() => navigateMonth(-1)} className="clw-heatmap-nav"><ChevronLeft size={18} /></button>
+                            <span className="clw-heatmap-title">{monthNames[heatmapMonth]} {heatmapYear}</span>
+                            <button onClick={() => navigateMonth(1)} className="clw-heatmap-nav"><ChevronRight size={18} /></button>
+                        </div>
+                        <div className="clw-heatmap-grid">
+                            {dayNames.map((d, i) => (
+                                <span key={`dn-${i}`} className="clw-heatmap-dayname">{d}</span>
+                            ))}
+                            {Array.from({ length: (firstDayOfWeek + 6) % 7 }, (_, i) => (
+                                <span key={`pad-${i}`} className="clw-heatmap-cell empty" />
+                            ))}
+                            {Array.from({ length: daysInMonth }, (_, i) => {
+                                const day = i + 1;
+                                const dayStr = `${heatmapYear}-${String(heatmapMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                                const info = heatmapData[dayStr];
+                                const isSelected = dayStr === selectedDate;
+                                const isToday = dayStr === getTodayISO();
+                                const pctLabel = info ? `${info.checked}/${info.total}` : '';
+                                return (
+                                    <button
+                                        key={dayStr}
+                                        className={`clw-heatmap-cell ${isSelected ? 'selected' : ''} ${isToday ? 'today' : ''}`}
+                                        style={{ background: getHeatColor(dayStr) }}
+                                        onClick={() => setSelectedDate(dayStr)}
+                                        title={info ? `${dayStr}: ${info.checked}/${info.total} completati` : dayStr}
+                                    >
+                                        <span className="clw-heatmap-day-num">{day}</span>
+                                        {pctLabel && <span className="clw-heatmap-day-pct">{pctLabel}</span>}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        <div className="clw-heatmap-legend">
+                            <span className="clw-heatmap-legend-item"><span style={{ background: '#f1f5f9' }} className="clw-heatmap-dot" /> Nessun dato</span>
+                            <span className="clw-heatmap-legend-item"><span style={{ background: '#fee2e2' }} className="clw-heatmap-dot" /> 0%</span>
+                            <span className="clw-heatmap-legend-item"><span style={{ background: '#fecaca' }} className="clw-heatmap-dot" /> &lt;50%</span>
+                            <span className="clw-heatmap-legend-item"><span style={{ background: '#fef3c7' }} className="clw-heatmap-dot" /> &lt;100%</span>
+                            <span className="clw-heatmap-legend-item"><span style={{ background: '#bbf7d0' }} className="clw-heatmap-dot" /> 100%</span>
+                        </div>
+                    </div>
+                )}
 
                 {/* Progress Bar */}
                 {totalCount > 0 && (
@@ -498,6 +680,10 @@ export default function ChecklistWebPage() {
                                                         onChange={e => setEditingNoteValue(e.target.value)}
                                                         onKeyDown={e => {
                                                             if (e.key === 'Escape') cancelEditing();
+                                                            if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey) {
+                                                                e.preventDefault();
+                                                                handleSaveNote(entry.id, true);
+                                                            }
                                                             if (e.key === 'Enter' && e.ctrlKey) {
                                                                 e.preventDefault();
                                                                 handleSaveNote(entry.id);
@@ -505,14 +691,22 @@ export default function ChecklistWebPage() {
                                                         }}
                                                         className="clw-note-textarea"
                                                         autoFocus
-                                                        placeholder={"Scrivi nota...\nUsa [ ] per aggiungere un item spuntabile"}
+                                                        placeholder={"Scrivi nota...\nUsa [ ] per aggiungere un item spuntabile\nInvio = salva e prossima | Shift+Invio = a capo"}
                                                     />
                                                     <div className="clw-note-editor-toolbar">
                                                         <button onClick={addChecklistItemToEditor} className="clw-editor-btn" title="Aggiungi item checklist">
                                                             <Plus size={14} /> Item
                                                         </button>
+                                                        <button
+                                                            onClick={isRecording ? stopVoiceRecording : startVoiceRecording}
+                                                            className={`clw-editor-btn ${isRecording ? 'recording' : ''}`}
+                                                            title={isRecording ? 'Ferma registrazione' : 'Nota vocale'}
+                                                        >
+                                                            {isRecording ? <MicOff size={14} /> : <Mic size={14} />}
+                                                            {isRecording ? 'Stop' : 'Voce'}
+                                                        </button>
                                                         <span className="clw-editor-spacer" />
-                                                        <span className="clw-editor-hint">Ctrl+Enter per salvare</span>
+                                                        <span className="clw-editor-hint">Invio = salva+prossima</span>
                                                         <button onClick={cancelEditing} className="clw-editor-btn cancel">
                                                             <XCircle size={14} /> Annulla
                                                         </button>

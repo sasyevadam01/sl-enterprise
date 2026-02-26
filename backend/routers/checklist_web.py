@@ -107,6 +107,40 @@ async def get_checklist_by_date(
     return [_serialize_entry(e) for e in entries]
 
 
+@router.get("/monthly-summary", summary="Summary mensile completamento")
+async def get_monthly_summary(
+    year: int = Query(..., description="Anno"),
+    month: int = Query(..., ge=1, le=12, description="Mese (1-12)"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Ritorna il riepilogo giornaliero di completamento per un mese intero."""
+    _require_checklist_permission(current_user)
+
+    from sqlalchemy import func, case
+    from calendar import monthrange
+
+    _, last_day = monthrange(year, month)
+    start = date(year, month, 1)
+    end = date(year, month, last_day)
+
+    rows = (
+        db.query(
+            ChecklistWebEntry.data,
+            func.count().label("total"),
+            func.sum(case((ChecklistWebEntry.checked == True, 1), else_=0)).label("checked"),
+        )
+        .filter(ChecklistWebEntry.data >= start, ChecklistWebEntry.data <= end)
+        .group_by(ChecklistWebEntry.data)
+        .all()
+    )
+
+    return [
+        {"date": row.data.isoformat(), "total": row.total, "checked": int(row.checked or 0)}
+        for row in rows
+    ]
+
+
 @router.post("/init", summary="Inizializza giornata")
 async def init_day(
     body: InitDayRequest,
