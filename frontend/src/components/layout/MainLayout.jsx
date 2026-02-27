@@ -38,6 +38,8 @@ export default function MainLayout() {
     const userInteracted = useRef(false);
     const [alertCount, setAlertCount] = useState(0);
     const [lastAlertTime, setLastAlertTime] = useState(null);
+    const lastSoundTimeRef = useRef(0);
+    const lastWsEventRef = useRef(null);
 
     // ── Track user interaction (Chrome autoplay policy) ──
     useEffect(() => {
@@ -55,6 +57,12 @@ export default function MainLayout() {
     // ── Notification Sound (Web Audio API — no files needed) ──
     const playNotificationSound = useCallback(() => {
         if (!userInteracted.current) return;
+
+        // Cooldown: ignore if played less than 5 seconds ago
+        const now = Date.now();
+        if (now - lastSoundTimeRef.current < 5000) return;
+        lastSoundTimeRef.current = now;
+
         try {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
             // Primo tono (Do alto)
@@ -98,10 +106,15 @@ export default function MainLayout() {
                 try {
                     const data = JSON.parse(event.data);
                     if (data.type === 'new_request') {
+                        // Dedup: skip if same request_id received within 2 seconds
+                        const eventKey = `${data.type}_${data.request_id || ''}`;
+                        if (lastWsEventRef.current === eventKey) return;
+                        lastWsEventRef.current = eventKey;
+                        setTimeout(() => { lastWsEventRef.current = null; }, 2000);
+
                         playNotificationSound();
                         setAlertCount(prev => prev + 1);
                         setLastAlertTime(new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }));
-                        console.log('[WS Global] 🔔 Notifica ricevuta: new_request');
                     }
                 } catch (err) {
                     console.error('[WS Global] Parse error:', err);

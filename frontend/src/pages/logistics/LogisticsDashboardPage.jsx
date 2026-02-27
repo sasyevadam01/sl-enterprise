@@ -27,39 +27,10 @@ export default function LogisticsDashboardPage() {
     const [loading, setLoading] = useState(true);
     const { toast } = useUI();
 
-    // ── Notification Sound (Web Audio API) ──
-    const playNotificationSound = () => {
-        try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc1 = ctx.createOscillator();
-            const gain1 = ctx.createGain();
-            osc1.type = 'sine';
-            osc1.frequency.value = 830;
-            gain1.gain.setValueAtTime(0.3, ctx.currentTime);
-            gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-            osc1.connect(gain1);
-            gain1.connect(ctx.destination);
-            osc1.start(ctx.currentTime);
-            osc1.stop(ctx.currentTime + 0.3);
-            const osc2 = ctx.createOscillator();
-            const gain2 = ctx.createGain();
-            osc2.type = 'sine';
-            osc2.frequency.value = 1050;
-            gain2.gain.setValueAtTime(0.3, ctx.currentTime + 0.15);
-            gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
-            osc2.connect(gain2);
-            gain2.connect(ctx.destination);
-            osc2.start(ctx.currentTime + 0.15);
-            osc2.stop(ctx.currentTime + 0.5);
-        } catch (e) {
-            console.warn('[Sound] Audio non supportato:', e);
-        }
-    };
-
     useEffect(() => {
         loadData();
 
-        // WS Connection
+        // WS Connection (data refresh only — sound handled by MainLayout)
         const wsUrl = `ws://${window.location.hostname}:8000/ws/logistics`;
         const ws = new WebSocket(wsUrl);
 
@@ -68,10 +39,6 @@ export default function LogisticsDashboardPage() {
                 const data = JSON.parse(event.data);
                 if (data.type === 'new_request' || data.type === 'request_updated' || data.type === 'request_completed') {
                     loadData();
-                    if (data.type === 'new_request') {
-                        playNotificationSound();
-                        toast.info('📦 Nuova richiesta materiale in arrivo!');
-                    }
                 }
             } catch (err) {
                 console.error("WS error:", err);

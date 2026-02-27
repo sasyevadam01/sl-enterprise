@@ -9,12 +9,15 @@ import AuthContext from '../../context/AuthContext';
 import { logisticsApi, fleetApi } from '../../api/client';
 import LogisticsModal from './components/LogisticsModal';
 import { useUI } from '../../components/ui/CustomUI';
+
+const VISIBLE_ACTIVE_STATUSES = ['pending', 'preparing', 'prepared', 'processing'];
 import { Package, Clock, ArrowRight, MapPin, User, XCircle, AlertTriangle } from 'lucide-react';
 import MaterialIcon from './components/MaterialIcon';
 import './LogisticsStyles.css';
 
 export default function MaterialRequestPage() {
     const { user } = useContext(AuthContext);
+    const { toast } = useUI();
     const [materials, setMaterials] = useState([]);
     const [requireOtp, setRequireOtp] = useState(false);
     const [banchine, setBanchine] = useState([]);
@@ -87,7 +90,7 @@ export default function MaterialRequestPage() {
     const checkActiveRequest = async () => {
         try {
             const data = await logisticsApi.getRequests({ my_requests: true, status: 'active' });
-            const activeList = data.items?.filter(r => ['pending', 'processing'].includes(r.status)) || [];
+            const activeList = data.items?.filter(r => VISIBLE_ACTIVE_STATUSES.includes(r.status)) || [];
             setActiveRequest(activeList);
 
             if (activeList.length > 0) {
@@ -138,7 +141,7 @@ export default function MaterialRequestPage() {
         } catch (err) {
             console.error('Errore invio richiesta:', err);
             const errorMsg = err.response?.data?.detail || "Errore durante l'invio della richiesta.";
-            setError(errorMsg);
+            toast.error(errorMsg);
         } finally {
             setSending(false);
         }
