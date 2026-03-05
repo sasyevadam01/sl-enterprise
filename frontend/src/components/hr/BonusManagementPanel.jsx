@@ -40,8 +40,10 @@ export default function BonusManagementPanel() {
     const [summary, setSummary] = useState({ bonus_count: 0, total_amount: 0 });
     const [loading, setLoading] = useState(false);
 
-    // Bonus Table Filter
+    // Bonus Table Filters
     const [bonusSearchQuery, setBonusSearchQuery] = useState('');
+    const [bonusTableDeptFilter, setBonusTableDeptFilter] = useState('');
+    const [nameSortOrder, setNameSortOrder] = useState('none'); // 'none' | 'asc' | 'desc'
 
     // Form State
     const [showManualForm, setShowManualForm] = useState(false);
@@ -162,17 +164,43 @@ export default function BonusManagementPanel() {
         return filtered;
     }, [employees, selectedDepartment, departments]);
 
-    // Filtered bonuses for table display
+    // Filtered + sorted bonuses for table display
     const filteredBonuses = useMemo(() => {
-        if (!bonusSearchQuery.trim()) return bonuses;
+        let result = [...bonuses];
 
-        const query = bonusSearchQuery.toLowerCase().trim();
-        return bonuses.filter(b =>
-            b.employee_name?.toLowerCase().includes(query) ||
-            b.description?.toLowerCase().includes(query) ||
-            b.event_description?.toLowerCase().includes(query)
-        );
-    }, [bonuses, bonusSearchQuery]);
+        // Filter by department
+        if (bonusTableDeptFilter) {
+            const deptId = parseInt(bonusTableDeptFilter);
+            const selectedDeptObj = departments.find(d => d.id === deptId);
+            const deptName = selectedDeptObj ? selectedDeptObj.name.toLowerCase() : '';
+
+            result = result.filter(b => {
+                const emp = employees.find(e => e.id === b.employee_id);
+                if (!emp) return false;
+                return emp.department_id === deptId ||
+                    (emp.department_name && emp.department_name.toLowerCase() === deptName);
+            });
+        }
+
+        // Filter by search query
+        if (bonusSearchQuery.trim()) {
+            const query = bonusSearchQuery.toLowerCase().trim();
+            result = result.filter(b =>
+                b.employee_name?.toLowerCase().includes(query) ||
+                b.description?.toLowerCase().includes(query) ||
+                b.event_description?.toLowerCase().includes(query)
+            );
+        }
+
+        // Sort by name
+        if (nameSortOrder === 'asc') {
+            result.sort((a, b) => (a.employee_name || '').localeCompare(b.employee_name || ''));
+        } else if (nameSortOrder === 'desc') {
+            result.sort((a, b) => (b.employee_name || '').localeCompare(a.employee_name || ''));
+        }
+
+        return result;
+    }, [bonuses, bonusSearchQuery, bonusTableDeptFilter, nameSortOrder, employees, departments]);
 
     // Open modal for event bonus assignment
     const handleAssignFromEvent = (event) => {
@@ -526,24 +554,38 @@ export default function BonusManagementPanel() {
                 <div className="p-4 border-b border-yellow-500/10 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                     <h3 className="text-lg font-bold text-yellow-400">💰 Bonus Assegnati - {MONTHS[month]} {year}</h3>
 
-                    {/* Search Filter */}
-                    <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">🔍</span>
-                        <input
-                            type="text"
-                            value={bonusSearchQuery}
-                            onChange={e => setBonusSearchQuery(e.target.value)}
-                            placeholder="Cerca dipendente..."
-                            className="w-full md:w-64 bg-slate-800 border border-yellow-500/30 rounded-lg pl-10 pr-4 py-2 text-white placeholder:text-gray-500 focus:border-yellow-500/50 focus:outline-none transition"
-                        />
-                        {bonusSearchQuery && (
-                            <button
-                                onClick={() => setBonusSearchQuery('')}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition"
-                            >
-                                ✕
-                            </button>
-                        )}
+                    <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
+                        {/* Department Filter */}
+                        <select
+                            value={bonusTableDeptFilter}
+                            onChange={e => setBonusTableDeptFilter(e.target.value)}
+                            className="bg-slate-800 border border-yellow-500/30 rounded-lg px-3 py-2 text-white text-sm focus:border-yellow-500/50 focus:outline-none transition"
+                        >
+                            <option value="">Tutti i Reparti</option>
+                            {departments.map(d => (
+                                <option key={d.id} value={d.id}>{d.name}</option>
+                            ))}
+                        </select>
+
+                        {/* Search Filter */}
+                        <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">🔍</span>
+                            <input
+                                type="text"
+                                value={bonusSearchQuery}
+                                onChange={e => setBonusSearchQuery(e.target.value)}
+                                placeholder="Cerca dipendente..."
+                                className="w-full md:w-64 bg-slate-800 border border-yellow-500/30 rounded-lg pl-10 pr-4 py-2 text-white placeholder:text-gray-500 focus:border-yellow-500/50 focus:outline-none transition"
+                            />
+                            {bonusSearchQuery && (
+                                <button
+                                    onClick={() => setBonusSearchQuery('')}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition"
+                                >
+                                    ✕
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -558,7 +600,18 @@ export default function BonusManagementPanel() {
                         <table className="w-full text-sm">
                             <thead className="bg-slate-800 text-yellow-400/80 uppercase text-xs">
                                 <tr>
-                                    <th className="text-left p-3">Dipendente</th>
+                                    <th
+                                        className="text-left p-3 cursor-pointer select-none hover:text-yellow-300 transition-colors"
+                                        onClick={() => setNameSortOrder(prev => prev === 'none' ? 'asc' : prev === 'asc' ? 'desc' : 'none')}
+                                    >
+                                        <span className="inline-flex items-center gap-1">
+                                            Dipendente
+                                            <span className="inline-flex flex-col text-[10px] leading-[10px]">
+                                                <span className={nameSortOrder === 'asc' ? 'text-yellow-400' : 'text-gray-600'}>▲</span>
+                                                <span className={nameSortOrder === 'desc' ? 'text-yellow-400' : 'text-gray-600'}>▼</span>
+                                            </span>
+                                        </span>
+                                    </th>
                                     <th className="text-left p-3">Evento / Motivo</th>
                                     <th className="text-left p-3">Richiesto Da</th>
                                     <th className="text-center p-3">Data</th>
